@@ -1,0 +1,63 @@
+Target keycloak-services-deltares-4.8.3.Final.jar contains:
+
+Formaction classes:
+- RegistrationDeltaresEmai: Check for @deltares.nl emails when registering
+- RegistrationDeltaresUsername: Auto generates username value on registration
+
+Requiredaction classes:
+-LoginStatsRecordingRequiredActionProvider: stores login statistics: 1st login, last login, login count
+
+
+General installation:
+
+- Copy JAR to keycloak\standalone\deplolyments\
+- Check if deployment successful by checking if <jar file name>.deployed file is created
+
+- Copy deltares-keycloak-theme to keycloak\themes\
+
+
+Configure Registration Flow:
+
+- Login to keycloak admin console and go to section Authentication
+
+- Goto Tab Flows
+
+- Copy Registration Flow
+
+- Add execution from the Actions dropdown  of the first table row. Not the Add execution button!!!!
+	'Deltares email check'
+	'Deltares username check'
+
+- Move both actions before 'Registration user Creation' (^ v)
+
+- Goto Tab Bindings and select newly creaded flow in dropdown box; 'Registration Flow'
+
+
+
+Configure Browser Flow:
+
+- Login to keycloak admin console and go to section Authentication
+
+- Goto Tab Flows
+
+- Copy Browser Flow
+
+- Add execution from the Actions dropdown of the Browser Forms row. Not the Add execution button!!!!
+	Select 'Deltares Username Password Form'
+
+- Move before 'OTP Form' (^ v)
+
+- Remove the existing 'Username Password Form'
+
+- Goto Tab Bindings
+
+- Goto Tab Bindings and select newly creaded flow in dropdown box; 'Browser Flow'
+
+
+Configure Required actions:
+
+- Login to keycloak admin console and go to section Authentication
+
+- Goto Required Actions
+
+- Add action 'Record Login Statistic Action'
