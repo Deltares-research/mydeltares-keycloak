@@ -1,7 +1,7 @@
 Target keycloak-services-deltares-4.8.3.Final.jar contains:
 
 Formaction classes:
-- RegistrationDeltaresEmai: Check for @deltares.nl emails when registering
+- RegistrationDeltaresEmail: Check for @deltares.nl emails when registering
 - RegistrationDeltaresUsername: Auto generates username value on registration
 
 Requiredaction classes:
