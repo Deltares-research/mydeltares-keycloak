@@ -1,4 +1,4 @@
-package org.keycloak.authentication.requiredactions;
+package nl.deltares.keycloak.authentication.requiredactions;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;

@@ -1,33 +1,26 @@
-package org.keycloak.authentication.forms;
+package nl.deltares.keycloak.authentication.forms;
 
 import org.keycloak.Config;
 import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormActionFactory;
 import org.keycloak.authentication.FormContext;
 import org.keycloak.authentication.ValidationContext;
+import org.keycloak.authentication.forms.RegistrationPage;
 import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.*;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.services.messages.DeltaresMessages;
-import org.keycloak.services.validation.Validation;
 
 import javax.ws.rs.core.MultivaluedMap;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
-public class RegistrationDeltaresEmail implements FormAction, FormActionFactory {
-    public static final String PROVIDER_ID = "registration-deltares-email-action";
+public class RegistrationUsername implements FormAction, FormActionFactory {
+    public static final String PROVIDER_ID = "registration-deltares-user-action";
 
     @Override
     public String getHelpText() {
-        return "Validates email to make sure it does not end with @deltares.nl.";
+        return "Checks username and if missing auto generates.";
     }
 
     @Override
@@ -38,30 +31,30 @@ public class RegistrationDeltaresEmail implements FormAction, FormActionFactory 
     @Override
     public void validate(ValidationContext context) {
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        List<FormMessage> errors = new ArrayList<>();
-
         context.getEvent().detail(Details.REGISTER_METHOD, "form");
-        String eventError = Errors.INVALID_REGISTRATION;
 
-        String email = formData.getFirst(Validation.FIELD_EMAIL);
-        if (email.toLowerCase().endsWith("@deltares.nl")) {
-            context.getEvent().detail(Details.EMAIL, email);
-            errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, DeltaresMessages.DELTARES_EMAIL));
-        }
+        String username = formData.getFirst(RegistrationPage.FIELD_USERNAME);
+        context.getEvent().detail(Details.USERNAME, username);
 
-        if (errors.size() > 0) {
-            context.error(eventError);
-            context.validationError(formData, errors);
+        if (username == null || username.trim().length() == 0) {
+            UUID uuid = UUID.randomUUID();
+            formData.putSingle(Details.USERNAME, uuid.toString());
         } else {
-            context.success();
+            int i = username.indexOf('\\');
+            if (i > 0){
+                //remove directory\ string
+                String strippedUsername = username.substring(i+1);
+                formData.putSingle(Details.USERNAME, strippedUsername);
+            }
         }
+        context.success();
     }
 
     @Override
     public void success(FormContext context) {
 //        UserModel user = context.getUser();
 //        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-//        user.setEmail(formData.getFirst(RegistrationPage.FIELD_EMAIL));
+//        user.setUsername(formData.getFirst(RegistrationPage.FIELD_USERNAME));
     }
 
     @Override
@@ -97,7 +90,7 @@ public class RegistrationDeltaresEmail implements FormAction, FormActionFactory 
 
     @Override
     public String getDisplayType() {
-        return "Deltares Email Check";
+        return "Deltares Username Validate ";
     }
 
     @Override
