@@ -7,7 +7,10 @@
             ${msg("emailVerifyInstruction1")}
         </p>
         <p class="instruction">
-            ${msg("emailVerifyInstruction2")} <a href="${url.loginAction}">${msg("doClickHere")}</a> ${msg("emailVerifyInstruction3")}
+            ${msg("emailVerifyInstruction2")} <p>${msg("emailVerifyInstruction4")}<a href="${url.loginAction}">${msg("doClickHere")}</a> ${msg("emailVerifyInstruction3")} </p>
         </p>
+        
+	${msg("pageExpiredMsg1")} <a id="loginRestartLink" href="${url.loginRestartFlowUrl}">${msg("doClickHere")}</a> .<br/>
+	
     </#if>
 </@layout.registrationLayout>

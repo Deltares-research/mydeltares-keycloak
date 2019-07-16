@@ -34,7 +34,11 @@
 <body class="${properties.kcBodyClass!}">
   <div class="${properties.kcLoginClass!}">
     <div id="kc-header" class="${properties.kcHeaderClass!} navbar header">
-      <div id="kc-header-wrapper" class="container"> <span class="navbar-header"><h1 class="navbar-title">MyDeltares</h1></span></div>
+      <div id="kc-header-wrapper" class="container"> <span class="navbar-header">
+      
+     
+      <h1 class="navbar-title"><img src="${url.resourcesPath}/img/wit_deltares_logo.png" style="float:left" /> MyDeltares</h1></span></div>
+      
       <div class="navbar-collapse navbar-collapse-1">
                       <div class="container">
                           <ul class="nav navbar-nav navbar-utility">
@@ -62,6 +66,7 @@
       </header>
       <div id="kc-content">
         <div id="kc-content-wrapper">
+
 
           <#if displayMessage && message?has_content>
               <div class="alert alert-${message.type}">

@@ -33,7 +33,7 @@ html{
     -webkit-text-size-adjust:100%;
     padding:0;
     margin:0;
-    overflow-y: scroll;
+ /*   overflow-y: scroll;*/
 }
 
 body{
@@ -47,7 +47,7 @@ body{
     font-size:14px;
     min-width:320px;
     width:100%;
-    min-height:100vh;
+   /* min-height:100vh;*/
 }
 
 .navbar.header {
@@ -56,12 +56,21 @@ body{
     height:94px;
     color:#fff;
     padding: 8px;
-    border-bottom: 1px solid #666;
-    border-top: 1px solid #666;
+    /*border-bottom: 1px solid #666;
+    border-top: 1px solid #666;*/
+}
+
+/* link style */
+a
+{
+    text-decoration: none;
+    color: #92b6c7;
+    font-weight: bold;
+
 }
 
 .navbar-header {
-    width:256px;
+    /*width:256px;*/
     margin-left:120px;
     float:left;
 }
@@ -150,13 +159,14 @@ form input[type="text"], input[type="password"]{
     padding:8px 4px;
     min-width: 250px;
     width: 100%;
+    border: 1px solid #cecece;
 }
 
 .form-group {
      margin:16px 0 10px;
 }
 
-form button,form input[type="submit"]{
+form button,form input[type="submit"], .button {
     font-family:inherit;
     font-size:100%;
     text-transform:none;
@@ -172,6 +182,27 @@ form button,form input[type="submit"]{
     outline:none;
     border-radius:0;
     margin:16px 0 10px;
+}
+
+#kc-social-providers ul
+{
+    list-style-type: none;
+    padding: 0;
+}
+
+.form-group.remove-margin 
+{
+    margin: 0px;
+}
+
+.align-right
+{
+    text-align:right;
+}
+
+a.button 
+{
+    font-weight: normal;
 }
 
 table{
@@ -219,7 +250,7 @@ thead, thead tr, thead td{
 }
 
 .footer .misc-column{
-    max-width: 128px;
+    max-width: 500px;
     float:right;
     text-align:right;
     clear:none;
@@ -228,7 +259,7 @@ thead, thead tr, thead td{
 
 .footer .misc-column a{
     margin-right:0;
-    display:block
+    font-weight: normal;
 }
 
 .footer a{
@@ -261,10 +292,15 @@ thead, thead tr, thead td{
     width:50%;
     margin:120px auto;
     padding-bottom:128px;
-    border: 1px solid #666;
+   /* border: 1px solid #666;*/
     padding-top:40px;
     min-width: 380px;
-    max-width: 500px;
+	max-width: 800px;
+}
+
+.darkurl
+{
+    color:#000;
 }
 
 .login-container-content > *
@@ -332,10 +368,11 @@ thead, thead tr, thead td{
 }
 
 #kc-locale-dropdown a {
-    color: #4d5258;
+    color: #fff;
     background: 0 0;
     padding: 0 15px 0 0;
     font-weight: 300;
+    text-decoration: none;
 }
 
 #kc-locale-dropdown a:hover {
