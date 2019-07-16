@@ -3,26 +3,26 @@
 }
 
 @font-face{
-    font-family:'SansaNormal';
-    src:url("../fonts/sansa/normal_pack/Normal/SansaPro-Normal.eot#iefix") format("embedded-opentype"),url("../fonts/sansa/normal_pack/Normal/SansaPro-Normal.woff") format("woff"),url("../fonts/sansa/normal_pack/Normal/SansaPro-Normal.svg") format("svg");
+    font-family:'sansanormal';
+    src:url("../fonts/sansa/normal_pack/normal/sansapro-normal.eot#iefix") format("embedded-opentype"),url("../fonts/sansa/normal_pack/normal/sansapro-normal.woff") format("woff"),url("../fonts/sansa/normal_pack/normal/sansapro-normal.svg") format("svg");
     font-weight:normal;
     font-style:normal
 }
 @font-face{
-    font-family:'SansaNormalItalic';
-    src:url("../fonts/sansa/normal_pack/Normal_Italic/SansaPro-NormalItalic.eot#iefix") format("embedded-opentype"),url("../fonts/sansa/normal_pack/Normal_Italic/SansaPro-NormalItalic.woff") format("woff"),url("../fonts/sansa/normal_pack/Normal_Italic/SansaPro-NormalItalic.svg") format("svg");
+    font-family:'sansanormalitalic';
+    src:url("../fonts/sansa/normal_pack/normal_italic/sansapro-normalitalic.eot#iefix") format("embedded-opentype"),url("../fonts/sansa/normal_pack/normal_italic/sansapro-normalitalic.woff") format("woff"),url("../fonts/sansa/normal_pack/normal_italic/sansapro-normalitalic.svg") format("svg");
     font-weight:normal;
     font-style:normal
 }
 @font-face{
-    font-family:'SansaLight';
-    src:url("../fonts/sansa/light_pack/Light/SansaPro-Light.eot#iefix") format("embedded-opentype"),url("../fonts/sansa/light_pack/Light/SansaPro-Light.woff") format("woff"),url("../fonts/sansa/light_pack/Light/SansaPro-Light.svg") format("svg");
+    font-family:'sansalight';
+    src:url("../fonts/sansa/light_pack/light/sansapro-light.eot#iefix") format("embedded-opentype"),url("../fonts/sansa/light_pack/light/sansapro-light.woff") format("woff"),url("../fonts/sansa/light_pack/light/sansapro-light.svg") format("svg");
     font-weight:normal;
     font-style:normal
 }
 @font-face{
-    font-family:'SansaSemiBold';
-    src:url("../fonts/sansa/semi_bold_pack/SemiBold/SansaPro-SemiBold.eot#iefix") format("embedded-opentype"),url("../fonts/sansa/semi_bold_pack/SemiBold/SansaPro-SemiBold.woff") format("woff"),url("../fonts/sansa/semi_bold_pack/SemiBold/SansaPro-SemiBold.svg") format("svg");
+    font-family:'sansasemibold';
+    src:url("../fonts/sansa/semi_bold_pack/semibold/sansapro-semibold.eot#iefix") format("embedded-opentype"),url("../fonts/sansa/semi_bold_pack/semibold/sansapro-semibold.woff") format("woff"),url("../fonts/sansa/semi_bold_pack/semibold/sansapro-semibold.svg") format("svg");
     font-weight:normal;
     font-style:normal
 }
