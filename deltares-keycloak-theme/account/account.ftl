@@ -18,6 +18,7 @@
             <div class="form-group ${messagesPerField.printIfExists('username','has-error')}">
                 <div class="col-sm-2 col-md-2">
                     <label for="username" class="control-label">${msg("username")}</label> <#if realm.editUsernameAllowed><span class="required">*</span></#if>
+                    <br/><span>${msg("usernameChangeInfo")}</span>
                 </div>
 
                 <div class="col-sm-10 col-md-10">
@@ -32,7 +33,7 @@
             </div>
 
             <div class="col-sm-10 col-md-10">
-                <input type="text" class="form-control" id="email" name="email" autofocus value="${(account.email!'')}"/>
+                <input type="text" class="form-control" id="email" name="email" disabled="disabled" autofocus value="${(account.email!'')}"/>
             </div>
         </div>
 
