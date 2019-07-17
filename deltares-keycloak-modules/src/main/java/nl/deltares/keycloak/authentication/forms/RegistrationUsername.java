@@ -13,10 +13,9 @@ import org.keycloak.provider.ProviderConfigProperty;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.List;
-import java.util.UUID;
 
 public class RegistrationUsername implements FormAction, FormActionFactory {
-    public static final String PROVIDER_ID = "registration-deltares-user-action";
+    private static final String PROVIDER_ID = "registration-deltares-user-action";
 
     @Override
     public String getHelpText() {
@@ -37,8 +36,11 @@ public class RegistrationUsername implements FormAction, FormActionFactory {
         context.getEvent().detail(Details.USERNAME, username);
 
         if (username == null || username.trim().length() == 0) {
-            UUID uuid = UUID.randomUUID();
-            formData.putSingle(Details.USERNAME, uuid.toString());
+            String email = formData.getFirst(RegistrationPage.FIELD_EMAIL);
+            String newUserName = createUserName(email, context);
+            if (newUserName != null) {
+                formData.putSingle(Details.USERNAME, newUserName);
+            }
         } else {
             int i = username.indexOf('\\');
             if (i > 0){
@@ -48,6 +50,27 @@ public class RegistrationUsername implements FormAction, FormActionFactory {
             }
         }
         context.success();
+    }
+
+    private String createUserName(String email, ValidationContext context) {
+
+        if (email == null) return null;
+        int i = email.indexOf('@');
+        String userName;
+        if (i > 0){
+            //remove domain
+            userName =  email.substring(0, i);
+        } else {
+            userName = email;
+        }
+
+        UserProvider users = context.getSession().users();
+        i = 0;
+        String validUserName = userName;
+        while (users.getUserByUsername(validUserName, context.getRealm()) != null){
+            validUserName = userName + '_' + String.valueOf(i++);
+        }
+        return validUserName;
     }
 
     @Override
