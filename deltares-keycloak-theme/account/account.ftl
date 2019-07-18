@@ -33,7 +33,7 @@
             </div>
 
             <div class="col-sm-10 col-md-10">
-                <input type="text" class="form-control" id="email" name="email" disabled="disabled" autofocus value="${(account.email!'')}"/>
+                <input type="text" class="form-control" id="email" name="email" autofocus value="${(account.email!'')}"/>
             </div>
         </div>
 
