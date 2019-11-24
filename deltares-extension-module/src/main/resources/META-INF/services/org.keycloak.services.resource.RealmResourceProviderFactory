@@ -1,0 +1,2 @@
+nl.deltares.keycloak.storage.rest.AvatarResourceProviderFactory
+nl.deltares.keycloak.storage.rest.MailingResourceProviderFactory
