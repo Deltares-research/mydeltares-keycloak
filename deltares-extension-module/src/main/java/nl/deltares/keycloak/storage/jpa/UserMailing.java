@@ -3,8 +3,8 @@ package nl.deltares.keycloak.storage.jpa;
 import javax.persistence.*;
 
 @NamedQueries({
-        @NamedQuery(name = "findByUser", query = "from UserMailing where userId = :userId and realmId = :realmId"),
-        @NamedQuery(name = "findByMailing", query = "from UserMailing where mailingId = :mailingId and realmId = :realmId")
+        @NamedQuery(name = "findUserMailingByUserAndRealm", query = "select m from UserMailing m where m.userId = :userId and m.realmId = :realmId"),
+        @NamedQuery(name = "findUserMailingByMailingAndRealm", query = "select m from UserMailing m where m.mailingId = :mailingId and m.realmId = :realmId")
 })
 @Entity
 @Table(name = "USER_MAILING")

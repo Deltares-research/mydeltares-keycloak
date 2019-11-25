@@ -67,11 +67,24 @@
                 <scope>provided</scope>		
 	        </dependency>
             <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-ldap-federation</artifactId>
-                <version>${keycloak.version}</version>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-core</artifactId>
+                <version>5.4.4.Final</version>
                 <scope>provided</scope>
             </dependency>
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>5.1.42</version>
+                <scope>provided</scope>
+            </dependency>
+
+<!--            <dependency>-->
+<!--                <groupId>org.keycloak</groupId>-->
+<!--                <artifactId>keycloak-ldap-federation</artifactId>-->
+<!--                <version>${keycloak.version}</version>-->
+<!--                <scope>provided</scope>-->
+<!--            </dependency>-->
         </dependencies>
     </dependencyManagement>
 

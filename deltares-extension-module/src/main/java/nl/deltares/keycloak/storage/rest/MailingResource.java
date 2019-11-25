@@ -151,7 +151,7 @@ public class MailingResource {
     }
 
     private Mailing getMailingById(String realmId, String id) {
-        List<Mailing> resultList = getEntityManager().createNamedQuery("findById", Mailing.class)
+        List<Mailing> resultList = getEntityManager().createNamedQuery("findMailingByIdAndRealm", Mailing.class)
                 .setParameter("id", id)
                 .setParameter("realmId", realmId)
                 .getResultList();
@@ -160,7 +160,7 @@ public class MailingResource {
     }
 
     private Mailing getMailingByName(String realmId, String name) {
-        List<Mailing> resultList = getEntityManager().createNamedQuery("findByName", Mailing.class)
+        List<Mailing> resultList = getEntityManager().createNamedQuery("findMailingByNameAndRealm", Mailing.class)
                 .setParameter("name", name)
                 .setParameter("realmId", realmId)
                 .getResultList();
@@ -169,7 +169,7 @@ public class MailingResource {
     }
 
     private List<Mailing> getMailingsByRealm(String realmId) {
-        return getEntityManager().createNamedQuery("getAllByRealm", Mailing.class)
+        return getEntityManager().createNamedQuery("getAllMailingsByRealm", Mailing.class)
                 .setParameter("realmId", realmId)
                 .getResultList();
     }

@@ -3,7 +3,7 @@ package nl.deltares.keycloak.storage.jpa;
 import javax.persistence.*;
 
 @NamedQueries({
-   @NamedQuery(name = "findByUser", query = "from Avatar where userId = :userId and realmId = :realmId")
+   @NamedQuery(name = "findAvatarByUserAndRealm", query = "select a from Avatar a where a.userId = :userId and a.realmId = :realmId")
 })
 @Entity
 @Table(name = "USER_AVATAR")

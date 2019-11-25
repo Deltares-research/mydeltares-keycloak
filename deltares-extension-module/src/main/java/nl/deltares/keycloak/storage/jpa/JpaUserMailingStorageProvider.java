@@ -14,7 +14,7 @@ public class JpaUserMailingStorageProvider implements JpaEntityProvider {
 
     @Override
     public String getChangelogLocation() {
-        return "META-INF/mailing-changelog.xml";
+        return "META-INF/usermailing-changelog.xml";
     }
 
     @Override

@@ -80,7 +80,7 @@ abstract class AbstractAvatarResource {
     }
 
     private Avatar getAvatar(String realmId, String userId) {
-        List<Avatar> resultList = getEntityManager().createNamedQuery("findByUser", Avatar.class)
+        List<Avatar> resultList = getEntityManager().createNamedQuery("findAvatarByUserAndRealm", Avatar.class)
                 .setParameter("userId", userId)
                 .setParameter("realmId", realmId)
                 .getResultList();

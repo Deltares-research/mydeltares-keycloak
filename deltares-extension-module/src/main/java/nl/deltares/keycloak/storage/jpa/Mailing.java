@@ -3,9 +3,9 @@ package nl.deltares.keycloak.storage.jpa;
 import javax.persistence.*;
 
 @NamedQueries({
-    @NamedQuery(name = "getAllByRealm", query = "from Mailing where realmId = :realmId order by name"),
-    @NamedQuery(name = "findById", query = "from Mailing where id = :id and realmId = :realmId"),
-    @NamedQuery(name = "findByName", query = "from Mailing where name = :name and realmId = :realmId")
+    @NamedQuery(name = "getAllMailingsByRealm", query = "select m from Mailing m where m.realmId = :realmId order by m.name"),
+    @NamedQuery(name = "findMailingByIdAndRealm", query = "select m from Mailing m where m.id = :id and m.realmId = :realmId"),
+    @NamedQuery(name = "findMailingByNameAndRealm", query = "select m from Mailing m where m.name = :name and m.realmId = :realmId")
 })
 @Entity
 @Table(name = "MAILING_ENTITY")
