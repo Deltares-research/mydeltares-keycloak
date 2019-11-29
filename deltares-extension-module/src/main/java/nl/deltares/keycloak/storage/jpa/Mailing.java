@@ -5,7 +5,9 @@ import javax.persistence.*;
 @NamedQueries({
     @NamedQuery(name = "getAllMailingsByRealm", query = "select m from Mailing m where m.realmId = :realmId order by m.name"),
     @NamedQuery(name = "findMailingByIdAndRealm", query = "select m from Mailing m where m.id = :id and m.realmId = :realmId"),
-    @NamedQuery(name = "findMailingByNameAndRealm", query = "select m from Mailing m where m.name = :name and m.realmId = :realmId")
+    @NamedQuery(name = "findMailingByNameAndRealm", query = "select m from Mailing m where m.name = :name and m.realmId = :realmId"),
+    @NamedQuery(name= "searchForMailing", query="select m from Mailing m where m.realmId = :realmId and lower(m.name) like :search order by m.name")
+
 })
 @Entity
 @Table(name = "MAILING_ENTITY")
@@ -32,6 +34,9 @@ public class Mailing {
 
     @Column(name = "DELIVERY", nullable = false)
     private int delivery=0;
+
+    @Column(name = "CREATED_TIMESTAMP")
+    protected Long createdTimestamp;
 
     public String getId() {
         return id;
@@ -98,4 +103,13 @@ public class Mailing {
 
         this.delivery = delivery;
     }
+
+    public Long getCreatedTimestamp() {
+        return createdTimestamp;
+    }
+
+    public void setCreatedTimestamp(Long timestamp) {
+        createdTimestamp = timestamp;
+    }
+
 }

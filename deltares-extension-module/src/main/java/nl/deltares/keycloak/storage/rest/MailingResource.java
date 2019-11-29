@@ -3,10 +3,12 @@ package nl.deltares.keycloak.storage.rest;
 import nl.deltares.keycloak.storage.jpa.Mailing;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.AppAuthManager;
@@ -27,7 +29,7 @@ import static nl.deltares.keycloak.storage.rest.ResourceUtils.authenticateRealmA
 
 public class MailingResource {
     private static final Logger logger = Logger.getLogger(MailingResource.class);
-
+    private static final String SEARCH_ID_PARAMETER = "id:";
     private final KeycloakSession session;
     private AdminPermissionEvaluator realmAuth;
     private AppAuthManager authManager;
@@ -38,17 +40,25 @@ public class MailingResource {
     @Context
     private ClientConnection clientConnection;
     private RealmModel realm;
+    private UserModel user;
+
+    @Path("/admin")
+    public MailingResource admin() {
+        ResteasyProviderFactory.getInstance().injectProperties(this);
+        init();
+        return this;
+    }
 
 
     public MailingResource(KeycloakSession session) {
         this.session = session;
         this.authManager = new AppAuthManager();
-        init();
     }
 
     public void init() {
         realm = session.getContext().getRealm();
         AdminAuth auth = authenticateRealmAdminRequest(authManager, httpHeaders, session, clientConnection);
+        user = auth.getUser();
         realmAuth = AdminPermissions.evaluator(session, realm, auth);
         session.getContext().setRealm(realm);
     }
@@ -70,7 +80,7 @@ public class MailingResource {
 
         logger.info("Adding mailing : " + rep.getName());
         getEntityManager().persist(mailing);
-        return Response.ok().build();
+        return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(mailing.getId()).build()).build();
     }
 
     @PUT
@@ -87,7 +97,7 @@ public class MailingResource {
 
         logger.info("Updating mailing : " + rep.getName());
         getEntityManager().persist(mailing);
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @DELETE
@@ -103,7 +113,7 @@ public class MailingResource {
 
         logger.info("Delete mailing : " + mailingId);
         getEntityManager().remove(mailing);
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     /**
@@ -116,7 +126,7 @@ public class MailingResource {
     public MailingRepresentation getMailing(final @PathParam("id") String id) {
         realmAuth.users().requireQuery();
 
-        Mailing mailing = getMailingById(id, realm.getId());
+        Mailing mailing = getMailingById(realm.getId(), id);
         if (mailing == null) {
             throw new NotFoundException("Mailing not found for id " + id);
         }
@@ -127,10 +137,23 @@ public class MailingResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<MailingRepresentation> getMailings(@QueryParam("name") String name) {
+    public List<MailingRepresentation> getMailings(@QueryParam("search") String search, @QueryParam("name") String name) {
         realmAuth.users().requireQuery();
 
         List<MailingRepresentation> reps = new ArrayList<>();
+        if (search != null) {
+            if (search.startsWith(SEARCH_ID_PARAMETER)) {
+                Mailing mailing = getMailingById(realm.getId(), search.substring(SEARCH_ID_PARAMETER.length()).trim());
+                if (mailing != null) {
+                    reps.add(toRepresentation(mailing));
+                }
+            } else {
+                List<Mailing> resultList = searchForMailings(realm.getId(), search.trim());
+                resultList.forEach(mailing -> reps.add(toRepresentation(mailing)));
+            }
+            return reps;
+        }
+
         if (name != null) {
             Mailing mailing = getMailingByName(realm.getId(), name);
             if (mailing == null) throw new NotFoundException("Mailing not found for name " + name);
@@ -148,6 +171,7 @@ public class MailingResource {
         mailing.setDelivery(rep.getDelivery());
         mailing.setLanguages(rep.getLanguages());
         mailing.setFrequency(rep.getFrequency());
+        mailing.setCreatedTimestamp(System.currentTimeMillis());
     }
 
     private Mailing getMailingById(String realmId, String id) {
@@ -168,6 +192,13 @@ public class MailingResource {
         return resultList.get(0);
     }
 
+    private List<Mailing> searchForMailings(String realmId, String search) {
+        return getEntityManager().createNamedQuery("searchForMailing", Mailing.class)
+                .setParameter("realmId", realmId)
+                .setParameter("search", search)
+                .getResultList();
+    }
+
     private List<Mailing> getMailingsByRealm(String realmId) {
         return getEntityManager().createNamedQuery("getAllMailingsByRealm", Mailing.class)
                 .setParameter("realmId", realmId)
@@ -178,14 +209,18 @@ public class MailingResource {
         return session.getProvider(JpaConnectionProvider.class).getEntityManager();
     }
 
-    private static MailingRepresentation toRepresentation(Mailing mailing) {
+    private MailingRepresentation toRepresentation(Mailing mailing) {
         MailingRepresentation rep = new MailingRepresentation();
         rep.setId(mailing.getId());
         rep.setRealmId(mailing.getRealmId());
         rep.setName(mailing.getName());
         rep.setDescription(mailing.getDescription());
         rep.setDelivery(mailing.getDelivery());
+        rep.setLanguages(mailing.getLanguages());
         rep.setFrequency(mailing.getFrequency());
+        rep.getCreatedTimestamp(mailing.getCreatedTimestamp());
+
+        rep.setAccess(realmAuth.users().getAccess(user));
         return rep;
     }
 

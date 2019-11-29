@@ -1,0 +1,11 @@
+<div data-ng-controller="MailingTabCtrl">
+    <h1 data-ng-hide="create">
+        {{mailing.name|capitalize}}
+        <i id="removeMailing" class="pficon pficon-delete clickable" data-ng-show="!create && mailing.access.manage" data-ng-click="removeMailing()"></i>
+    </h1>
+    <h1 data-ng-show="create">{{:: 'add-mailing' | translate}}</h1>
+
+    <ul class="nav nav-tabs" data-ng-show="!create">
+        <li ng-class="{active: !path[4] && path[0] != 'create'}"><a href="#/load/mailing/{{realm.realm}}/{{mailing.id}}">{{:: 'details' | translate}}</a></li>
+    </ul>
+</div>

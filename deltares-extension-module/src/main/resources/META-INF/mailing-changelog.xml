@@ -24,6 +24,7 @@
             <column name="DELIVERY" type="TINYINT" defaultValue="0" remarks="0,1 or 2 (email/post/both)">
                 <constraints nullable="false"/>
             </column>
+            <column name="CREATED_TIMESTAMP" type="BIGINT"/>
         </createTable>
 
 
@@ -32,6 +33,10 @@
                 tableName="MAILING_ENTITY"
                 columnNames="ID"
         />
+
+        <addUniqueConstraint columnNames="REALM_ID,NAME"
+                             constraintName="UK_MAILING_NAME"
+                             tableName="MAILING_ENTITY" />
 
         <addForeignKeyConstraint baseTableName="MAILING_ENTITY"
                                  baseColumnNames="REALM_ID"

@@ -1,0 +1,69 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2" ng-init="init()">
+
+    <kc-tabs-mailings></kc-tabs-mailings>
+
+    <table class="table table-striped table-bordered" id="mailing-table">
+        <caption data-ng-show="mailings" class="hidden">{{:: 'table-of-mailings' | translate}}</caption>
+        <thead>
+        <tr>
+            <th colspan="7">
+                <div class="form-inline">
+                    <div class="form-group">
+                        <div class="input-group">
+                            <input type="text" placeholder="{{:: 'search.placeholder' | translate}}" data-ng-model="query.search" class="form-control search" onkeydown="if (event.keyCode == 13) document.getElementById('mailingSearch').click()">
+                            <div class="input-group-addon">
+                                    <i class="fa fa-search" id="mailingSearch" data-ng-click="firstPage()"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="viewAllMailings" class="btn btn-default" ng-click="query.search = null; firstPage()">{{:: 'view-all-mailings' | translate}}</button>
+
+                    <div class="pull-right" data-ng-show="access.manageUsers">
+                        <a id="createMailing" class="btn btn-default" href="#/create/mailing/{{realm.realm}}">{{:: 'add-mailing' | translate}}</a>
+                    </div>
+                </div>
+            </th>
+        </tr>
+        <tr>
+        <tr data-ng-show="searchLoaded && mailings.length > 0">
+            <th class="w-15">{{:: 'id' | translate}}</th>
+            <th class="w-15">{{:: 'mailing-name' | translate}}</th>
+            <th class="w-15">{{:: 'mailing-languages' | translate}}</th>
+            <th class="w-15">{{:: 'mailing-frequency' | translate}}</th>
+            <th class="w-15">{{:: 'mailing-delivery' | translate}}</th>
+<!--            <th class="w-15">{{:: 'mailings-description' | translate}}</th>-->
+            <th colspan="2">{{:: 'actions' | translate}}</th>
+        </tr>
+        </thead>
+        <tfoot data-ng-show="mailings && (mailings.length >= query.max || query.first > 0)">
+        <tr>
+            <td colspan="7">
+                <div class="table-nav">
+                    <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">{{:: 'first-page' | translate}}</button>
+                    <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">{{:: 'previous-page' | translate}}</button>
+                    <button data-ng-click="nextPage()" class="next" ng-disabled="users.length < query.max">{{:: 'next-page' | translate}}</button>
+                </div>
+            </td>
+        </tr>
+        </tfoot>
+        <tbody>
+        <tr ng-repeat="mailing in mailings">
+            <td class="clip"><a href="#/load/mailing/{{realm.realm}}/{{mailing.id}}">{{mailing.id}}</a></td>
+            <td class="clip">{{mailing.name}}</td>
+            <td class="clip">{{mailing.languages}}</td>
+            <td class="clip">{{mailing.frequencyTxt}}</td>
+            <td class="clip">{{mailing.deliveryTxt}}</td>
+<!--            <td class="clip">{{mailing.description}}</td>-->
+            <td class="kc-action-cell" kc-open="/load/mailing/{{realm.realm}}/{{mailing.id}}">{{:: 'edit' | translate}}</td>
+            <td data-ng-show="mailing.access.manage" class="kc-action-cell" data-ng-click="removeMailing(mailing)">{{:: 'delete' | translate}}</td>
+        </tr>
+        <tr data-ng-show="!mailings || mailings.length == 0">
+            <td class="text-muted" data-ng-show="!users">{{:: 'users.instruction' | translate}}</td>
+            <td class="text-muted" data-ng-show="searchLoaded && mailings.length == 0 && lastSearch != null">{{:: 'no-results' | translate}}</td>
+            <td class="text-muted" data-ng-show="searchLoaded && mailings.length == 0 && lastSearch == null">{{:: 'no-mailings-available' | translate}}</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<kc-menu></kc-menu>
