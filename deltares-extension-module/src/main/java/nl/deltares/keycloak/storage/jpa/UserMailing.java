@@ -4,7 +4,8 @@ import javax.persistence.*;
 
 @NamedQueries({
         @NamedQuery(name = "findUserMailingByUserAndRealm", query = "select m from UserMailing m where m.userId = :userId and m.realmId = :realmId"),
-        @NamedQuery(name = "findUserMailingByMailingAndRealm", query = "select m from UserMailing m where m.mailingId = :mailingId and m.realmId = :realmId")
+        @NamedQuery(name = "getUserMailing", query = "select m from UserMailing m where m.mailingId = :mailingId and m.realmId = :realmId and m.userId = :userId"),
+        @NamedQuery(name = "getUserMailingById", query = "select m from UserMailing m where m.id = :id")
 })
 @Entity
 @Table(name = "USER_MAILING")
@@ -71,5 +72,13 @@ public class UserMailing {
     public void setDelivery(int delivery) {
         if (delivery < 0 || delivery > 2) throw new IllegalArgumentException("invalid delivery " + delivery);
         this.delivery = delivery;
+    }
+
+    public String getMailingId() {
+        return mailingId;
+    }
+
+    public void setMailingId(String mailingId) {
+        this.mailingId = mailingId;
     }
 }

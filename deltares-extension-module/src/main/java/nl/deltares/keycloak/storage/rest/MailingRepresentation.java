@@ -2,7 +2,10 @@ package nl.deltares.keycloak.storage.rest;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class MailingRepresentation {
@@ -16,8 +19,8 @@ public class MailingRepresentation {
     protected int delivery = 0;
     protected Long createdTimestamp;
     private Map<String, Boolean> access;
-    private static List<String> frequencies;
-    private static List<String> deliveries;
+    protected static List<String> frequencies;
+    protected static List<String> deliveries;
 
     static {
         frequencies = Arrays.asList("weekly", "montly", "anually", "other");
@@ -69,7 +72,7 @@ public class MailingRepresentation {
     }
 
     public String getFrequencyTxt() {
-        return getSupportedFrequencies().get(frequency);
+        return frequencies.get(frequency);
     }
 
     public void setFrequencyTxt(String frequencies) {
@@ -86,9 +89,13 @@ public class MailingRepresentation {
     }
 
     public String getDeliveryTxt() {
-        return getSupportedDeliveries().get(delivery);
+        return deliveries.get(delivery);
     }
 
+    public void setDeliveryTxt(String deliveryTxt) {
+        int delivery = this.deliveries.indexOf(deliveryTxt);
+        this.delivery = delivery == -1 ? 0 : delivery;
+    }
     public void setDelivery(int delivery) {
         this.delivery = delivery;
     }

@@ -5,7 +5,6 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -16,7 +15,6 @@ import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
-import javax.persistence.EntityManager;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -24,8 +22,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.authenticateRealmAdminRequest;
+import static nl.deltares.keycloak.storage.rest.ResourceUtils.getEntityManager;
 
 public class MailingResource {
     private static final Logger logger = Logger.getLogger(MailingResource.class);
@@ -49,7 +49,6 @@ public class MailingResource {
         return this;
     }
 
-
     public MailingResource(KeycloakSession session) {
         this.session = session;
         this.authManager = new AppAuthManager();
@@ -69,7 +68,7 @@ public class MailingResource {
         realmAuth.users().requireManage();
 
         // Double-check duplicated name
-        if (rep.getName() != null && getMailingByName(realm.getId(), rep.getName()) != null) {
+        if (rep.getName() != null && getMailingByName(session, realm.getId(), rep.getName()) != null) {
             return ErrorResponse.exists("Mailing exists with same name");
         }
 
@@ -79,7 +78,7 @@ public class MailingResource {
         setMailingValues(rep, mailing);
 
         logger.info("Adding mailing : " + rep.getName());
-        getEntityManager().persist(mailing);
+        getEntityManager(session).persist(mailing);
         return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(mailing.getId()).build()).build();
     }
 
@@ -89,14 +88,14 @@ public class MailingResource {
         realmAuth.users().requireManage();
 
         // Double-check duplicated name
-        Mailing mailing = getMailingById(realm.getId(), rep.getId());
+        Mailing mailing = getMailingById(session, realm.getId(), rep.getId());
         if (mailing == null) {
             return ErrorResponse.exists("Mailing does not exist with id " + rep.getId());
         }
         setMailingValues(rep, mailing);
 
         logger.info("Updating mailing : " + rep.getName());
-        getEntityManager().persist(mailing);
+        getEntityManager(session).persist(mailing);
         return Response.noContent().build();
     }
 
@@ -106,13 +105,13 @@ public class MailingResource {
         realmAuth.users().requireManage();
 
         // Double-check duplicated name
-        Mailing mailing = getMailingById(realm.getId(), mailingId);
+        Mailing mailing = getMailingById(session, realm.getId(), mailingId);
         if (mailing == null) {
             return ErrorResponse.exists("Mailing does not exist with id " + mailingId);
         }
 
         logger.info("Delete mailing : " + mailingId);
-        getEntityManager().remove(mailing);
+        getEntityManager(session).remove(mailing);
         return Response.noContent().build();
     }
 
@@ -126,12 +125,15 @@ public class MailingResource {
     public MailingRepresentation getMailing(final @PathParam("id") String id) {
         realmAuth.users().requireQuery();
 
-        Mailing mailing = getMailingById(realm.getId(), id);
+        Mailing mailing = getMailingById(session, realm.getId(), id);
         if (mailing == null) {
             throw new NotFoundException("Mailing not found for id " + id);
         }
 
-        return toRepresentation(mailing);
+        MailingRepresentation mailingRepresentation = toRepresentation(mailing, realmAuth.users().getAccess(user));
+        mailingRepresentation.setAccess(realmAuth.users().getAccess(user));
+
+        return mailingRepresentation;
     }
 
     @GET
@@ -141,26 +143,31 @@ public class MailingResource {
         realmAuth.users().requireQuery();
 
         List<MailingRepresentation> reps = new ArrayList<>();
+        Map<String, Boolean> access = realmAuth.users().getAccess(user);
         if (search != null) {
             if (search.startsWith(SEARCH_ID_PARAMETER)) {
-                Mailing mailing = getMailingById(realm.getId(), search.substring(SEARCH_ID_PARAMETER.length()).trim());
+                Mailing mailing = getMailingById(session, realm.getId(), search.substring(SEARCH_ID_PARAMETER.length()).trim());
                 if (mailing != null) {
-                    reps.add(toRepresentation(mailing));
+                    reps.add(toRepresentation(mailing , access));
                 }
             } else {
-                List<Mailing> resultList = searchForMailings(realm.getId(), search.trim());
-                resultList.forEach(mailing -> reps.add(toRepresentation(mailing)));
+                List<Mailing> resultList = searchForMailings(session, realm.getId(), search.trim());
+
+                resultList.forEach(mailing -> {
+
+                    reps.add(toRepresentation(mailing, access));
+                });
             }
             return reps;
         }
 
         if (name != null) {
-            Mailing mailing = getMailingByName(realm.getId(), name);
+            Mailing mailing = getMailingByName(session, realm.getId(), name);
             if (mailing == null) throw new NotFoundException("Mailing not found for name " + name);
-            reps.add(toRepresentation(mailing));
+            reps.add(toRepresentation(mailing, access));
         } else {
-            List<Mailing> resultList = getMailingsByRealm(realm.getId());
-            resultList.forEach(mailing -> reps.add(toRepresentation(mailing)));
+            List<Mailing> resultList = getMailingsByRealm(session, realm.getId());
+            resultList.forEach(mailing -> reps.add(toRepresentation(mailing, access)));
         }
         return reps;
     }
@@ -174,8 +181,8 @@ public class MailingResource {
         mailing.setCreatedTimestamp(System.currentTimeMillis());
     }
 
-    private Mailing getMailingById(String realmId, String id) {
-        List<Mailing> resultList = getEntityManager().createNamedQuery("findMailingByIdAndRealm", Mailing.class)
+    public static Mailing getMailingById(KeycloakSession session, String realmId, String id) {
+        List<Mailing> resultList = getEntityManager(session).createNamedQuery("findMailingByIdAndRealm", Mailing.class)
                 .setParameter("id", id)
                 .setParameter("realmId", realmId)
                 .getResultList();
@@ -183,8 +190,8 @@ public class MailingResource {
         return resultList.get(0);
     }
 
-    private Mailing getMailingByName(String realmId, String name) {
-        List<Mailing> resultList = getEntityManager().createNamedQuery("findMailingByNameAndRealm", Mailing.class)
+    public static Mailing getMailingByName(KeycloakSession session, String realmId, String name) {
+        List<Mailing> resultList = getEntityManager(session).createNamedQuery("findMailingByNameAndRealm", Mailing.class)
                 .setParameter("name", name)
                 .setParameter("realmId", realmId)
                 .getResultList();
@@ -192,24 +199,20 @@ public class MailingResource {
         return resultList.get(0);
     }
 
-    private List<Mailing> searchForMailings(String realmId, String search) {
-        return getEntityManager().createNamedQuery("searchForMailing", Mailing.class)
+    public static List<Mailing> searchForMailings(KeycloakSession session, String realmId, String search) {
+        return getEntityManager(session).createNamedQuery("searchForMailing", Mailing.class)
                 .setParameter("realmId", realmId)
                 .setParameter("search", search)
                 .getResultList();
     }
 
-    private List<Mailing> getMailingsByRealm(String realmId) {
-        return getEntityManager().createNamedQuery("getAllMailingsByRealm", Mailing.class)
+    public static List<Mailing> getMailingsByRealm(KeycloakSession session, String realmId) {
+        return getEntityManager(session).createNamedQuery("getAllMailingsByRealm", Mailing.class)
                 .setParameter("realmId", realmId)
                 .getResultList();
     }
 
-    private EntityManager getEntityManager() {
-        return session.getProvider(JpaConnectionProvider.class).getEntityManager();
-    }
-
-    private MailingRepresentation toRepresentation(Mailing mailing) {
+    public static MailingRepresentation toRepresentation(Mailing mailing, Map<String, Boolean> access) {
         MailingRepresentation rep = new MailingRepresentation();
         rep.setId(mailing.getId());
         rep.setRealmId(mailing.getRealmId());
@@ -219,8 +222,7 @@ public class MailingResource {
         rep.setLanguages(mailing.getLanguages());
         rep.setFrequency(mailing.getFrequency());
         rep.getCreatedTimestamp(mailing.getCreatedTimestamp());
-
-        rep.setAccess(realmAuth.users().getAccess(user));
+        rep.setAccess(access);
         return rep;
     }
 

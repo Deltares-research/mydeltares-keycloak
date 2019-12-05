@@ -33,6 +33,7 @@ public class AvatarAdminResource extends AbstractAvatarResource {
     @Context
     private ClientConnection clientConnection;
 
+    private AdminAuth adminAuth;
     private AdminAuth auth;
 
     public AvatarAdminResource(KeycloakSession session, Properties properties) {
@@ -44,8 +45,8 @@ public class AvatarAdminResource extends AbstractAvatarResource {
         RealmModel realm = session.getContext().getRealm();
         if (realm == null) throw new NotFoundException("Realm not found.");
 
-        auth = authenticateRealmAdminRequest(authManager, httpHeaders, session, clientConnection);
-        realmAuth = AdminPermissions.evaluator(session, realm, auth);
+        adminAuth = authenticateRealmAdminRequest(authManager, httpHeaders, session, clientConnection);
+        realmAuth = AdminPermissions.evaluator(session, realm, adminAuth);
         session.getContext().setRealm(realm);
     }
 
@@ -71,7 +72,7 @@ public class AvatarAdminResource extends AbstractAvatarResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response uploadUserAvatarImage(@PathParam("user_id") String userId, MultipartFormDataInput input) {
         try {
-            if (auth == null) {
+            if (adminAuth == null) {
                 return Response.status(Response.Status.UNAUTHORIZED).build();
             }
             canManageUsers();
@@ -95,7 +96,7 @@ public class AvatarAdminResource extends AbstractAvatarResource {
     @Path("/{user_id}")
     public Response deleteUserAvatarImage(@PathParam("user_id") String userId) {
         try {
-            if (auth == null) {
+            if (adminAuth == null) {
                 return Response.status(Response.Status.UNAUTHORIZED).build();
             }
             canManageUsers();

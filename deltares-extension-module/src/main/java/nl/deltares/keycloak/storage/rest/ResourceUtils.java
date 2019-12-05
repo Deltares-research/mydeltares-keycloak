@@ -1,17 +1,22 @@
 package nl.deltares.keycloak.storage.rest;
 
 import org.keycloak.common.ClientConnection;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminAuth;
+import org.keycloak.services.util.ResolveRelative;
+import org.keycloak.services.validation.Validation;
 
+import javax.persistence.EntityManager;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.HttpHeaders;
@@ -28,18 +33,7 @@ public class ResourceUtils {
 
     public static AdminAuth authenticateRealmAdminRequest(AppAuthManager authManager, HttpHeaders httpHeaders, KeycloakSession session, ClientConnection clientConnection) {
         String tokenString = authManager.extractAuthorizationHeaderToken(httpHeaders);
-        MultivaluedMap<String, String> queryParameters = session.getContext().getUri().getQueryParameters();
-        if (tokenString == null && queryParameters.containsKey("access_token")) {
-            tokenString = queryParameters.getFirst("access_token");
-        }
-        if (tokenString == null) throw new NotAuthorizedException("Bearer");
-        AccessToken token;
-        try {
-            JWSInput input = new JWSInput(tokenString);
-            token = input.readJsonContent(AccessToken.class);
-        } catch (JWSInputException e) {
-            throw new NotAuthorizedException("Bearer token format error");
-        }
+        AccessToken token = getAccessToken(tokenString, session);
         String realmName = token.getIssuer().substring(token.getIssuer().lastIndexOf('/') + 1);
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(realmName);
@@ -66,6 +60,88 @@ public class ResourceUtils {
         }
         return auth;
 
+    }
+
+    public static AccessToken getAccessToken(String tokenString, KeycloakSession session){
+
+        MultivaluedMap<String, String> queryParameters = session.getContext().getUri().getQueryParameters();
+        if (tokenString == null && queryParameters.containsKey("access_token")) {
+            tokenString = queryParameters.getFirst("access_token");
+        }
+        if (tokenString == null) throw new NotAuthorizedException("Bearer");
+
+        try {
+            JWSInput input = new JWSInput(tokenString);
+            return input.readJsonContent(AccessToken.class);
+        } catch (JWSInputException e) {
+            throw new NotAuthorizedException("Bearer token format error");
+        }
+    }
+
+
+    public static EntityManager getEntityManager(KeycloakSession session) {
+        return session.getProvider(JpaConnectionProvider.class).getEntityManager();
+    }
+//    public static Auth authenticateRealmRequest(AppAuthManager authManager, HttpHeaders httpHeaders, KeycloakSession session, ClientConnection clientConnection) {
+//        String tokenString = authManager.extractAuthorizationHeaderToken(httpHeaders);
+//        AccessToken token = getAccessToken(tokenString, session);
+//        String realmName = token.getIssuer().substring(token.getIssuer().lastIndexOf('/') + 1);
+//        RealmManager realmManager = new RealmManager(session);
+//        RealmModel realm = realmManager.getRealmByName(realmName);
+//        if (realm == null) {
+//            throw new NotAuthorizedException("Unknown realm in token");
+//        }
+//        session.getContext().setRealm(realm);
+//        AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(tokenString, session, realm, session.getContext().getUri(), clientConnection, httpHeaders);
+//        if (authResult == null) {
+//            throw new NotAuthorizedException("Bearer");
+//        }
+//
+//        ClientModel client = realm.getClientByClientId(token.getIssuedFor());
+//        if (client == null) {
+//            throw new NotFoundException("Could not find client for authorization");
+//
+//        }
+//
+//        return new Auth(realm, authResult.getToken(), authResult.getUser(), client, authResult.getSession(), true);
+//
+//    }
+
+    public static String[] getReferrer(KeycloakSession session, RealmModel realm, ClientModel client) {
+        String referrer = session.getContext().getUri().getQueryParameters().getFirst("referrer");
+        if (referrer == null) {
+            return null;
+        }
+
+        String referrerUri = session.getContext().getUri().getQueryParameters().getFirst("referrer_uri");
+
+        ClientModel referrerClient = realm.getClientByClientId(referrer);
+        if (referrerClient != null) {
+            if (referrerUri != null) {
+                referrerUri = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), referrerUri, realm, referrerClient);
+            } else {
+                referrerUri = ResolveRelative.resolveRelativeUri(session.getContext().getUri().getRequestUri(), client.getRootUrl(), referrerClient.getBaseUrl());
+            }
+
+            if (referrerUri != null) {
+                String referrerName = referrerClient.getName();
+                if (Validation.isBlank(referrerName)) {
+                    referrerName = referrer;
+                }
+                return new String[]{referrerName, referrerUri};
+            }
+        } else if (referrerUri != null) {
+            referrerClient = realm.getClientByClientId(referrer);
+            if (client != null) {
+                referrerUri = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), referrerUri, realm, referrerClient);
+
+                if (referrerUri != null) {
+                    return new String[]{referrer, referrerUri};
+                }
+            }
+        }
+
+        return null;
     }
 
 }

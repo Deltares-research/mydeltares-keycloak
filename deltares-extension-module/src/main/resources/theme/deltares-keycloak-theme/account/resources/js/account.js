@@ -11,56 +11,50 @@ function checkFileSize() {
 
 }
 
-//
-// module.service('UserAvatar', function(Auth) {
-//     this.url = function(user, realm) {
-//         return authUrl + '/realms/' + realm.realm + '/avatar-provider/admin/' + user.id + "?access_token=" + Auth.authz.token + "&" + + new Date().getTime();
-//     }
-// });
+function saveMailings(url) {
 
-module.controller('UserAvatarCtrl', function($scope, $http, Notifications, UserAvatar) {
-    // $scope.avatarUrl = UserAvatar.url($scope.user, $scope.realm);
+    var rows = document.getElementById("mailingsTable").getElementsByTagName("tbody")[0].getElementsByTagName("tr").length;
 
-    $scope.uploadAvatar = function(avatarUrl) {
-
-        $scope.avatarUrl = avatarUrl;
-        var uploadField = document.getElementById("avatar");
-        if (!uploadField || !uploadField.files) return;
-        var uploadFile = uploadField.files[0];
-
-        var fd = new FormData();
-        //Take the first selected file
-        fd.append("image", uploadFile);
-
-        $http.post($scope.avatarUrl, fd, {
-            headers: {'Content-Type': undefined },
-            transformRequest: angular.identity
-        }).then(function() {
-            Notifications.success("Your changes have been saved to the user.");
-            // $scope.avatarUrl = UserAvatar.url($scope.user, $scope.realm);
-            $scope.avatarUrl = avatarUrl;
-        }, function(error) {
-            console.error(error);
-            Notifications.error("Could not save the avatar");
-        });
-    };
-
-
-    $scope.deleteAvatar = function(avatarUrl) {
-        //Take the first selected file
-        $scope.avatarUrl = avatarUrl;
-
-        $http.delete($scope.avatarUrl, {
-            headers: {'Content-Type': undefined },
-            transformRequest: angular.identity
-        }).then(function() {
-            Notifications.success("Avatar has been deleted.");
-            $scope.avatarUrl = avatarUrl;
-        }, function(error) {
-            console.error(error);
-            Notifications.error("Could not delete the avatar");
-        });
+    for (var i = 0; i < rows; i++ ){
+        var userMailing = {};
+        userMailing.id = document.getElementById("id" + i).value;
+        userMailing.mailingId = document.getElementById("mailingId" + i).value;
+        var enabled = document.getElementById("enabled" + i).checked;
+        var langElement = document.getElementById("language" + i);
+        userMailing.language = langElement.options[langElement.selectedIndex].value;
+        var delElement = document.getElementById("delivery" + i);
+        userMailing.deliveryTxt = delElement.options[delElement.selectedIndex].value;
+        var hasId = userMailing.id !== '';
+        if (hasId && !enabled){
+            sendHttpMessage(url + '/' + userMailing.id,"DELETE", userMailing);
+        } else if(!hasId && enabled){
+            sendHttpMessage(url,"POST", userMailing);
+        } else if(hasId && enabled){
+            sendHttpMessage(url,"PUT", userMailing);
+        }
     }
-});
+}
+
+function sendHttpMessage(url, method, data){
+    var xhr = new XMLHttpRequest();
+    xhr.open(method, url, false);
+    xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+            var json = JSON.parse(xhr.responseText);
+            console.log(json);
+        }
+    };
+    xhr.send(JSON.stringify(data));
+}
+
+function cancel() {
+    document.location.reload();
+}
+
+// When the user clicks on <div>, open the popup
+function fullDescription(popup) {
+    popup.childNodes[1].classList.toggle("show")
+}
 
 

@@ -41,8 +41,8 @@ module.controller('UserAvatarCtrl', function($scope, $http, Notifications, UserA
         });
     }
 });
-
-function checkFileSize(file) {
-
-    alert("Checking size" + file.files[0].size);
-}
+//
+// function checkFileSize(file) {
+//
+//     alert("Checking size" + file.files[0].size);
+// }
