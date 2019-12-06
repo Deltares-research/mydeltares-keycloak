@@ -35,6 +35,8 @@ public class AvatarAdminResource extends AbstractAvatarResource {
     private ClientConnection clientConnection;
 
     private AdminAuth adminAuth;
+    //Realm from request path
+    private RealmModel callerRealm;
 
     public AvatarAdminResource(KeycloakSession session, Properties properties) {
         super(session, properties);
@@ -48,6 +50,8 @@ public class AvatarAdminResource extends AbstractAvatarResource {
         adminAuth = authenticateRealmAdminRequest(authManager, httpHeaders, session, clientConnection);
         realmAuth = AdminPermissions.evaluator(session, realm, adminAuth);
         session.getContext().setRealm(realm);
+
+        callerRealm = ResourceUtils.getRealmFromPath(session);
     }
 
     @GET
@@ -57,7 +61,7 @@ public class AvatarAdminResource extends AbstractAvatarResource {
         try {
             canViewUsers();
 
-            return Response.ok(getAvatarImage(session.getContext().getRealm().getId(), userId)).build();
+            return Response.ok(getAvatarImage(callerRealm.getId(), userId)).build();
         } catch (ForbiddenException e) {
             return Response.status(Response.Status.FORBIDDEN).entity(e.getMessage()).build();
         } catch (Exception e) {
@@ -78,7 +82,7 @@ public class AvatarAdminResource extends AbstractAvatarResource {
             canManageUsers();
 
             InputStream imageInputStream = input.getFormDataPart(AVATAR_IMAGE_PARAMETER, InputStream.class, null);
-            setAvatarImage(session.getContext().getRealm().getId(), userId, imageInputStream);
+            setAvatarImage(callerRealm.getId(), userId, imageInputStream);
         } catch (MaxSizeExceededException e) {
             return Response.status(Response.Status.REQUEST_ENTITY_TOO_LARGE).entity(e.getMessage()).build();
         } catch (ForbiddenException e) {
@@ -101,7 +105,7 @@ public class AvatarAdminResource extends AbstractAvatarResource {
             }
             canManageUsers();
 
-            deleteAvatarImage(session.getContext().getRealm().getId(), userId);
+            deleteAvatarImage(callerRealm.getId(), userId);
 
         } catch (ForbiddenException e) {
             return Response.status(Response.Status.FORBIDDEN).entity(e.getMessage()).build();

@@ -40,19 +40,18 @@ public class MailingAdminResource {
     private ClientConnection clientConnection;
 
     private AdminAuth adminAuth;
+    private RealmModel callerRealm;
 
     public MailingAdminResource(KeycloakSession session) {
         this.session = session;
     }
 
     public void init() {
-        RealmModel realm = session.getContext().getRealm();
-        if (realm == null) throw new NotFoundException("Realm not found.");
-
         authManager = new AppAuthManager();
         adminAuth = authenticateRealmAdminRequest(authManager, httpHeaders, session, clientConnection);
-        realmAuth = AdminPermissions.evaluator(session, realm, adminAuth);
-        session.getContext().setRealm(realm);
+        realmAuth = AdminPermissions.evaluator(session, adminAuth.getRealm(), adminAuth);
+
+        callerRealm = ResourceUtils.getRealmFromPath(session);
     }
 
     @POST
@@ -60,15 +59,15 @@ public class MailingAdminResource {
     public Response createMailing(final MailingRepresentation rep) {
         realmAuth.users().requireManage();
 
-        RealmModel realm = session.getContext().getRealm();
         // Double-check duplicated name
-        if (rep.getName() != null && getMailingByName(session, realm.getId(), rep.getName()) != null) {
+        String realmId = callerRealm.getId();
+        if (rep.getName() != null && getMailingByName(session, realmId, rep.getName()) != null) {
             return ErrorResponse.exists("Mailing exists with same name");
         }
 
         Mailing mailing = new Mailing();
         mailing.setId(KeycloakModelUtils.generateId());
-        mailing.setRealmId(realm.getId());
+        mailing.setRealmId(realmId);
         setMailingValues(rep, mailing);
 
         logger.info("Adding mailing : " + rep.getName());
@@ -81,9 +80,9 @@ public class MailingAdminResource {
     public Response updateMailing(final MailingRepresentation rep) {
         realmAuth.users().requireManage();
 
-        RealmModel realm = session.getContext().getRealm();
+        String realmId = callerRealm.getId();
         // Double-check duplicated name
-        Mailing mailing = getMailingById(session, realm.getId(), rep.getId());
+        Mailing mailing = getMailingById(session, realmId, rep.getId());
         if (mailing == null) {
             return ErrorResponse.exists("Mailing does not exist with id " + rep.getId());
         }
@@ -99,9 +98,9 @@ public class MailingAdminResource {
     public Response deleteMailing(@PathParam("mailing_id") String mailingId) {
         realmAuth.users().requireManage();
 
-        RealmModel realm = session.getContext().getRealm();
+        String realmId = callerRealm.getId();
         // Double-check duplicated name
-        Mailing mailing = getMailingById(session, realm.getId(), mailingId);
+        Mailing mailing = getMailingById(session, realmId, mailingId);
         if (mailing == null) {
             return ErrorResponse.exists("Mailing does not exist with id " + mailingId);
         }
@@ -120,8 +119,8 @@ public class MailingAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     public MailingRepresentation getMailing(final @PathParam("id") String id) {
         realmAuth.users().requireQuery();
-        RealmModel realm = session.getContext().getRealm();
-        Mailing mailing = getMailingById(session, realm.getId(), id);
+        String realmId = callerRealm.getId();
+        Mailing mailing = getMailingById(session, realmId, id);
         if (mailing == null) {
             throw new NotFoundException("Mailing not found for id " + id);
         }
@@ -137,18 +136,18 @@ public class MailingAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<MailingRepresentation> getMailings(@QueryParam("search") String search, @QueryParam("name") String name) {
         realmAuth.users().requireQuery();
-        RealmModel realm = session.getContext().getRealm();
+        String realmId = callerRealm.getId();
         List<MailingRepresentation> reps = new ArrayList<>();
         UserModel user = adminAuth.getUser();
         Map<String, Boolean> access = realmAuth.users().getAccess(user);
         if (search != null) {
             if (search.startsWith(SEARCH_ID_PARAMETER)) {
-                Mailing mailing = getMailingById(session, realm.getId(), search.substring(SEARCH_ID_PARAMETER.length()).trim());
+                Mailing mailing = getMailingById(session, realmId, search.substring(SEARCH_ID_PARAMETER.length()).trim());
                 if (mailing != null) {
                     reps.add(toRepresentation(mailing , access));
                 }
             } else {
-                List<Mailing> resultList = searchForMailings(session, realm.getId(), search.trim());
+                List<Mailing> resultList = searchForMailings(session, realmId, search.trim());
 
                 resultList.forEach(mailing -> {
 
@@ -159,11 +158,11 @@ public class MailingAdminResource {
         }
 
         if (name != null) {
-            Mailing mailing = getMailingByName(session, realm.getId(), name);
+            Mailing mailing = getMailingByName(session, realmId, name);
             if (mailing == null) throw new NotFoundException("Mailing not found for name " + name);
             reps.add(toRepresentation(mailing, access));
         } else {
-            List<Mailing> resultList = getMailingsByRealm(session, realm.getId());
+            List<Mailing> resultList = getMailingsByRealm(session, realmId);
             resultList.forEach(mailing -> reps.add(toRepresentation(mailing, access)));
         }
         return reps;

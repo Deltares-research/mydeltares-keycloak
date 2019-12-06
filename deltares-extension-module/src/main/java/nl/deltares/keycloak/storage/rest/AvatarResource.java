@@ -81,10 +81,10 @@ public class AvatarResource extends AbstractAvatarResource {
             return badRequest();
         }
 
-        try {
+        String realmName = authResult.getSession().getRealm().getId();
 
+        try {
             InputStream imageInputStream = input.getFormDataPart(AVATAR_IMAGE_PARAMETER, InputStream.class, null);
-            String realmName = authResult.getSession().getRealm().getId();
             String userId = authResult.getUser().getId();
             int image_size = imageInputStream.available();
             if (image_size == 0){
@@ -93,11 +93,7 @@ public class AvatarResource extends AbstractAvatarResource {
                 setAvatarImage(realmName, userId, imageInputStream);
             }
 
-            if (uriInfo.getQueryParameters().containsKey("account")) {
-                return Response.seeOther(RealmsResource.accountUrl(session.getContext().getUri().getBaseUriBuilder()).build(realmName)).build();
-            }
-
-            return Response.ok().build();
+            return Response.seeOther(RealmsResource.accountUrl(session.getContext().getUri().getBaseUriBuilder()).build(realmName)).build();
         } catch (MaxSizeExceededException e){
             return Response.status(Response.Status.REQUEST_ENTITY_TOO_LARGE.getStatusCode(), e.getMessage()).build();
         } catch (Exception ex) {

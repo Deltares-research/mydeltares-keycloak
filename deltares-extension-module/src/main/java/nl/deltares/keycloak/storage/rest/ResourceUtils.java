@@ -6,6 +6,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.AccessToken;
@@ -86,6 +87,16 @@ public class ResourceUtils {
         }
     }
 
+    public static RealmModel getRealmFromPath(KeycloakSession session){
+
+        KeycloakUriInfo requestUri = session.getContext().getUri();
+
+        String substring = requestUri.getRequestUri().getPath().substring(requestUri.getBaseUri().getPath().length());
+        String[] split = substring.split("/");
+        assert split.length > 1;
+        RealmManager realmManager = new RealmManager(session);
+        return realmManager.getRealm(split[1]);
+    }
 
     public static EntityManager getEntityManager(KeycloakSession session) {
         return session.getProvider(JpaConnectionProvider.class).getEntityManager();
