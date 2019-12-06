@@ -201,11 +201,11 @@ public class UserMailingResource {
 
     private List<MailingRepresentation> getMailings() {
         if (cachedMailings != null) return cachedMailings;
-        List<Mailing> mailings = MailingResource.getMailingsByRealm(session, realm.getId());
+        List<Mailing> mailings = MailingAdminResource.getMailingsByRealm(session, realm.getId());
         cachedMailings = new ArrayList<>();
         HashMap<String, Boolean> access = new HashMap<>();
         for (Mailing mailing : mailings) {
-            cachedMailings.add(MailingResource.toRepresentation(mailing, access));
+            cachedMailings.add(MailingAdminResource.toRepresentation(mailing, access));
         }
         return cachedMailings;
     }

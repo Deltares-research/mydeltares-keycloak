@@ -10,6 +10,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.AppAuthManager;
+import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminAuth;
@@ -89,30 +90,32 @@ public class ResourceUtils {
     public static EntityManager getEntityManager(KeycloakSession session) {
         return session.getProvider(JpaConnectionProvider.class).getEntityManager();
     }
-//    public static Auth authenticateRealmRequest(AppAuthManager authManager, HttpHeaders httpHeaders, KeycloakSession session, ClientConnection clientConnection) {
-//        String tokenString = authManager.extractAuthorizationHeaderToken(httpHeaders);
-//        AccessToken token = getAccessToken(tokenString, session);
-//        String realmName = token.getIssuer().substring(token.getIssuer().lastIndexOf('/') + 1);
-//        RealmManager realmManager = new RealmManager(session);
-//        RealmModel realm = realmManager.getRealmByName(realmName);
-//        if (realm == null) {
-//            throw new NotAuthorizedException("Unknown realm in token");
-//        }
-//        session.getContext().setRealm(realm);
-//        AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(tokenString, session, realm, session.getContext().getUri(), clientConnection, httpHeaders);
-//        if (authResult == null) {
-//            throw new NotAuthorizedException("Bearer");
-//        }
-//
-//        ClientModel client = realm.getClientByClientId(token.getIssuedFor());
-//        if (client == null) {
-//            throw new NotFoundException("Could not find client for authorization");
-//
-//        }
-//
-//        return new Auth(realm, authResult.getToken(), authResult.getUser(), client, authResult.getSession(), true);
-//
-//    }
+
+    public static Auth authenticateRealmRequest(AppAuthManager authManager, HttpHeaders httpHeaders, KeycloakSession session, ClientConnection clientConnection) {
+        String tokenString = getTokenString(authManager, httpHeaders, session);
+        AccessToken token = getAccessToken(tokenString);
+
+        String realmName = token.getIssuer().substring(token.getIssuer().lastIndexOf('/') + 1);
+        RealmManager realmManager = new RealmManager(session);
+        RealmModel realm = realmManager.getRealmByName(realmName);
+        if (realm == null) {
+            throw new NotAuthorizedException("Unknown realm in token");
+        }
+        session.getContext().setRealm(realm);
+        AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(tokenString, session, realm, session.getContext().getUri(), clientConnection, httpHeaders);
+        if (authResult == null) {
+            throw new NotAuthorizedException("Bearer");
+        }
+
+        ClientModel client = realm.getClientByClientId(token.getIssuedFor());
+        if (client == null) {
+            throw new NotFoundException("Could not find client for authorization");
+
+        }
+
+        return new Auth(realm, authResult.getToken(), authResult.getUser(), client, authResult.getSession(), true);
+
+    }
 
     public static String[] getReferrer(KeycloakSession session, RealmModel realm, ClientModel client) {
         String referrer = session.getContext().getUri().getQueryParameters().getFirst("referrer");

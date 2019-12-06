@@ -3,19 +3,20 @@ package nl.deltares.keycloak.storage.rest;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.managers.AppAuthManager;
+import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.RealmsResource;
 
 import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.*;
 import java.io.InputStream;
 import java.util.Objects;
 import java.util.Properties;
 
+import static nl.deltares.keycloak.storage.rest.ResourceUtils.authenticateRealmRequest;
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.resolveAuthentication;
 
 public class AvatarResource extends AbstractAvatarResource {
@@ -23,13 +24,28 @@ public class AvatarResource extends AbstractAvatarResource {
     private static final String STATE_CHECKER_ATTRIBUTE = "state_checker";
     private static final String STATE_CHECKER_PARAMETER = "stateChecker";
 
-    private final AuthenticationManager.AuthResult auth;
+    private AuthenticationManager.AuthResult authResult;
+
+    @Context
+    private HttpHeaders httpHeaders;
+
+    @Context
+    private ClientConnection clientConnection;
 
     public AvatarResource(KeycloakSession session, Properties properties) {
         super(session, properties);
-        this.auth = resolveAuthentication(session);
     }
 
+    public void init(){
+        ResteasyProviderFactory.getInstance().injectProperties(this);
+        authResult = resolveAuthentication(session);
+        if (authResult == null) {
+            //this is when user accesses API via openid request and not GUI
+            AppAuthManager authManager = new AppAuthManager();
+            Auth auth = authenticateRealmRequest(authManager, httpHeaders, session, clientConnection);
+            authResult = new AuthenticationManager.AuthResult(auth.getUser(), auth.getSession(), auth.getToken());
+        }
+    }
 
     @Path("/admin")
     public AvatarAdminResource admin() {
@@ -43,12 +59,12 @@ public class AvatarResource extends AbstractAvatarResource {
     @Produces({"image/png", "image/jpeg", "image/gif"})
     public Response downloadCurrentUserAvatarImage() {
 
-        if (auth == null) {
+        if (authResult == null) {
             return badRequest();
         }
 
-        String userId = auth.getUser().getId();
-        String realmId = auth.getSession().getRealm().getId();
+        String  userId = authResult.getUser().getId();
+        String realmId = authResult.getSession().getRealm().getId();
         return Response.ok(getAvatarImage(realmId, userId)).build();
     }
 
@@ -57,7 +73,7 @@ public class AvatarResource extends AbstractAvatarResource {
     @Consumes({MediaType.MULTIPART_FORM_DATA})
     public Response uploadCurrentUserAvatarImage(MultipartFormDataInput input, @Context UriInfo uriInfo) {
 
-        if (auth == null) {
+        if (authResult == null) {
             return badRequest();
         }
 
@@ -68,8 +84,8 @@ public class AvatarResource extends AbstractAvatarResource {
         try {
 
             InputStream imageInputStream = input.getFormDataPart(AVATAR_IMAGE_PARAMETER, InputStream.class, null);
-            String realmName = auth.getSession().getRealm().getId();
-            String userId = auth.getUser().getId();
+            String realmName = authResult.getSession().getRealm().getId();
+            String userId = authResult.getUser().getId();
             int image_size = imageInputStream.available();
             if (image_size == 0){
                 deleteAvatarImage(realmName, userId);
@@ -93,13 +109,13 @@ public class AvatarResource extends AbstractAvatarResource {
     @NoCache
     public Response deleteCurrentUserAvatarImage(@Context UriInfo uriInfo) {
 
-        if (auth == null) {
+        if (authResult == null) {
             return badRequest();
         }
 
         try {
-            String realmName = auth.getSession().getRealm().getId();
-            String userId = auth.getUser().getId();
+            String realmName = authResult.getSession().getRealm().getId();
+            String userId = authResult.getUser().getId();
             deleteAvatarImage(realmName, userId);
 
             if (uriInfo.getQueryParameters().containsKey("account")) {

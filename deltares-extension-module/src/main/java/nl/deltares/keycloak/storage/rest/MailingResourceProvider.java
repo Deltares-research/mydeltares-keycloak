@@ -14,7 +14,9 @@ public class MailingResourceProvider implements RealmResourceProvider {
 
     @Override
     public Object getResource() {
-        return new MailingResource(keycloakSession);
+        MailingResource mailingResource = new MailingResource(keycloakSession);
+        mailingResource.init();
+        return mailingResource;
     }
 
     @Override
