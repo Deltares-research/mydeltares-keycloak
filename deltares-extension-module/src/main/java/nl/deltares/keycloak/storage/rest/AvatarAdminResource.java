@@ -6,6 +6,7 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
@@ -20,12 +21,14 @@ import java.io.InputStream;
 import java.util.Properties;
 
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.authenticateRealmAdminRequest;
+import static nl.deltares.keycloak.storage.rest.ResourceUtils.getTokenString;
 
 public class AvatarAdminResource extends AbstractAvatarResource {
     private static final Logger logger = Logger.getLogger(AvatarAdminResource.class);
 
     private AdminPermissionEvaluator realmAuth;
     private AppAuthManager authManager;
+    private TokenManager tokenManager;
 
     @Context
     private HttpHeaders httpHeaders;
@@ -34,11 +37,11 @@ public class AvatarAdminResource extends AbstractAvatarResource {
     private ClientConnection clientConnection;
 
     private AdminAuth adminAuth;
-    private AdminAuth auth;
 
     public AvatarAdminResource(KeycloakSession session, Properties properties) {
         super(session, properties);
         authManager = new AppAuthManager();
+        tokenManager = new TokenManager();
     }
 
     public void init() {

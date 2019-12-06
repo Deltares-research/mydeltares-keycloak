@@ -31,9 +31,22 @@ public class ResourceUtils {
         return appAuthManager.authenticateIdentityCookie(keycloakSession, realm);
     }
 
+    public static String getTokenString(AppAuthManager authManager, HttpHeaders headers, KeycloakSession session){
+        String tokenString = authManager.extractAuthorizationHeaderToken(headers);
+        MultivaluedMap<String, String> queryParameters = session.getContext().getUri().getQueryParameters();
+        if (tokenString == null && queryParameters.containsKey("access_token")) {
+            tokenString = queryParameters.getFirst("access_token");
+        }
+        if (tokenString == null) throw new NotAuthorizedException("No Bearer token");
+
+        return tokenString;
+    }
+
     public static AdminAuth authenticateRealmAdminRequest(AppAuthManager authManager, HttpHeaders httpHeaders, KeycloakSession session, ClientConnection clientConnection) {
-        String tokenString = authManager.extractAuthorizationHeaderToken(httpHeaders);
-        AccessToken token = getAccessToken(tokenString, session);
+
+        String tokenString = getTokenString(authManager, httpHeaders, session);
+        AccessToken token = getAccessToken(tokenString);
+
         String realmName = token.getIssuer().substring(token.getIssuer().lastIndexOf('/') + 1);
         RealmManager realmManager = new RealmManager(session);
         RealmModel realm = realmManager.getRealmByName(realmName);
@@ -62,13 +75,7 @@ public class ResourceUtils {
 
     }
 
-    public static AccessToken getAccessToken(String tokenString, KeycloakSession session){
-
-        MultivaluedMap<String, String> queryParameters = session.getContext().getUri().getQueryParameters();
-        if (tokenString == null && queryParameters.containsKey("access_token")) {
-            tokenString = queryParameters.getFirst("access_token");
-        }
-        if (tokenString == null) throw new NotAuthorizedException("Bearer");
+    public static AccessToken getAccessToken(String tokenString){
 
         try {
             JWSInput input = new JWSInput(tokenString);
