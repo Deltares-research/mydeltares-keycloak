@@ -8,11 +8,13 @@
         ${msg("loginWelcome")}
         </p>
 
-
+        <div class="alert alert-error" id="validateId" style="display: none">
+            <span class="kc-feedback-text">${msg("deltaresEmailNotAllowed")}</span>
+        </div>
     <div id="kc-form" <#if realm.password && social.providers??>class="${properties.kcContentWrapperClass!}"</#if>>
       <div id="kc-form-wrapper" <#if realm.password && social.providers??>class="${properties.kcFormSocialAccountContentClass!} ${properties.kcFormSocialAccountClass!}"</#if>>
         <#if realm.password>
-            <form id="kc-form-login" onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post">
+            <form id="kc-form-login" onsubmit="login.disabled = true; return validateForm();" action="${url.loginAction}"  method="post">
                 <div class="${properties.kcFormGroupClass!}">
                     <label for="username" class="${properties.kcLabelClass!}">${msg("email")}</label>
 

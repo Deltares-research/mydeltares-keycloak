@@ -3,7 +3,10 @@
     <#if section = "header">
         ${msg("emailForgotTitle")}
     <#elseif section = "form">
-        <form id="kc-reset-password-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
+        <div class="alert alert-error" id="validateId" style="display: none">
+            <span class="kc-feedback-text">${msg("deltaresPasswordResetNotAllowed")}</span>
+        </div>
+        <form id="kc-reset-password-form" class="${properties.kcFormClass!}" action="${url.loginAction}"  onsubmit="return validateForm()" method="post">
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
                     <label for="username" class="${properties.kcLabelClass!}">${msg("email")}</label> 
