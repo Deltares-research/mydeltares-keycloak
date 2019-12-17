@@ -9,6 +9,7 @@ import java.util.Objects;
 public class UserAvatarEntity {
     private String id;
     private byte[] avatar;
+    private String contentType;
     private RealmEntity realmByRealmId;
     private UserEntityEntity userEntityByUserId;
 
@@ -20,6 +21,16 @@ public class UserAvatarEntity {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    @Basic
+    @Column(name = "CONTENT_TYPE")
+    public String getContentType() {
+        return contentType;
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
     }
 
     @Basic

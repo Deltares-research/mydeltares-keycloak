@@ -32,6 +32,12 @@
                                  constraintName="FK_USER_AVATAR_REALM_ENTITY" referencedTableName="REALM"
                                  referencedColumnNames="ID" onDelete="CASCADE" onUpdate="RESTRICT" />
         </changeSet>
-
+        <changeSet id="1.1" author="erik.derooij@deltares.nl">
+            <addColumn tableName="USER_AVATAR">
+                <column name="CONTENT_TYPE" type="VARCHAR(12)" defaultValue="image/jpeg">
+                    <constraints nullable="false" />
+                </column>
+            </addColumn>
+        </changeSet>
 
 </databaseChangeLog>

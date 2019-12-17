@@ -19,6 +19,9 @@ public class Avatar {
     @Column(name = "USER_ID", nullable = false)
     private String userId;
 
+    @Column(name = "CONTENT_TYPE", nullable = false)
+    private String contentType;
+
     @Lob
     @Basic(fetch = FetchType.LAZY)
     @Column(name = "AVATAR", nullable = false)
@@ -54,5 +57,13 @@ public class Avatar {
 
     public void setAvatar(byte[] avatar) {
         this.avatar = avatar;
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
+    }
+
+    public String getContentType() {
+        return contentType;
     }
 }

@@ -2,20 +2,26 @@ package nl.deltares.keycloak.storage.rest;
 
 import nl.deltares.keycloak.storage.jpa.Avatar;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.plugins.providers.multipart.InputPart;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URLConnection;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 abstract class AbstractAvatarResource {
     private static final Logger LOG = Logger.getLogger(AbstractAvatarResource.class);
     static final String AVATAR_IMAGE_PARAMETER = "image";
+    static final String AVATAR_CONTENTTYPE_PARAMETER = "Content-Type";
     static int MAX_SIZE; //bytes
     static int MAX_SIZE_KB = 50; //bytes
     final Properties properties;
@@ -35,22 +41,18 @@ abstract class AbstractAvatarResource {
         return Response.status(Response.Status.BAD_REQUEST).build();
     }
 
-    StreamingOutput getAvatarImage(String realmId, String userId) {
+    void setAvatarImage(String realmId, String userId, MultipartFormDataInput input) throws MaxSizeExceededException, IOException {
 
-        Avatar avatar = getAvatar(realmId, userId);
-        InputStream in;
-        if (avatar == null) {
-            LOG.info("No avatar exists for user " + userId);
-            in = new ByteArrayInputStream(new byte[0]);
-        } else {
-            in = new ByteArrayInputStream(avatar.getAvatar());
+        Map<String, List<InputPart>> formDataMap = input.getFormDataMap();
+        List<InputPart> inputParts = formDataMap.get(AVATAR_IMAGE_PARAMETER);
+        if (inputParts == null || inputParts.isEmpty()){
+            throw new IllegalArgumentException("Missing image");
         }
-        return output -> copyStream(in, output);
-    }
+        InputPart inputPart = inputParts.get(0);
+        String contentType = inputPart.getHeaders().getFirst(AVATAR_CONTENTTYPE_PARAMETER);
+        InputStream imageInputStream = inputPart.getBody(InputStream.class, null);
 
-    void setAvatarImage(String realmId, String userId, InputStream input) throws MaxSizeExceededException, IOException {
-
-        Avatar avatar = getAvatar(realmId, userId);
+        Avatar avatar = getAvatarEntity(realmId, userId);
         if (avatar == null) {
             avatar = new Avatar();
             avatar.setId(KeycloakModelUtils.generateId());
@@ -60,13 +62,13 @@ abstract class AbstractAvatarResource {
         } else {
             LOG.info("Updating avatar for user: " + userId);
         }
-
-        avatar.setAvatar(readAllBytes(input));
+        avatar.setContentType(contentType != null ? contentType : URLConnection.guessContentTypeFromStream(imageInputStream));
+        avatar.setAvatar(readAllBytes(imageInputStream));
         getEntityManager().persist(avatar);
     }
 
     void deleteAvatarImage(String realmId, String userId) {
-        Avatar avatar = getAvatar(realmId, userId);
+        Avatar avatar = getAvatarEntity(realmId, userId);
         if (avatar == null){
             LOG.info("No avatar exists for user " + userId);
             return;
@@ -79,7 +81,7 @@ abstract class AbstractAvatarResource {
         return session.getProvider(JpaConnectionProvider.class).getEntityManager();
     }
 
-    private Avatar getAvatar(String realmId, String userId) {
+    Avatar getAvatarEntity(String realmId, String userId) {
         List<Avatar> resultList = getEntityManager().createNamedQuery("findAvatarByUserAndRealm", Avatar.class)
                 .setParameter("userId", userId)
                 .setParameter("realmId", realmId)
@@ -105,16 +107,8 @@ abstract class AbstractAvatarResource {
 
         return buffer.toByteArray();
     }
-    private void copyStream(InputStream in, OutputStream out) throws IOException {
 
-        byte[] buffer = new byte[16384];
-
-        int len;
-        while ((len = in.read(buffer)) != -1) {
-            out.write(buffer, 0, len);
-        }
-
-        out.flush();
+    static String getExtension(String contentType) {
+        return contentType.substring("image/".length());
     }
-
 }

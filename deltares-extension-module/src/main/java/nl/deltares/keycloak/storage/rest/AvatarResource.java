@@ -1,5 +1,6 @@
 package nl.deltares.keycloak.storage.rest;
 
+import nl.deltares.keycloak.storage.jpa.Avatar;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
@@ -12,7 +13,6 @@ import org.keycloak.services.resources.RealmsResource;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
-import java.io.InputStream;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -65,7 +65,16 @@ public class AvatarResource extends AbstractAvatarResource {
 
         String  userId = authResult.getUser().getId();
         String realmId = authResult.getSession().getRealm().getId();
-        return Response.ok(getAvatarImage(realmId, userId)).build();
+
+        Avatar avatar = getAvatarEntity(realmId, userId);
+        if (avatar == null){
+            return Response.status(Response.Status.NO_CONTENT).build();
+        }
+
+        return Response.ok(avatar.getAvatar(), avatar.getContentType())
+                .header("Content-Disposition", "inline; filename = \"avatar." + getExtension(avatar.getContentType()) + "\"")
+                .build();
+
     }
 
     @POST
@@ -84,15 +93,8 @@ public class AvatarResource extends AbstractAvatarResource {
         String realmName = authResult.getSession().getRealm().getId();
 
         try {
-            InputStream imageInputStream = input.getFormDataPart(AVATAR_IMAGE_PARAMETER, InputStream.class, null);
             String userId = authResult.getUser().getId();
-            int image_size = imageInputStream.available();
-            if (image_size == 0){
-                deleteAvatarImage(realmName, userId);
-            } else {
-                setAvatarImage(realmName, userId, imageInputStream);
-            }
-
+            setAvatarImage(realmName, userId, input);
             return Response.seeOther(RealmsResource.accountUrl(session.getContext().getUri().getBaseUriBuilder()).build(realmName)).build();
         } catch (MaxSizeExceededException e){
             return Response.status(Response.Status.REQUEST_ENTITY_TOO_LARGE.getStatusCode(), e.getMessage()).build();

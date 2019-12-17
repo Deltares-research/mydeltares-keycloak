@@ -1,22 +1,24 @@
 package nl.deltares.keycloak.storage.rest;
 
+import nl.deltares.keycloak.storage.jpa.Avatar;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
 import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.*;
 import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.authenticateRealmAdminRequest;
@@ -60,8 +62,16 @@ public class AvatarAdminResource extends AbstractAvatarResource {
     public Response downloadUserAvatarImage(@PathParam("user_id") String userId) {
         try {
             canViewUsers();
+            Avatar avatar = getAvatarEntity(callerRealm.getId(), userId);
+            if (avatar == null){
+                logger.info("No avatar exists for user " + userId);
+                return Response.status(Response.Status.NO_CONTENT).build();
+            }
 
-            return Response.ok(getAvatarImage(callerRealm.getId(), userId)).build();
+            return Response.ok(avatar.getAvatar(), avatar.getContentType())
+                    .header("Content-Disposition", "inline; filename = \"avatar." + getExtension(avatar.getContentType()) + "\"")
+                    .build();
+
         } catch (ForbiddenException e) {
             return Response.status(Response.Status.FORBIDDEN).entity(e.getMessage()).build();
         } catch (Exception e) {
@@ -81,8 +91,7 @@ public class AvatarAdminResource extends AbstractAvatarResource {
             }
             canManageUsers();
 
-            InputStream imageInputStream = input.getFormDataPart(AVATAR_IMAGE_PARAMETER, InputStream.class, null);
-            setAvatarImage(callerRealm.getId(), userId, imageInputStream);
+            setAvatarImage(callerRealm.getId(), userId, input);
         } catch (MaxSizeExceededException e) {
             return Response.status(Response.Status.REQUEST_ENTITY_TOO_LARGE).entity(e.getMessage()).build();
         } catch (ForbiddenException e) {
@@ -117,6 +126,39 @@ public class AvatarAdminResource extends AbstractAvatarResource {
         return Response.ok().build();
     }
 
+
+    @GET
+    @NoCache
+    @Produces({"image/png", "image/jpeg", "image/gif"})
+    public Response getAvatar(@QueryParam("username") String username, @QueryParam("email") String email) {
+
+        if (adminAuth == null) {
+            return Response.status(Response.Status.UNAUTHORIZED).build();
+        }
+        canViewUsers();
+
+        String realmId = callerRealm.getId();
+        UserModel user;
+        if (username != null) {
+             user = session.users().getUserByUsername(username, callerRealm);
+            if (user == null) throw new NotFoundException("User not found for username " + username);
+        } else if (email != null) {
+            user = session.users().getUserByEmail(email, callerRealm);
+            if (user == null) throw new NotFoundException("User not found for email " + email);
+        } else {
+            throw new IllegalArgumentException("no filter parameters defined!");
+        }
+
+        Avatar avatar = getAvatarEntity(realmId, user.getId());
+        if (avatar == null){
+            logger.info("No avatar exists for user " + user.getId());
+            return Response.status(Response.Status.NO_CONTENT).build();
+        }
+
+        return Response.ok(avatar.getAvatar(), avatar.getContentType())
+                .header("Content-Disposition", "inline; filename = \"" + user.getUsername() + '.' + getExtension(avatar.getContentType()) + "\"")
+                .build();
+    }
 
     private void canViewUsers() {
         if (!realmAuth.users().canView()) {
