@@ -1,14 +1,21 @@
 function checkFileSize() {
 
     var uploadField = document.getElementById("avatar");
-    if (!uploadField || !uploadField.files) return;
+    if (!uploadField || !uploadField.files){
+        document.getElementById("saveAvatar").disabled = true;
+        return;
+    }
     var uploadFile = uploadField.files[0];
     var fileSizeKb = uploadFile.size / 1024;
     if (fileSizeKb > avatarMaxSizeKb){
         alert("Selected file size " + fileSizeKb.toFixed(1) + "(KB) is larger than maximum allowed size " + avatarMaxSizeKb + "(KB)!")
         uploadField.files[0]=null;
+        document.getElementById("saveAvatar").disabled = true;
+        return;
     }
 
+    //file ok. set status save button
+    document.getElementById("saveAvatar").disabled = false;
 }
 
 function saveMailings(url) {

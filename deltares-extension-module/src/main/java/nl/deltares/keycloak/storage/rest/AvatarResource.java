@@ -89,7 +89,9 @@ public class AvatarResource extends AbstractAvatarResource {
         if (!isValidStateChecker(input)) {
             return badRequest();
         }
-
+        if (input.getFormDataMap().get("deleteAction") != null){
+            return deleteCurrentUserAvatarImage(uriInfo);
+        }
         String realmName = authResult.getSession().getRealm().getId();
 
         try {
@@ -115,14 +117,8 @@ public class AvatarResource extends AbstractAvatarResource {
             String realmName = authResult.getSession().getRealm().getId();
             String userId = authResult.getUser().getId();
             deleteAvatarImage(realmName, userId);
-
-            if (uriInfo.getQueryParameters().containsKey("account")) {
-                return Response.seeOther(RealmsResource.accountUrl(session.getContext().getUri().getBaseUriBuilder()).build(realmName)).build();
-            }
-
-            return Response.ok().build();
-
-        } catch (Exception ex) {
+            return Response.seeOther(RealmsResource.accountUrl(session.getContext().getUri().getBaseUriBuilder()).build(realmName)).build();
+        }  catch (Exception ex) {
             return Response.serverError().build();
         }
     }

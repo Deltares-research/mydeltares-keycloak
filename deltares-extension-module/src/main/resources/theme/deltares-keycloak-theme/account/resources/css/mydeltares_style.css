@@ -184,6 +184,9 @@ form button,form input[type="submit"], .button {
     margin:16px 0 10px;
 }
 
+form button:disabled, form button[disabled]{
+    background-color: #666;
+}
 #kc-social-providers ul
 {
     list-style-type: none;

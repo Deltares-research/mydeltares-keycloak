@@ -139,19 +139,19 @@
 
     <#assign avatarUrl = url.accountUrl?replace("^(.*)(/account/?)(\\?(.*))?$", "$1/avatar-provider/?account&$4", 'r') />
     <#assign errorImg = url.resourcesPath + '/img/avatar.png' />
-    <form action="${avatarUrl}" class="form-horizontal" method="post" enctype="multipart/form-data">
+    <form action="${avatarUrl}" class="form-horizontal" method="post" enctype="multipart/form-data" >
 
         <img src="${avatarUrl}" style="max-width:100px" onerror="if (this.src != '${errorImg}') this.src = '${errorImg}';"  />
-        <input type="file" id="avatar" name="image" onchange="checkFileSize()">
+        <input type="file" id="avatar" name="image" onchange="checkFileSize();">
 
         <input type="hidden" name="stateChecker" value="${stateChecker}">
 
         <div class="form-group">
             <div id="kc-form-buttons" class="col-md-offset-2 col-md-10 submit">
                 <div class="">
-                    <button type="submit" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" name="submitAction" value="Save">${msg("doSave")}</button>
+                    <button id="saveAvatar" type="submit" disabled="disabled" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" name="submitAction" value="Save">${msg("doSave")}</button>
                     <!-- delete action is same as save. pressing button when no file is selected deletes avatar -->
-                    <button type="submit" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" name="submitAction" value="Delete">${msg("doRemove")}</button>
+                    <button type="submit" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" name="deleteAction" value="Delete">${msg("doRemove")}</button>
                 </div>
             </div>
         </div>

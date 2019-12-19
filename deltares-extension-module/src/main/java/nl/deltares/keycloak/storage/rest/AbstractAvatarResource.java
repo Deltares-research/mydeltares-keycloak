@@ -7,6 +7,7 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.services.resources.RealmsResource;
 
 import javax.persistence.EntityManager;
 import javax.ws.rs.core.Response;
@@ -38,7 +39,7 @@ abstract class AbstractAvatarResource {
     }
 
     Response badRequest() {
-        return Response.status(Response.Status.BAD_REQUEST).build();
+        return Response.seeOther(RealmsResource.accountUrl(session.getContext().getUri().getBaseUriBuilder()).build()).status(Response.Status.BAD_REQUEST).build();
     }
 
     void setAvatarImage(String realmId, String userId, MultipartFormDataInput input) throws MaxSizeExceededException, IOException {
@@ -51,7 +52,9 @@ abstract class AbstractAvatarResource {
         InputPart inputPart = inputParts.get(0);
         String contentType = inputPart.getHeaders().getFirst(AVATAR_CONTENTTYPE_PARAMETER);
         InputStream imageInputStream = inputPart.getBody(InputStream.class, null);
-
+        if (imageInputStream.available() == 0){
+            return; //save pressed when no image selected
+        }
         Avatar avatar = getAvatarEntity(realmId, userId);
         if (avatar == null) {
             avatar = new Avatar();
