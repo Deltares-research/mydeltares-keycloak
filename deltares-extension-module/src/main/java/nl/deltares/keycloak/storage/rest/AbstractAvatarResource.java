@@ -19,12 +19,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static nl.deltares.keycloak.storage.rest.ResourceUtils.parseContentType;
+
 abstract class AbstractAvatarResource {
     private static final Logger LOG = Logger.getLogger(AbstractAvatarResource.class);
     static final String AVATAR_IMAGE_PARAMETER = "image";
     static final String AVATAR_CONTENTTYPE_PARAMETER = "Content-Type";
     static int MAX_SIZE; //bytes
-    static int MAX_SIZE_KB = 50; //bytes
+    static int MAX_SIZE_KB = 65; //bytes
     final Properties properties;
     KeycloakSession session;
 
@@ -50,7 +52,7 @@ abstract class AbstractAvatarResource {
             throw new IllegalArgumentException("Missing image");
         }
         InputPart inputPart = inputParts.get(0);
-        String contentType = inputPart.getHeaders().getFirst(AVATAR_CONTENTTYPE_PARAMETER);
+        String contentType = parseContentType(inputPart.getHeaders().getFirst(AVATAR_CONTENTTYPE_PARAMETER));
         InputStream imageInputStream = inputPart.getBody(InputStream.class, null);
         if (imageInputStream.available() == 0){
             return; //save pressed when no image selected

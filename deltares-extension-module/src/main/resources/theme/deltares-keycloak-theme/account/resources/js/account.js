@@ -1,3 +1,7 @@
+function enableSave(index){
+    document.getElementById("saveMailing").disabled = false;
+    document.getElementById("rowState" + index).value = "save";
+}
 function checkFileSize() {
 
     var uploadField = document.getElementById("avatar");
@@ -18,11 +22,13 @@ function checkFileSize() {
     document.getElementById("saveAvatar").disabled = false;
 }
 
-function saveMailings(url) {
+function saveMailings(url, urlParams) {
 
     var rows = document.getElementById("mailingsTable").getElementsByTagName("tbody")[0].getElementsByTagName("tr").length;
 
     for (var i = 0; i < rows; i++ ){
+
+        if (document.getElementById("rowState" + i).value !== "save") continue;
         var userMailing = {};
         userMailing.id = document.getElementById("id" + i).value;
         userMailing.mailingId = document.getElementById("mailingId" + i).value;
@@ -33,18 +39,18 @@ function saveMailings(url) {
         userMailing.deliveryTxt = delElement.options[delElement.selectedIndex].value;
         var hasId = userMailing.id !== '';
         if (hasId && !enabled){
-            sendHttpMessage(url + '/' + userMailing.id,"DELETE", userMailing);
+            sendHttpMessage(url + '/' + userMailing.id + urlParams,"DELETE", userMailing);
         } else if(!hasId && enabled){
-            sendHttpMessage(url,"POST", userMailing);
+            sendHttpMessage(url + urlParams,"POST", userMailing);
         } else if(hasId && enabled){
-            sendHttpMessage(url,"PUT", userMailing);
+            sendHttpMessage(url + urlParams,"PUT", userMailing);
         }
     }
 }
 
 function sendHttpMessage(url, method, data){
     var xhr = new XMLHttpRequest();
-    xhr.open(method, url, false);
+    xhr.open(method, url, true);
     xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     xhr.onreadystatechange = function () {
         if (xhr.readyState === 4 && xhr.status === 200) {

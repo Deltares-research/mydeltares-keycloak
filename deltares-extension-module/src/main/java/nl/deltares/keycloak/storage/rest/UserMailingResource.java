@@ -5,6 +5,7 @@ import nl.deltares.keycloak.storage.jpa.Mailing;
 import nl.deltares.keycloak.storage.jpa.UserMailing;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
@@ -21,9 +22,11 @@ import org.keycloak.services.managers.AuthenticationManager;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.getEntityManager;
 
@@ -116,7 +119,8 @@ public class UserMailingResource {
         logger.info("Adding user mailing : " + userMailing.getId());
         getEntityManager(session).persist(userMailing);
 
-        return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(userMailing.getId()).build()).build();
+        UriBuilder builder = ResourceUtils.appendReferrer(session.getContext().getUri().getAbsolutePathBuilder().path(userMailing.getId()), session);
+        return Response.created(builder.build()).status(Response.Status.CREATED).build();
     }
 
     @PUT
@@ -136,7 +140,9 @@ public class UserMailingResource {
         logger.infof("Updating mailing %s for user %s.", rep.getMailingId(), userId);
 
         getEntityManager(session).persist(userMailing);
-        return Response.noContent().build();
+        UriBuilder builder = ResourceUtils.appendReferrer(session.getContext().getUri().getAbsolutePathBuilder().path(userMailing.getId()), session);
+        return Response.created(builder.build()).status(Response.Status.NO_CONTENT).build();
+
     }
 
     @DELETE
@@ -144,7 +150,7 @@ public class UserMailingResource {
     public Response deleteUserMailing(@PathParam("mailing_id") String mailingId) {
 
         if (auth == null) {
-            return  redirectLogin();
+            return redirectLogin();
         }
 
         UserMailing mailing = getUserMailingById(session, mailingId);
@@ -157,14 +163,14 @@ public class UserMailingResource {
         return Response.noContent().build();
     }
 
-    public static List<UserMailing> getUserMailings(KeycloakSession session, String realmId, String userId) {
+    private static List<UserMailing> getUserMailings(KeycloakSession session, String realmId, String userId) {
         return getEntityManager(session).createNamedQuery("findUserMailingByUserAndRealm", UserMailing.class)
                 .setParameter("realmId", realmId)
                 .setParameter("userId", userId)
                 .getResultList();
     }
 
-    public static UserMailing getUserMailing(KeycloakSession session, String realmId, String userId, String mailingId) {
+    private static UserMailing getUserMailing(KeycloakSession session, String realmId, String userId, String mailingId) {
         List<UserMailing> resultList = getEntityManager(session).createNamedQuery("getUserMailing", UserMailing.class)
                 .setParameter("realmId", realmId)
                 .setParameter("userId", userId)
@@ -173,7 +179,7 @@ public class UserMailingResource {
         return resultList.isEmpty() ? null : resultList.get(0);
     }
 
-    public static UserMailing getUserMailingById(KeycloakSession session, String id) {
+    private static UserMailing getUserMailingById(KeycloakSession session, String id) {
         List<UserMailing> resultList = getEntityManager(session).createNamedQuery("getUserMailingById", UserMailing.class)
                 .setParameter("id", id)
                 .getResultList();
@@ -190,7 +196,7 @@ public class UserMailingResource {
         return cachedUserMailings;
     }
 
-    public static UserMailingRepresentation toRepresentation(UserMailing mailing) {
+    private static UserMailingRepresentation toRepresentation(UserMailing mailing) {
         UserMailingRepresentation rep = new UserMailingRepresentation();
         rep.setId(mailing.getId());
         rep.setMailingId(mailing.getMailingId());
@@ -210,14 +216,13 @@ public class UserMailingResource {
         return cachedMailings;
     }
 
-    public UserMailingResource(KeycloakSession session) {
+    UserMailingResource(KeycloakSession session) {
         this.session = session;
         this.authManager = new AppAuthManager();
         ResteasyProviderFactory.getInstance().injectProperties(this);
-        init();
     }
 
-    private void init() {
+    void init() {
         eventStore = session.getProvider(EventStoreProvider.class);
         realm = session.getContext().getRealm();
         client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
@@ -247,6 +252,7 @@ public class UserMailingResource {
                 throw new ForbiddenException();
             }
         }
+        setReferrerOnPage();
 
         if (authResult != null) {
             UserSessionModel userSession = authResult.getSession();
@@ -272,7 +278,13 @@ public class UserMailingResource {
 
     private Response redirectLogin() {
         UriBuilder uriBuilder = UriBuilder.fromUri(session.getContext().getUri().getBaseUri()).path("realms").path(realm.getName()).path("account");
-        return Response.temporaryRedirect(uriBuilder.build()).build();
+        return Response.temporaryRedirect(ResourceUtils.appendReferrer(uriBuilder, session).build()).build();
     }
 
+    private void setReferrerOnPage() {
+        String[] referrer = ResourceUtils.getReferrer(session, realm, client);
+        if (referrer != null) {
+            account.setReferrer(referrer);
+        }
+    }
 }

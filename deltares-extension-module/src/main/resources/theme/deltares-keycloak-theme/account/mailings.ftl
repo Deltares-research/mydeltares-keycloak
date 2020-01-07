@@ -21,6 +21,7 @@
         <tbody>
         <#list mailings.mailings as mailing>
             <tr>
+                <input id="rowState${mailing?index}" type="hidden" value="">
                 <td style="display: none">
                     <input id="id${mailing?index}" type="text" value="${mailing.id}">
                 </td>
@@ -28,18 +29,18 @@
                     <input id="mailingId${mailing?index}" type="text" value="${mailing.mailingId}">
                 </td>
                 <td>
-                    <label class="switch">
+                    <label class="switch" >
                         <#if mailing.enabled>
-                            <input id="enabled${mailing?index}" type="checkbox" checked>
+                            <input id="enabled${mailing?index}" type="checkbox" onchange="enableSave(${mailing?index})" checked>
                         <#else>
-                            <input id="enabled${mailing?index}" type="checkbox" >
+                            <input id="enabled${mailing?index}" type="checkbox" onchange="enableSave(${mailing?index})">
                         </#if>
                         <span class="slider round"></span>
                     </label>
                 </td>
                 <td>${mailing.name}</td>
                 <td>
-                    <select id="language${mailing?index}" >
+                    <select id="language${mailing?index}" onchange="enableSave(${mailing?index})">
                         <#list mailing.supportedLanguages as language>
                             <#if mailing.language == language >
                                 <option selected value="${language}">${language}</option>
@@ -51,7 +52,7 @@
                 </td>
                 <td>${mailing.frequency}</td>
                 <td>
-                    <select id="delivery${mailing?index}" >
+                    <select id="delivery${mailing?index}" onchange="enableSave(${mailing?index})">
                         <#list mailing.supportedDeliveries as delivery>
                             <#if mailing.delivery == delivery >
                                 <option selected value="${delivery}">${delivery}</option>
@@ -64,10 +65,10 @@
                 <td>
                     <#assign desc = mailing.description/>
                     <div class="popup" onclick="fullDescription(this)" >
-                        <#if desc?length < 10>
+                        <#if desc?length < 50>
                             ${desc}
                         <#else >
-                            ${desc[0..<10]}...
+                            ${desc[0..<50]}...
                         </#if>
                         <span class="popuptext">${desc}</span>
                     </div>
@@ -77,12 +78,14 @@
         </tbody>
     </table>
     <#assign  userMailingUrl = url.accountUrl?replace("^(.*)(/account/?)(\\?(.*))?$", "$1/user-mailings", 'r') >
+    <#assign  urlParams = url.accountUrl?replace("^(.*)(/account/?)(\\?(.*))?$", "$4", 'r') >
     <form>
         <div class="form-group">
             <div id="kc-form-buttons" class="col-md-offset-2 col-md-10 submit">
                 <div class="">
-                    <#if url.referrerURI??><a href="${url.referrerURI}">${kcSanitize(msg("backToApplication")?no_esc)}</a></#if>
-                    <button class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" onclick="saveMailings('${userMailingUrl}')"> ${msg("doSave")}</button>
+                    <button class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}"
+                            disabled="disabled" id="saveMailing" onclick="saveMailings('${userMailingUrl}','${urlParams}')"> ${msg("doSave")}
+                    </button>
                     <button class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!}" onclick="cancel()"> ${msg("doCancel")}</button>
                 </div>
             </div>

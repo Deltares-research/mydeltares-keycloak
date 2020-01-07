@@ -14,7 +14,9 @@ public class UserMailingResourceProvider implements RealmResourceProvider {
 
     @Override
     public Object getResource() {
-        return new UserMailingResource(keycloakSession);
+        UserMailingResource userMailingResource = new UserMailingResource(keycloakSession);
+        userMailingResource.init();
+        return userMailingResource;
     }
 
     @Override

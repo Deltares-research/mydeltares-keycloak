@@ -30,28 +30,32 @@
         <nav class="navbar" role="navigation">
             <div class="navbar-header">
                 <div class="container">
-                     <h1 class="navbar-title"><img src="${url.resourcesPath}/img/wit_deltares_logo.png" style="float:left" /> MyDeltares</h1></span></div>
+                    <h1 class="navbar-title"><img src="${url.resourcesPath}/img/wit_deltares_logo.png"
+                                                  style="float:left"/> MyDeltares</h1></span>
+                    <#if referrer?? >
+                    <a href="${referrer.url}" id="backPage">${msg("back")} ${referrer.name}</a>
+                    </#if>
                 </div>
             </div>
-                  <div class="navbar-collapse navbar-collapse-1">
-                      <div class="container">
-                          <ul class="nav navbar-nav navbar-utility">
-                              <#if realm.internationalizationEnabled  && locale.supported?size gt 1>
-				  <div id="kc-locale">
-				      <div id="kc-locale-wrapper" class="${properties.kcLocaleWrapperClass!}">
-					  <div class="kc-dropdown" id="kc-locale-dropdown">
-					      <a href="#" id="kc-current-locale-link">${locale.current}</a>
-					      <ul>
-						  <#list locale.supported as l>
-						      <li class="kc-dropdown-item"><a href="${l.url}">${l.label}</a></li>
-						  </#list>
-					      </ul>
-					  </div>
-				      </div>
-				  </div>
-        			</#if>
-                          </ul>
-                      </div>
+            <div class="navbar-collapse navbar-collapse-1">
+                <div class="container">
+                    <ul class="nav navbar-nav navbar-utility">
+                        <#if realm.internationalizationEnabled  && locale.supported?size gt 1>
+                            <div id="kc-locale">
+                                <div id="kc-locale-wrapper" class="${properties.kcLocaleWrapperClass!}">
+                                    <div class="kc-dropdown" id="kc-locale-dropdown">
+                                        <a href="#" id="kc-current-locale-link">${locale.current}</a>
+                                        <ul>
+                                            <#list locale.supported as l>
+                                                <li class="kc-dropdown-item"><a href="${l.url}">${l.label}</a></li>
+                                            </#list>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </#if>
+                    </ul>
+                </div>
             </div>
         </nav>
     </header>

@@ -137,7 +137,7 @@
         </div>
     </div>
 
-    <#assign avatarUrl = url.accountUrl?replace("^(.*)(/account/?)(\\?(.*))?$", "$1/avatar-provider/?account&$4", 'r') />
+    <#assign avatarUrl = url.accountUrl?replace("^(.*)(/account/?)(\\?(.*))?$", "$1/avatar-provider$4", 'r') />
     <#assign errorImg = url.resourcesPath + '/img/avatar.png' />
     <form action="${avatarUrl}" class="form-horizontal" method="post" enctype="multipart/form-data" >
 

@@ -23,17 +23,18 @@ import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.UriBuilder;
 
-public class ResourceUtils {
+class ResourceUtils {
 
-    public static AuthenticationManager.AuthResult resolveAuthentication(KeycloakSession keycloakSession) {
+    static AuthenticationManager.AuthResult resolveAuthentication(KeycloakSession keycloakSession) {
         AppAuthManager appAuthManager = new AppAuthManager();
         RealmModel realm = keycloakSession.getContext().getRealm();
 
         return appAuthManager.authenticateIdentityCookie(keycloakSession, realm);
     }
 
-    public static String getTokenString(AppAuthManager authManager, HttpHeaders headers, KeycloakSession session){
+    private static String getTokenString(AppAuthManager authManager, HttpHeaders headers, KeycloakSession session){
         String tokenString = authManager.extractAuthorizationHeaderToken(headers);
         MultivaluedMap<String, String> queryParameters = session.getContext().getUri().getQueryParameters();
         if (tokenString == null && queryParameters.containsKey("access_token")) {
@@ -44,7 +45,7 @@ public class ResourceUtils {
         return tokenString;
     }
 
-    public static AdminAuth authenticateRealmAdminRequest(AppAuthManager authManager, HttpHeaders httpHeaders, KeycloakSession session, ClientConnection clientConnection) {
+    static AdminAuth authenticateRealmAdminRequest(AppAuthManager authManager, HttpHeaders httpHeaders, KeycloakSession session, ClientConnection clientConnection) {
 
         String tokenString = getTokenString(authManager, httpHeaders, session);
         AccessToken token = getAccessToken(tokenString);
@@ -77,7 +78,7 @@ public class ResourceUtils {
 
     }
 
-    public static AccessToken getAccessToken(String tokenString){
+    private static AccessToken getAccessToken(String tokenString){
 
         try {
             JWSInput input = new JWSInput(tokenString);
@@ -87,7 +88,7 @@ public class ResourceUtils {
         }
     }
 
-    public static RealmModel getRealmFromPath(KeycloakSession session){
+    static RealmModel getRealmFromPath(KeycloakSession session){
 
         KeycloakUriInfo requestUri = session.getContext().getUri();
 
@@ -98,11 +99,11 @@ public class ResourceUtils {
         return realmManager.getRealm(split[1]);
     }
 
-    public static EntityManager getEntityManager(KeycloakSession session) {
+    static EntityManager getEntityManager(KeycloakSession session) {
         return session.getProvider(JpaConnectionProvider.class).getEntityManager();
     }
 
-    public static Auth authenticateRealmRequest(AppAuthManager authManager, HttpHeaders httpHeaders, KeycloakSession session, ClientConnection clientConnection) {
+    static Auth authenticateRealmRequest(AppAuthManager authManager, HttpHeaders httpHeaders, KeycloakSession session, ClientConnection clientConnection) {
         String tokenString = getTokenString(authManager, httpHeaders, session);
         AccessToken token = getAccessToken(tokenString);
 
@@ -128,7 +129,7 @@ public class ResourceUtils {
 
     }
 
-    public static String[] getReferrer(KeycloakSession session, RealmModel realm, ClientModel client) {
+    static String[] getReferrer(KeycloakSession session, RealmModel realm, ClientModel client) {
         String referrer = session.getContext().getUri().getQueryParameters().getFirst("referrer");
         if (referrer == null) {
             return null;
@@ -165,4 +166,24 @@ public class ResourceUtils {
         return null;
     }
 
+    static String parseContentType(String rawContentType){
+
+        String[] split = rawContentType.split(";");
+        for (String s : split) {
+            if (s.toLowerCase().startsWith("image")) return s;
+        }
+        return rawContentType;
+    }
+    static UriBuilder appendReferrer(UriBuilder builder, KeycloakSession session) {
+        String referrer = session.getContext().getUri().getQueryParameters().getFirst("referrer");
+        if (referrer != null) {
+            builder = builder.queryParam("referrer", referrer);
+        }
+        String referrerUri = session.getContext().getUri().getQueryParameters().getFirst("referrer_uri");
+        if (referrerUri != null){
+            builder = builder.queryParam("referrer_uri", referrerUri);
+        }
+        return builder;
+
+    }
 }
