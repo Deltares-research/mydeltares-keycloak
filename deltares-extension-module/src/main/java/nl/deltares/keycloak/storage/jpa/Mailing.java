@@ -90,7 +90,7 @@ public class Mailing {
     }
 
     public void setFrequency(int frequency) {
-        if (frequency < 0 || frequency > 3) throw new IllegalArgumentException("invalid frequency " + frequency);
+        if (frequency < 0 || frequency > 4) throw new IllegalArgumentException("invalid frequency " + frequency);
         this.frequency = frequency;
     }
 

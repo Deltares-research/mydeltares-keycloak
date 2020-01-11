@@ -5,7 +5,6 @@ import nl.deltares.keycloak.storage.jpa.Mailing;
 import nl.deltares.keycloak.storage.jpa.UserMailing;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
@@ -15,20 +14,18 @@ import org.keycloak.forms.account.AccountProvider;
 import org.keycloak.models.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.resources.RealmsResource;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
 
-import static nl.deltares.keycloak.storage.rest.ResourceUtils.getEntityManager;
+import static nl.deltares.keycloak.storage.rest.ResourceUtils.*;
 
 public class UserMailingResource {
 
@@ -36,15 +33,13 @@ public class UserMailingResource {
     private final KeycloakSession session;
     private final AppAuthManager authManager;
 
-    private Auth auth;
+    private AuthenticationManager.AuthResult authResult;
     private AccountProvider account;
     private String stateChecker;
-    private EventStoreProvider eventStore;
     private RealmModel realm;
-    private ClientModel client;
 
     @Context
-    private HttpHeaders headers;
+    private HttpHeaders httpHeaders;
 
     @Context
     private ClientConnection connection;
@@ -61,14 +56,14 @@ public class UserMailingResource {
     @Produces(MediaType.TEXT_HTML)
     public Response mailingsPage() {
 
-        if (auth == null) {
+        if (authResult == null) {
             return redirectLogin();
         }
 
         if (account instanceof FreeMarkerAccountProvider) {
             FreeMarkerAccountProvider account = (FreeMarkerAccountProvider) this.account;
             account.setMailings(getUserMailings(), getMailings());
-            return account.createCustomResponse("mailings.ftl");
+            return account.createResponse("MAILINGS","mailings.ftl");
         } else {
             logger.error("Failed to process template because account is not of type " + FreeMarkerAccountProvider.class.getName());
             return Response.serverError().build();
@@ -83,10 +78,10 @@ public class UserMailingResource {
     @NoCache
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public UserMailingRepresentation getUserMailing(final @PathParam("id") String id) {
+    public Response getUserMailing(final @PathParam("id") String id) {
 
-        if (auth == null) {
-            return null;
+        if (authResult == null) {
+            return badRequest();
         }
 
         UserMailing mailing = getUserMailingById(session, id);
@@ -94,44 +89,43 @@ public class UserMailingResource {
             throw new NotFoundException("User mailing not found for id " + id);
         }
 
-        return toRepresentation(mailing);
+        return Response.ok(toRepresentation(mailing), MediaType.APPLICATION_JSON).build();
     }
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createUserMailing(final UserMailingRepresentation rep) {
 
-        if (auth == null) {
+        if (authResult == null) {
             return redirectLogin();
         }
         // Double-check duplicated name
-        if (rep.getMailingId() != null && getUserMailing(session, realm.getId(), auth.getUser().getId(), rep.getMailingId()) != null) {
-            return ErrorResponse.exists(String.format("User mailing already exists for user %s and mailing %s", auth.getUser().getId(), rep.getMailingId()));
+        UserModel user = authResult.getUser();
+        if (rep.getMailingId() != null && getUserMailing(session, realm.getId(), user.getId(), rep.getMailingId()) != null) {
+            return ErrorResponse.exists(String.format("User mailing already exists for user %s and mailing %s", user.getId(), rep.getMailingId()));
         }
 
         UserMailing userMailing = new UserMailing();
         userMailing.setRealmId(realm.getId());
         userMailing.setId(KeycloakModelUtils.generateId());
-        userMailing.setUserId(auth.getUser().getId());
+        userMailing.setUserId(user.getId());
         userMailing.setDelivery(rep.getDelivery());
         userMailing.setLanguage(rep.getLanguage());
         userMailing.setMailingId(rep.getMailingId());
         logger.info("Adding user mailing : " + userMailing.getId());
         getEntityManager(session).persist(userMailing);
 
-        UriBuilder builder = ResourceUtils.appendReferrer(session.getContext().getUri().getAbsolutePathBuilder().path(userMailing.getId()), session);
-        return Response.created(builder.build()).status(Response.Status.CREATED).build();
+        return Response.ok().status(Response.Status.CREATED).build();
     }
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public Response updateUserMailing(final UserMailingRepresentation rep) {
 
-        if (auth == null) {
+        if (authResult == null) {
             return redirectLogin();
         }
-
-        String userId = auth.getUser().getId();
+        String userId = authResult.getUser().getId();
         UserMailing userMailing = getUserMailing(session, realm.getId(), userId, rep.getMailingId());
         if (userMailing == null) {
             return ErrorResponse.exists(String.format("User mailing does not exist for user %s and mailing %s ", userId, rep.getMailingId()));
@@ -140,8 +134,7 @@ public class UserMailingResource {
         logger.infof("Updating mailing %s for user %s.", rep.getMailingId(), userId);
 
         getEntityManager(session).persist(userMailing);
-        UriBuilder builder = ResourceUtils.appendReferrer(session.getContext().getUri().getAbsolutePathBuilder().path(userMailing.getId()), session);
-        return Response.created(builder.build()).status(Response.Status.NO_CONTENT).build();
+        return Response.noContent().build();
 
     }
 
@@ -149,7 +142,7 @@ public class UserMailingResource {
     @Path("/{mailing_id}")
     public Response deleteUserMailing(@PathParam("mailing_id") String mailingId) {
 
-        if (auth == null) {
+        if (authResult == null) {
             return redirectLogin();
         }
 
@@ -188,7 +181,7 @@ public class UserMailingResource {
 
     private List<UserMailingRepresentation> getUserMailings() {
         if (cachedUserMailings != null) return cachedUserMailings;
-        List<UserMailing> userMailings = getUserMailings(session, realm.getId(), auth.getUser().getId());
+        List<UserMailing> userMailings = getUserMailings(session, session.getContext().getRealm().getId(), authResult.getUser().getId());
         cachedUserMailings = new ArrayList<>();
         for (UserMailing userMailing : userMailings) {
             cachedUserMailings.add(toRepresentation(userMailing));
@@ -222,39 +215,64 @@ public class UserMailingResource {
         ResteasyProviderFactory.getInstance().injectProperties(this);
     }
 
-    void init() {
-        eventStore = session.getProvider(EventStoreProvider.class);
+    void init(){
+
+        if (isInitAccount()){
+            initAccount();
+        } else {
+            initApi();
+        }
+
+    }
+
+    private boolean isInitAccount() {
+        List<PathSegment> pathSegments = request.getUri().getPathSegments();
+        for (PathSegment pathSegment : pathSegments) {
+            if (pathSegment.getPath().equals("mailings-page")) return true;
+        }
+        return  false;
+    }
+
+    private void initApi(){
+
+        ResteasyProviderFactory.getInstance().injectProperties(this);
+        authResult = resolveAuthentication(session);
+        if (authResult == null) {
+            //this is when user accesses API via openid request and not GUI
+            AppAuthManager authManager = new AppAuthManager();
+            Auth auth = authenticateRealmRequest(authManager, httpHeaders, session, connection);
+            authResult = new AuthenticationManager.AuthResult(auth.getUser(), auth.getSession(), auth.getToken());
+        }
         realm = session.getContext().getRealm();
-        client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+    }
+
+    private void initAccount() {
+        realm = session.getContext().getRealm();
+        ClientModel client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
         if (client == null || !client.isEnabled()) {
             logger.debug("account management not enabled");
             throw new NotFoundException("account management not enabled");
         }
 
-        account = session.getProvider(AccountProvider.class).setRealm(realm).setUriInfo(session.getContext().getUri()).setHttpHeaders(headers);
-
-        AuthenticationManager.AuthResult authResult = authManager.authenticateIdentityCookie(session, realm);
-        if (authResult != null) {
-            stateChecker = (String) session.getAttribute("state_checker");
-            auth = new Auth(realm, authResult.getToken(), authResult.getUser(), client, authResult.getSession(), true);
-            account.setStateChecker(stateChecker);
-        }
-
         String requestOrigin = UriUtils.getOrigin(session.getContext().getUri().getBaseUri());
-        String origin = headers.getRequestHeaders().getFirst("Origin");
+        String origin = httpHeaders.getRequestHeaders().getFirst("Origin");
         if (origin != null && !requestOrigin.equals(origin)) {
             throw new ForbiddenException();
         }
-
         if (!request.getHttpMethod().equals("GET")) {
-            String referrer = headers.getRequestHeaders().getFirst("Referer");
+            String referrer = httpHeaders.getRequestHeaders().getFirst("Referer");
             if (referrer != null && !requestOrigin.equals(UriUtils.getOrigin(referrer))) {
                 throw new ForbiddenException();
             }
         }
-        setReferrerOnPage();
 
+        account = session.getProvider(AccountProvider.class).setRealm(realm).setUriInfo(session.getContext().getUri()).setHttpHeaders(httpHeaders);
+        account.setReferrer(ResourceUtils.getReferrer(session, realm, client));
+        authResult = authManager.authenticateIdentityCookie(session, realm);
         if (authResult != null) {
+            stateChecker = (String) session.getAttribute("state_checker");
+            account.setStateChecker(stateChecker);
+            Auth auth = new Auth(realm, authResult.getToken(), authResult.getUser(), client, authResult.getSession(), true);
             UserSessionModel userSession = authResult.getSession();
             if (userSession != null) {
                 AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
@@ -263,10 +281,9 @@ public class UserMailingResource {
                 }
                 auth.setClientSession(clientSession);
             }
-
             account.setUser(auth.getUser());
         }
-
+        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         account.setFeatures(realm.isIdentityFederationEnabled(), eventStore != null && realm.isEventsEnabled(), true, true);
 
     }
@@ -278,13 +295,10 @@ public class UserMailingResource {
 
     private Response redirectLogin() {
         UriBuilder uriBuilder = UriBuilder.fromUri(session.getContext().getUri().getBaseUri()).path("realms").path(realm.getName()).path("account");
-        return Response.temporaryRedirect(ResourceUtils.appendReferrer(uriBuilder, session).build()).build();
+        return Response.temporaryRedirect(uriBuilder.build()).build();
     }
 
-    private void setReferrerOnPage() {
-        String[] referrer = ResourceUtils.getReferrer(session, realm, client);
-        if (referrer != null) {
-            account.setReferrer(referrer);
-        }
+    Response badRequest() {
+        return Response.seeOther(RealmsResource.accountUrl(session.getContext().getUri().getBaseUriBuilder()).build()).status(Response.Status.BAD_REQUEST).build();
     }
 }

@@ -1,6 +1,6 @@
 <#macro mainLayout active bodyClass>
 <!doctype html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
@@ -23,8 +23,14 @@
             var avatarMaxSizeKb =  parseInt(${properties.avatar_max_kb});
         </script>
     </#if>
+
+    <#if referrer?? >
+        <script>
+            addReferrerCookie("${referrer.name}", "${referrer.url}");
+        </script>
+    </#if>
 </head>
-<body class="admin-console user ${bodyClass}">
+<body class="admin-console user ${bodyClass}" onload="loadReferrer()">
         
     <header class="navbar navbar-default navbar-pf navbar-main header">
         <nav class="navbar" role="navigation">
@@ -32,9 +38,7 @@
                 <div class="container">
                     <h1 class="navbar-title"><img src="${url.resourcesPath}/img/wit_deltares_logo.png"
                                                   style="float:left"/> MyDeltares</h1></span>
-                    <#if referrer?? >
-                    <a href="${referrer.url}" id="backPage">${msg("back")} ${referrer.name}</a>
-                    </#if>
+                    <a href="#" id="backPage">${msg("back")}</a>-->
                 </div>
             </div>
             <div class="navbar-collapse navbar-collapse-1">
@@ -68,8 +72,7 @@
 <!--                <li class="<#if active=='totp'>active</#if>"><a href="${url.totpUrl}">${msg("authenticator")}</a></li> -->
                 <li class="<#if active=='sessions'>active</#if>"><a href="${url.sessionsUrl}">${msg("sessions")}</a></li>
                 <li class="<#if active=='mailings'>active</#if>">
-                    <#assign mailingUrl = url.accountUrl?replace("^(.*)(/account/?)(\\?(.*))?$", "$1/user-mailings/mailings-page?account&$4", 'r') />
-                    <a href="${mailingUrl}">${msg("mailings")}</a>
+                    <a href="${url.mailingsUrl}">${msg("mailings")}</a>
                 </li>
 
 <!--                <#if features.identityFederation><li class="<#if active=='social'>active</#if>"><a href="${url.socialUrl}">${msg("federatedIdentity")}</a></li></#if>

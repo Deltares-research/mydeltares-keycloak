@@ -16,17 +16,23 @@
  */
 package nl.deltares.keycloak.forms.account.freemarker;
 
+import nl.deltares.keycloak.forms.account.freemarker.model.ExtendedUrlBean;
 import nl.deltares.keycloak.forms.account.freemarker.model.UserMailingsBean;
 import nl.deltares.keycloak.storage.rest.MailingRepresentation;
 import nl.deltares.keycloak.storage.rest.UserMailingRepresentation;
 import org.jboss.logging.Logger;
+import org.keycloak.forms.account.AccountPages;
 import org.keycloak.forms.account.AccountProvider;
+import org.keycloak.forms.account.freemarker.Templates;
 import org.keycloak.forms.account.freemarker.model.*;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.theme.BrowserSecurityHeaderSetup;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
+import org.keycloak.theme.beans.AdvancedMessageFormatterMethod;
 import org.keycloak.theme.beans.LocaleBean;
 import org.keycloak.utils.MediaType;
 
@@ -55,7 +61,14 @@ public class FreeMarkerAccountProvider extends org.keycloak.forms.account.freema
         return this;
     }
 
-    public Response createCustomResponse(String templateName) {
+    /**
+     * override the createResponse method to replace the UrlBean attribute
+     */
+    public Response createResponse(AccountPages page) {
+        return createResponse(page.name(), Templates.getTemplate(page));
+    }
+
+    public Response createResponse(String pageName, String templateName) {
         Map<String, Object> attributes = new HashMap<>();
 
         if (this.attributes != null) {
@@ -75,8 +88,15 @@ public class FreeMarkerAccountProvider extends org.keycloak.forms.account.freema
 
         URI baseUri = uriInfo.getBaseUri();
         UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
+        boolean referrerAdded = false;
         for (Map.Entry<String, List<String>> e : uriInfo.getQueryParameters().entrySet()) {
             baseUriBuilder.queryParam(e.getKey(), e.getValue().toArray());
+            if (e.getKey().equals("referrer")) referrerAdded = true;
+        }
+        if (!referrerAdded && referrer != null){
+            //add referrer
+            baseUriBuilder.queryParam("referrer", getClientIdForName(referrer[0], realm));
+            baseUriBuilder.queryParam("referrer_uri", referrer[1]);
         }
         URI baseQueryUri = baseUriBuilder.build();
 
@@ -87,14 +107,14 @@ public class FreeMarkerAccountProvider extends org.keycloak.forms.account.freema
         handleMessages(locale, messagesBundle, attributes);
 
         if (referrer != null) {
-            attributes.put("referrer", new ReferrerBean(referrer));
+            attributes.put("referrer", new ReferrerBean(this.referrer));
         }
 
         if (realm != null) {
             attributes.put("realm", new RealmBean(realm));
         }
 
-        attributes.put("url", new UrlBean(realm, theme, baseUri, baseQueryUri, uriInfo.getRequestUri(), stateChecker));
+        attributes.put("url", new ExtendedUrlBean(realm, theme, baseUri, baseQueryUri, uriInfo.getRequestUri(), stateChecker));
 
         if (realm.isInternationalizationEnabled()) {
             UriBuilder b = UriBuilder.fromUri(baseQueryUri).path(uriInfo.getPath());
@@ -104,13 +124,41 @@ public class FreeMarkerAccountProvider extends org.keycloak.forms.account.freema
         attributes.put("features", new FeaturesBean(identityProviderEnabled, eventsEnabled, passwordUpdateSupported, authorizationSupported));
         attributes.put("account", new AccountBean(user, profileFormData));
 
-        attributes.put("authorization", new AuthorizationBean(session, user, uriInfo));
+        switch (pageName) {
+            case "TOTP":
+                attributes.put("totp", new TotpBean(session, realm, user, uriInfo.getRequestUriBuilder()));
+                break;
+            case "FEDERATED_IDENTITY":
+                attributes.put("federatedIdentity", new AccountFederatedIdentityBean(session, realm, user, uriInfo.getBaseUri(), stateChecker));
+                break;
+            case "LOG":
+                attributes.put("log", new LogBean(events));
+                break;
+            case "SESSIONS":
+                attributes.put("sessions", new SessionsBean(realm, sessions));
+                break;
+            case "APPLICATIONS":
+                attributes.put("applications", new ApplicationsBean(session, realm, user));
+                attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messagesBundle));
+                break;
+            case "PASSWORD":
+                attributes.put("password", new PasswordBean(passwordSet));
+                break;
+            case "RESOURCES":
+            case "RESOURCE_DETAIL":
+                if (!realm.isUserManagedAccessAllowed()) {
+                    return Response.status(Response.Status.FORBIDDEN).build();
+                }
+                attributes.put("authorization", new AuthorizationBean(session, user, uriInfo));
+                break;
+            case "MAILINGS":
+                attributes.put("authorization", new AuthorizationBean(session, user, uriInfo));
+        }
 
-
-        return processTemplate(theme, attributes, locale, templateName);
+        return processTemplate(theme, templateName, attributes, locale);
     }
 
-    protected Response processTemplate(Theme theme, Map<String, Object> attributes, Locale locale, String templateName) {
+    protected Response processTemplate(Theme theme, String templateName, Map<String, Object> attributes, Locale locale) {
         try {
             String result = freeMarker.processTemplate(attributes, templateName, theme);
             Response.ResponseBuilder builder = Response.status(status).type(MediaType.TEXT_HTML_UTF_8_TYPE).language(locale).entity(result);
@@ -127,4 +175,14 @@ public class FreeMarkerAccountProvider extends org.keycloak.forms.account.freema
         super.attributes.put("mailings" , new UserMailingsBean(userMailings, mailings));
         return this;
     }
+
+    static String getClientIdForName(String clientName, RealmModel realm){
+
+        for (ClientModel client : realm.getClients()) {
+            if (clientName.equals(client.getName())) return client.getClientId();
+        }
+        return clientName;
+    }
+
+
 }

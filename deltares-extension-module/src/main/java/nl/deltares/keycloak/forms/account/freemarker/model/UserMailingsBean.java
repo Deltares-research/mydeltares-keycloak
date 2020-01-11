@@ -1,10 +1,12 @@
 package nl.deltares.keycloak.forms.account.freemarker.model;
 
-import nl.deltares.keycloak.storage.jpa.Mailing;
 import nl.deltares.keycloak.storage.rest.MailingRepresentation;
 import nl.deltares.keycloak.storage.rest.UserMailingRepresentation;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 public class UserMailingsBean {
 

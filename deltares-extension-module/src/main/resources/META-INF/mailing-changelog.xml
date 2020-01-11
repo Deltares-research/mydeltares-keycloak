@@ -45,5 +45,8 @@
 
     </changeSet>
 
+    <changeSet id="1.1" author="erik.derooij@deltares.nl" >
+        <addDefaultValue tableName="MAILING_ENTITY" columnName="FREQUENCY" defaultValue="4" />
+    </changeSet>
 
 </databaseChangeLog>

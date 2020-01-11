@@ -5,7 +5,6 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.forms.account.AccountProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
@@ -32,9 +31,8 @@ public class AvatarResource extends AbstractAvatarResource {
 
     @Context
     private ClientConnection clientConnection;
-    private AccountProvider account;
 
-    public AvatarResource(KeycloakSession session, Properties properties) {
+    AvatarResource(KeycloakSession session, Properties properties) {
         super(session, properties);
     }
 
@@ -100,7 +98,7 @@ public class AvatarResource extends AbstractAvatarResource {
             String userId = authResult.getUser().getId();
             setAvatarImage(realmName, userId, input);
             UriBuilder builder = RealmsResource.accountUrl(session.getContext().getUri().getBaseUriBuilder());
-            return Response.seeOther(ResourceUtils.appendReferrer(builder, session).build(realmName)).build();
+            return Response.seeOther(builder.build(realmName)).build();
         } catch (MaxSizeExceededException e){
             return Response.status(Response.Status.REQUEST_ENTITY_TOO_LARGE.getStatusCode(), e.getMessage()).build();
         } catch (Exception ex) {
@@ -121,7 +119,7 @@ public class AvatarResource extends AbstractAvatarResource {
             String userId = authResult.getUser().getId();
             deleteAvatarImage(realmName, userId);
             UriBuilder builder = RealmsResource.accountUrl(session.getContext().getUri().getBaseUriBuilder());
-            return Response.seeOther(ResourceUtils.appendReferrer(builder, session).build(realmName)).build();
+            return Response.seeOther(builder.build(realmName)).build();
         }  catch (Exception ex) {
             return Response.serverError().build();
         }

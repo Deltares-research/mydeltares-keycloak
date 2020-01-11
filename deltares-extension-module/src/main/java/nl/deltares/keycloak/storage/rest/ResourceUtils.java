@@ -23,7 +23,8 @@ import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.UriBuilder;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 
 class ResourceUtils {
 
@@ -130,12 +131,37 @@ class ResourceUtils {
     }
 
     static String[] getReferrer(KeycloakSession session, RealmModel realm, ClientModel client) {
-        String referrer = session.getContext().getUri().getQueryParameters().getFirst("referrer");
-        if (referrer == null) {
+        String ref = session.getContext().getRequestHeaders().getHeaderString("Referer");
+        if (ref == null) {
             return null;
         }
+        int beginIndex = ref.indexOf('?');
+        String referrerUri = null;
+        String referrer = null;
+        if (beginIndex > -1) {
+            String requestParameters = ref.substring(beginIndex + 1);
+            String[] params = requestParameters.split("&");
+            for (String param : params) {
+                if (param.startsWith("referrer_uri")){
+                    referrerUri = param.split("=")[1];
+                }
+                else if (param.startsWith("referrer")){
+                    referrer = param.split("=")[1];
+                }
+            }
+        }
+        if (referrer == null) {
+            referrer = session.getContext().getUri().getQueryParameters().getFirst("referrer");
+        }
+        if (referrerUri == null){
+            referrerUri = session.getContext().getUri().getQueryParameters().getFirst("referrer_uri");
+        }
 
-        String referrerUri = session.getContext().getUri().getQueryParameters().getFirst("referrer_uri");
+        if (referrerUri != null){
+            try {
+                referrerUri = URLDecoder.decode(referrerUri, "utf-8");
+            } catch (UnsupportedEncodingException ignored) {}//we tried
+        }
 
         ClientModel referrerClient = realm.getClientByClientId(referrer);
         if (referrerClient != null) {
@@ -174,16 +200,5 @@ class ResourceUtils {
         }
         return rawContentType;
     }
-    static UriBuilder appendReferrer(UriBuilder builder, KeycloakSession session) {
-        String referrer = session.getContext().getUri().getQueryParameters().getFirst("referrer");
-        if (referrer != null) {
-            builder = builder.queryParam("referrer", referrer);
-        }
-        String referrerUri = session.getContext().getUri().getQueryParameters().getFirst("referrer_uri");
-        if (referrerUri != null){
-            builder = builder.queryParam("referrer_uri", referrerUri);
-        }
-        return builder;
 
-    }
 }

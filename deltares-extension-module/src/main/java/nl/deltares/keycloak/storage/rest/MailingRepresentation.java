@@ -23,7 +23,7 @@ public class MailingRepresentation {
     protected static List<String> deliveries;
 
     static {
-        frequencies = Arrays.asList("weekly", "montly", "anually", "other");
+        frequencies = Arrays.asList("weekly", "monthly", "quarterly", "annually", "other");
         deliveries = Arrays.asList("email", "post", "both");
     }
 
@@ -77,7 +77,7 @@ public class MailingRepresentation {
 
     public void setFrequencyTxt(String frequencies) {
         int frequency = this.frequencies.indexOf(frequencies);
-        this.frequency = frequency == -1 ? 3 : frequency;
+        this.frequency = frequency == -1 ? 4 : frequency;
     }
 
     public void setFrequency(int frequency) {
