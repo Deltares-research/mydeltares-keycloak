@@ -3,6 +3,20 @@ import java.util.Properties;
 
 public class UploadAvatars {
 
+    /**
+     * Uploads Avatar images to the keycloak accounts database. Expected input properties file:
+     *
+     * keycloak properties example:
+     *
+     * keycloak.baseurl=http://keycloak.local.nl:8080/auth/realms/liferay-portal/
+     * keycloak.baseapiurl=http://keycloak.local.nl:8080/auth/admin/realms/liferay-portal/
+     * keycloak.clientid= client id
+     * keycloak.clientsecret= client secret
+     * avatar.dir= directory containing image files
+     * avatar.ids= file containing mapping email address and image id
+     *
+     * @param args
+     */
     public static void main(String[] args) {
         assert args.length > 0;
 
@@ -10,7 +24,7 @@ public class UploadAvatars {
         if (properties == null) return;
         KeycloakUtilsImpl keycloakUtils = new KeycloakUtilsImpl(properties);
 
-        File userPortraitsDir = new File(properties.getProperty("avatar.dir"));
+        File userPortraitsDir = new File(properties.getProperty("avatar.dir").trim());
         if (!userPortraitsDir.exists()){
             throw new RuntimeException("Portraits dir does not exist: " + userPortraitsDir.getAbsolutePath());
         }
