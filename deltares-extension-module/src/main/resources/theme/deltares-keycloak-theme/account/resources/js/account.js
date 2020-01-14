@@ -69,7 +69,7 @@ function cancel() {
 
 function addReferrerCookie(referrerName, referrerUrl) {
     document.cookie = 'referrer=' + referrerName;
-    document.cookie = 'referrer_url=' + referrerUrl;
+    document.cookie = 'referrer_uri=' + referrerUrl;
 }
 
 function loadReferrer() {

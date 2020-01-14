@@ -95,7 +95,7 @@ public class FreeMarkerAccountProvider extends org.keycloak.forms.account.freema
         }
         if (!referrerAdded && referrer != null){
             //add referrer
-            baseUriBuilder.queryParam("referrer", getClientIdForName(referrer[0], realm));
+            baseUriBuilder.queryParam("referrer", getClientName(referrer[0], realm));
             baseUriBuilder.queryParam("referrer_uri", referrer[1]);
         }
         URI baseQueryUri = baseUriBuilder.build();
@@ -176,12 +176,12 @@ public class FreeMarkerAccountProvider extends org.keycloak.forms.account.freema
         return this;
     }
 
-    static String getClientIdForName(String clientName, RealmModel realm){
+    static String getClientName(String clientId, RealmModel realm){
 
         for (ClientModel client : realm.getClients()) {
-            if (clientName.equals(client.getName())) return client.getClientId();
+            if (clientId.equals(client.getClientId())) return client.getClientId();
         }
-        return clientName;
+        return clientId;
     }
 
 
