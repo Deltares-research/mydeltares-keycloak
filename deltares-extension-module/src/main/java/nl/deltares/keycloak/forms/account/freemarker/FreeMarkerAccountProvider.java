@@ -25,9 +25,7 @@ import org.keycloak.forms.account.AccountPages;
 import org.keycloak.forms.account.AccountProvider;
 import org.keycloak.forms.account.freemarker.Templates;
 import org.keycloak.forms.account.freemarker.model.*;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.theme.BrowserSecurityHeaderSetup;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
@@ -88,15 +86,14 @@ public class FreeMarkerAccountProvider extends org.keycloak.forms.account.freema
 
         URI baseUri = uriInfo.getBaseUri();
         UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
-        boolean referrerAdded = false;
-        for (Map.Entry<String, List<String>> e : uriInfo.getQueryParameters().entrySet()) {
-            baseUriBuilder.queryParam(e.getKey(), e.getValue().toArray());
-            if (e.getKey().equals("referrer")) referrerAdded = true;
+        if (referrer == null){
+            referrer = new String[2];
         }
-        if (!referrerAdded && referrer != null){
-            //add referrer
-            baseUriBuilder.queryParam("referrer", getClientName(referrer[0], realm));
-            baseUriBuilder.queryParam("referrer_uri", referrer[1]);
+        for (Map.Entry<String, List<String>> e : uriInfo.getQueryParameters().entrySet()) {
+            Object[] values = e.getValue().toArray();
+            baseUriBuilder.queryParam(e.getKey(), values);
+            if (e.getKey().equals("referrer") && values.length > 0) referrer[0] = (String) values[0];
+            if (e.getKey().equals("referrer_uri") && values.length > 0) referrer[1] = (String) values[0];
         }
         URI baseQueryUri = baseUriBuilder.build();
 
@@ -106,7 +103,7 @@ public class FreeMarkerAccountProvider extends org.keycloak.forms.account.freema
 
         handleMessages(locale, messagesBundle, attributes);
 
-        if (referrer != null) {
+        if (Arrays.stream(referrer).allMatch(Objects::nonNull)) {
             attributes.put("referrer", new ReferrerBean(this.referrer));
         }
 
@@ -174,14 +171,6 @@ public class FreeMarkerAccountProvider extends org.keycloak.forms.account.freema
         if (super.attributes == null) super.attributes = new HashMap<>();
         super.attributes.put("mailings" , new UserMailingsBean(userMailings, mailings));
         return this;
-    }
-
-    static String getClientName(String clientId, RealmModel realm){
-
-        for (ClientModel client : realm.getClients()) {
-            if (clientId.equals(client.getClientId())) return client.getClientId();
-        }
-        return clientId;
     }
 
 

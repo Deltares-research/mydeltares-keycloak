@@ -8,15 +8,12 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminAuth;
-import org.keycloak.services.util.ResolveRelative;
-import org.keycloak.services.validation.Validation;
 
 import javax.persistence.EntityManager;
 import javax.ws.rs.NotAuthorizedException;
@@ -123,14 +120,12 @@ class ResourceUtils {
         ClientModel client = realm.getClientByClientId(token.getIssuedFor());
         if (client == null) {
             throw new NotFoundException("Could not find client for authorization");
-
         }
-
         return new Auth(realm, authResult.getToken(), authResult.getUser(), client, authResult.getSession(), true);
 
     }
 
-    static String[] getReferrer(KeycloakSession session, RealmModel realm, ClientModel client) {
+    static String[] getReferrer(KeycloakSession session) {
         String ref = session.getContext().getRequestHeaders().getHeaderString("Referer");
         if (ref == null) {
             return null;
@@ -162,34 +157,12 @@ class ResourceUtils {
                 referrerUri = URLDecoder.decode(referrerUri, "utf-8");
             } catch (UnsupportedEncodingException ignored) {}//we tried
         }
-
-        ClientModel referrerClient = realm.getClientByClientId(referrer);
-        if (referrerClient != null) {
-            if (referrerUri != null) {
-                referrerUri = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), referrerUri, realm, referrerClient);
-            } else {
-                referrerUri = ResolveRelative.resolveRelativeUri(session.getContext().getUri().getRequestUri(), client.getRootUrl(), referrerClient.getBaseUrl());
-            }
-
-            if (referrerUri != null) {
-                String referrerName = referrerClient.getName();
-                if (Validation.isBlank(referrerName)) {
-                    referrerName = referrer;
-                }
-                return new String[]{referrerName, referrerUri};
-            }
-        } else if (referrerUri != null) {
-            referrerClient = realm.getClientByClientId(referrer);
-            if (client != null) {
-                referrerUri = RedirectUtils.verifyRedirectUri(session.getContext().getUri(), referrerUri, realm, referrerClient);
-
-                if (referrerUri != null) {
-                    return new String[]{referrer, referrerUri};
-                }
-            }
+        if (referrer != null){
+            try {
+                referrer = URLDecoder.decode(referrer, "utf-8");
+            } catch (UnsupportedEncodingException ignored) {}//we tried
         }
-
-        return null;
+        return new String[]{referrer, referrerUri};
     }
 
     static String parseContentType(String rawContentType){

@@ -267,7 +267,7 @@ public class UserMailingResource {
         }
 
         account = session.getProvider(AccountProvider.class).setRealm(realm).setUriInfo(session.getContext().getUri()).setHttpHeaders(httpHeaders);
-        account.setReferrer(ResourceUtils.getReferrer(session, realm, client));
+        account.setReferrer(ResourceUtils.getReferrer(session));
         authResult = authManager.authenticateIdentityCookie(session, realm);
         if (authResult != null) {
             stateChecker = (String) session.getAttribute("state_checker");

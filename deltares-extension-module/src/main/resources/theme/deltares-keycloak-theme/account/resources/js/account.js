@@ -68,8 +68,8 @@ function cancel() {
 }
 
 function addReferrerCookie(referrerName, referrerUrl) {
-    document.cookie = 'referrer=' + referrerName;
-    document.cookie = 'referrer_uri=' + referrerUrl;
+    document.cookie = 'referrer=' + referrerName + ';path=' + document.location.pathname;
+    document.cookie = 'referrer_uri=' + referrerUrl + ';path=' + document.location.pathname;
 }
 
 function loadReferrer() {
