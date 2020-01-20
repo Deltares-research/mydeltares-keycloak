@@ -1914,14 +1914,6 @@ module.factory('Components', function($resource, ComponentUtils) {
     });
 });
 
-module.factory('MailingStorageOperations', function($resource) {
-    var object = $resource(authUrl + '/realms/:realm/mailing-provider/admin/:componentId', {
-        realm : '@realm',
-        componentId : '@componentId'
-    });
-    return object;
-});
-
 module.factory('UserStorageOperations', function($resource) {
     var object = {}
     object.sync = $resource(authUrl + '/admin/realms/:realm/user-storage/:componentId/sync', {

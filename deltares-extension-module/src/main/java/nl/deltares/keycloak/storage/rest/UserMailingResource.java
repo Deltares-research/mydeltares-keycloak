@@ -234,15 +234,8 @@ public class UserMailingResource {
     }
 
     private void initApi(){
-
         ResteasyProviderFactory.getInstance().injectProperties(this);
-        authResult = resolveAuthentication(session);
-        if (authResult == null) {
-            //this is when user accesses API via openid request and not GUI
-            AppAuthManager authManager = new AppAuthManager();
-            Auth auth = authenticateRealmRequest(authManager, httpHeaders, session, connection);
-            authResult = new AuthenticationManager.AuthResult(auth.getUser(), auth.getSession(), auth.getToken());
-        }
+        authResult = getAuthResult(session, httpHeaders, connection);
         realm = session.getContext().getRealm();
     }
 

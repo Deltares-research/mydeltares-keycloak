@@ -4,6 +4,7 @@ import javax.persistence.*;
 
 @NamedQueries({
         @NamedQuery(name = "findUserMailingByUserAndRealm", query = "select m from UserMailing m where m.userId = :userId and m.realmId = :realmId"),
+        @NamedQuery(name = "allUserMailingsByMailingAndRealm", query = "select m from UserMailing m where m.mailingId = :mailingId and m.realmId = :realmId"),
         @NamedQuery(name = "getUserMailing", query = "select m from UserMailing m where m.mailingId = :mailingId and m.realmId = :realmId and m.userId = :userId"),
         @NamedQuery(name = "getUserMailingById", query = "select m from UserMailing m where m.id = :id")
 })

@@ -14,7 +14,7 @@ module.controller('MailingTabCtrl', function($scope, $location, Dialog, Notifica
     };
 });
 
-module.controller('MailingListCtrl', function($scope, realm, Mailing, MailingSearchState, BruteForce, Notifications, $route, Dialog) {
+module.controller('MailingListCtrl', function($scope, realm, Mailing, MailingSearchState, BruteForce, Notifications, $route, $http, Dialog) {
 
     $scope.init = function() {
         $scope.realm = realm;
@@ -73,11 +73,23 @@ module.controller('MailingListCtrl', function($scope, realm, Mailing, MailingSea
             });
         });
     };
+
+    $scope.exportUserMailings = function(mailing) {
+        var exportUrl = authUrl + '/realms/' + realm.realm + '/mailing-provider/admin/export/usermailings/' + mailing.id;
+        var fileName = mailing.name + '-export.csv';
+        $http.get(exportUrl)
+            .then(function(response) {
+                var download = response.data;
+                saveAs(new Blob([download], { type: 'text/csv' }), fileName);
+            }).catch(function(err) {
+            Notifications.error("Sorry, something went wrong: "  + err);
+        });
+    };
+
 });
 
 module.controller('MailingDetailCtrl', function($scope, realm, mailing, BruteForceUser, Mailing,
-                                                Components, MailingStorageOperations,
-                                                $location, $http, Dialog, Notifications){
+                                                Components, $location, $http, Dialog, Notifications){
     $scope.realm = realm;
     $scope.create = !mailing.id;
 

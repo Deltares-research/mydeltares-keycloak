@@ -6,8 +6,6 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.managers.AppAuthManager;
-import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.RealmsResource;
 
@@ -16,8 +14,7 @@ import javax.ws.rs.core.*;
 import java.util.Objects;
 import java.util.Properties;
 
-import static nl.deltares.keycloak.storage.rest.ResourceUtils.authenticateRealmRequest;
-import static nl.deltares.keycloak.storage.rest.ResourceUtils.resolveAuthentication;
+import static nl.deltares.keycloak.storage.rest.ResourceUtils.getAuthResult;
 
 public class AvatarResource extends AbstractAvatarResource {
 
@@ -38,13 +35,7 @@ public class AvatarResource extends AbstractAvatarResource {
 
     public void init(){
         ResteasyProviderFactory.getInstance().injectProperties(this);
-        authResult = resolveAuthentication(session);
-        if (authResult == null) {
-            //this is when user accesses API via openid request and not GUI
-            AppAuthManager authManager = new AppAuthManager();
-            Auth auth = authenticateRealmRequest(authManager, httpHeaders, session, clientConnection);
-            authResult = new AuthenticationManager.AuthResult(auth.getUser(), auth.getSession(), auth.getToken());
-        }
+        authResult = getAuthResult(session, httpHeaders, clientConnection);
     }
 
     @Path("/admin")

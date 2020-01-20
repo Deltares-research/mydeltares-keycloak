@@ -1,13 +1,10 @@
 package nl.deltares.keycloak.storage.rest;
 
 import nl.deltares.keycloak.storage.jpa.Mailing;
-import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.managers.AppAuthManager;
-import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 
 import javax.ws.rs.*;
@@ -17,15 +14,15 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import static nl.deltares.keycloak.storage.rest.MailingAdminResource.*;
-import static nl.deltares.keycloak.storage.rest.ResourceUtils.authenticateRealmRequest;
-import static nl.deltares.keycloak.storage.rest.ResourceUtils.resolveAuthentication;
+import static nl.deltares.keycloak.storage.rest.ResourceUtils.getAuthResult;
 
 public class MailingResource {
-    private static final Logger logger = Logger.getLogger(MailingResource.class);
     private static final String SEARCH_ID_PARAMETER = "id:";
     private final KeycloakSession session;
+    private final Properties properties;
 
     private AuthenticationManager.AuthResult authResult;
 
@@ -35,25 +32,19 @@ public class MailingResource {
     @Context
     private ClientConnection clientConnection;
 
-    public MailingResource(KeycloakSession session) {
+    MailingResource(KeycloakSession session, Properties properties) {
         this.session = session;
+        this.properties = properties;
     }
 
     public void init() {
         ResteasyProviderFactory.getInstance().injectProperties(this);
-        authResult = resolveAuthentication(session);
-        if (authResult == null) {
-            //this is when user accesses API via openid request and not GUI
-            AppAuthManager authManager = new AppAuthManager();
-            Auth auth = authenticateRealmRequest(authManager, httpHeaders, session, clientConnection);
-            authResult = new AuthenticationManager.AuthResult(auth.getUser(), auth.getSession(), auth.getToken());
-        }
-
+        authResult = getAuthResult(session, httpHeaders, clientConnection);
     }
 
     @Path("/admin")
     public MailingAdminResource admin() {
-        MailingAdminResource service = new MailingAdminResource(session);
+        MailingAdminResource service = new MailingAdminResource(session, properties);
         ResteasyProviderFactory.getInstance().injectProperties(service);
         service.init();
         return service;
@@ -100,9 +91,7 @@ public class MailingResource {
             } else {
                 List<Mailing> resultList = searchForMailings(session, realmId, search.trim());
 
-                resultList.forEach(mailing -> {
-                    reps.add(toRepresentation(mailing, null));
-                });
+                resultList.forEach(mailing -> reps.add(toRepresentation(mailing, null)));
             }
             return Response.ok(reps).build();
         }

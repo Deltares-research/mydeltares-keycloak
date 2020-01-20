@@ -3,32 +3,29 @@ package nl.deltares.keycloak.storage.rest;
 import nl.deltares.keycloak.storage.jpa.Avatar;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.managers.AppAuthManager;
+import org.keycloak.services.managers.Auth;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
 import javax.ws.rs.*;
-import javax.ws.rs.core.*;
-import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.util.Properties;
 
-import static nl.deltares.keycloak.storage.rest.ResourceUtils.authenticateRealmAdminRequest;
+import static nl.deltares.keycloak.storage.rest.ResourceUtils.getAuth;
 
 public class AvatarAdminResource extends AbstractAvatarResource {
     private static final Logger logger = Logger.getLogger(AvatarAdminResource.class);
 
     private AdminPermissionEvaluator realmAuth;
-    private AppAuthManager authManager;
-
 
     @Context
     private HttpHeaders httpHeaders;
@@ -40,16 +37,15 @@ public class AvatarAdminResource extends AbstractAvatarResource {
     //Realm from request path
     private RealmModel callerRealm;
 
-    public AvatarAdminResource(KeycloakSession session, Properties properties) {
+    AvatarAdminResource(KeycloakSession session, Properties properties) {
         super(session, properties);
     }
 
     public void init() {
         RealmModel realm = session.getContext().getRealm();
         if (realm == null) throw new NotFoundException("Realm not found.");
-        authManager = new AppAuthManager();
-
-        adminAuth = authenticateRealmAdminRequest(authManager, httpHeaders, session, clientConnection);
+        Auth auth = getAuth(httpHeaders, session, clientConnection);
+        adminAuth = new AdminAuth(auth.getRealm(), auth.getToken(), auth.getUser(), auth.getClient());
         realmAuth = AdminPermissions.evaluator(session, realm, adminAuth);
         session.getContext().setRealm(realm);
 
