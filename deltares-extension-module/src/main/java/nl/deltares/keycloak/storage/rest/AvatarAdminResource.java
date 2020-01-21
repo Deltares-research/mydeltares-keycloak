@@ -20,6 +20,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Properties;
 
+import static nl.deltares.keycloak.storage.rest.ResourceUtils.contentTypeToExtension;
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.getAuth;
 
 public class AvatarAdminResource extends AbstractAvatarResource {
@@ -63,9 +64,11 @@ public class AvatarAdminResource extends AbstractAvatarResource {
                 logger.info("No avatar exists for user " + userId);
                 return Response.status(Response.Status.NO_CONTENT).build();
             }
+            UserModel user = session.users().getUserById(userId, callerRealm);
+            if (user == null) throw new NotFoundException("User not found for id " + userId);
 
             return Response.ok(avatar.getAvatar(), avatar.getContentType())
-                    .header("Content-Disposition", "inline; filename = \"avatar." + getExtension(avatar.getContentType()) + "\"")
+                    .header("Content-Disposition", "inline; filename = \"" + user.getUsername() + '.' + contentTypeToExtension(avatar.getContentType()) + '\"')
                     .build();
 
         } catch (ForbiddenException e) {
@@ -152,7 +155,7 @@ public class AvatarAdminResource extends AbstractAvatarResource {
         }
 
         return Response.ok(avatar.getAvatar(), avatar.getContentType())
-                .header("Content-Disposition", "inline; filename = \"" + user.getUsername() + '.' + getExtension(avatar.getContentType()) + "\"")
+                .header("Content-Disposition", "inline; filename = \"" + user.getUsername() + '.' + contentTypeToExtension(avatar.getContentType()) + '\"')
                 .build();
     }
 

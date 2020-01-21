@@ -21,7 +21,9 @@ import org.keycloak.services.managers.RealmManager;
 import javax.persistence.EntityManager;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.*;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.StreamingOutput;
 import java.io.*;
 import java.net.URLDecoder;
 import java.util.Properties;
@@ -199,4 +201,10 @@ class ResourceUtils {
         return properties;
     }
 
+    public static String contentTypeToExtension(String contentType){
+        String[] split = contentType.split("/");
+        if (split.length > 1) return split[1];
+        if (split.length > 0) return split[0];
+        return "";
+    }
 }

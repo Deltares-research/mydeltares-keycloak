@@ -152,7 +152,7 @@
             </legend>
             <div class="form-group">
                 <div class="col-md-10 col-md-offset-2">
-                    <img style="max-width:600px;" src="{{ avatarUrl }}" />
+                    <img id="avatar" style="max-width:600px;" src="{{ avatarUrl }}" />
                 </div>
             </div>
             <div class="form-group">
@@ -165,6 +165,7 @@
             <div class="form-group">
                 <div class="col-md-10 col-md-offset-2">
                     <button  onclick="angular.element(this).scope().deleteAvatar()">Delete</button>
+                    <button  onclick="angular.element(this).scope().downloadAvatar()">Download</button>
                 </div>
             </div>
         </fieldset>

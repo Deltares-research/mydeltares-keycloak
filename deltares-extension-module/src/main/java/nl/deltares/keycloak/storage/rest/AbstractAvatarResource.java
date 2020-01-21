@@ -113,7 +113,4 @@ abstract class AbstractAvatarResource {
         return buffer.toByteArray();
     }
 
-    static String getExtension(String contentType) {
-        return contentType.substring("image/".length());
-    }
 }

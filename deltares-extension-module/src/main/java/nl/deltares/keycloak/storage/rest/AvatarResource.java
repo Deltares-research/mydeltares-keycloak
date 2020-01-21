@@ -63,7 +63,7 @@ public class AvatarResource extends AbstractAvatarResource {
         }
 
         return Response.ok(avatar.getAvatar(), avatar.getContentType())
-                .header("Content-Disposition", "inline; filename = \"avatar." + getExtension(avatar.getContentType()) + "\"")
+                .header("Content-Disposition", "inline; filename = \"" + authResult.getUser().getUsername() + '.' + ResourceUtils.contentTypeToExtension(avatar.getContentType()) + '\"')
                 .build();
 
     }

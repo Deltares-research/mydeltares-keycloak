@@ -142,25 +142,25 @@ module.controller('MailingDetailCtrl', function($scope, realm, mailing, BruteFor
         }
     };
 
-    function convertAttributeValuesToLists() {
-        var attrs = $scope.user.attributes;
-        for (var attribute in attrs) {
-            if (typeof attrs[attribute] === "string") {
-                var attrVals = attrs[attribute].split("##");
-                attrs[attribute] = attrVals;
-            }
-        }
-    }
+    // function convertAttributeValuesToLists() {
+    //     var attrs = $scope.user.attributes;
+    //     for (var attribute in attrs) {
+    //         if (typeof attrs[attribute] === "string") {
+    //             var attrVals = attrs[attribute].split("##");
+    //             attrs[attribute] = attrVals;
+    //         }
+    //     }
+    // }
 
-    function convertAttributeValuesToString(user) {
-        var attrs = user.attributes;
-        for (var attribute in attrs) {
-            if (typeof attrs[attribute] === "object") {
-                var attrVals = attrs[attribute].join("##");
-                attrs[attribute] = attrVals;
-            }
-        }
-    }
+    // function convertAttributeValuesToString(user) {
+    //     var attrs = user.attributes;
+    //     for (var attribute in attrs) {
+    //         if (typeof attrs[attribute] === "object") {
+    //             var attrVals = attrs[attribute].join("##");
+    //             attrs[attribute] = attrVals;
+    //         }
+    //     }
+    // }
 
     $scope.reset = function() {
         $scope.mailing = angular.copy(mailing);
