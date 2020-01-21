@@ -42,7 +42,7 @@ body{
     border:none;
     position:relative;
     background-color:#fff;
-    color:#666;
+    color:#000;
     font-family:"SansaNormal",sans-serif;
     font-size:14px;
     min-width:320px;
@@ -52,7 +52,7 @@ body{
 
 .navbar.header {
     overflow: visible;
-    background-color: #008fc5;
+    background-color: #fff;
     height:94px;
     color:#fff;
     padding: 8px;
@@ -126,7 +126,7 @@ a
 
 .sub-bar li a{
     font-size: 24px;
-    color:#666;
+    color:#080C80;
     text-decoration: none;
 }
 
@@ -150,9 +150,9 @@ a
 }
 
 form{
-    background: #e5eef2;
+    background: #F0F4FF;
     padding: 20px;
-    margin-bottom:32px;
+    margin-bottom:16px;
 }
 
 form input[type="text"], input[type="password"]{
@@ -171,7 +171,7 @@ form button,form input[type="submit"], .button {
     font-size:100%;
     text-transform:none;
     cursor:pointer;
-    background:#008fc5;
+    background:#080C80;
     color:#fff;
     line-height:40px;
     padding:0 20px;
@@ -181,7 +181,7 @@ form button,form input[type="submit"], .button {
     border:none;
     outline:none;
     border-radius:0;
-    margin:16px 0 10px;
+    margin:0px 0 10px;
 }
 
 #kc-social-providers ul
@@ -244,7 +244,7 @@ thead, thead tr, thead td{
 }
 
 .footer{
-    background:#92b6c7;
+    background:#080C80;
     width:100%;
     height:128px;
 }
@@ -290,7 +290,7 @@ thead, thead tr, thead td{
 
 .login-container-content{
     width:50%;
-    margin:120px auto;
+    margin:auto;
     padding-bottom:128px;
    /* border: 1px solid #666;*/
     padding-top:40px;
@@ -310,14 +310,6 @@ thead, thead tr, thead td{
     min-width: 256px;
 }
 
-.login-container-content input[type="submit"]{
-    width:100%;
-}
-
-.login-container-content input[type="submit"]{
-    width:100%;
-}
-
 .login-container-content form
 {
     background-color: #fff;
@@ -327,6 +319,7 @@ thead, thead tr, thead td{
 .login-container-content h1{
     font-weight: normal;
     font-size: 24pt;
+    color: #080C80;
 }
 
 .alert-error
@@ -368,7 +361,7 @@ thead, thead tr, thead td{
 }
 
 #kc-locale-dropdown a {
-    color: #fff;
+    color: #000;
     background: 0 0;
     padding: 0 15px 0 0;
     font-weight: 300;
@@ -392,4 +385,9 @@ a#kc-current-locale-link {
 a#kc-current-locale-link::after {
     content: "\2c5";
     margin-left: 4px;
+}
+
+#kc-form a {
+    color: #0a28a3;
+    line-height: 200%;
 }

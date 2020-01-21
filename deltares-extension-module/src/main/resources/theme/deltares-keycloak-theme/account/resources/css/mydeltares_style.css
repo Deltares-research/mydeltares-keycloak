@@ -42,7 +42,7 @@ body{
     border:none;
     position:relative;
     background-color:#fff;
-    color:#666;
+    color:#000;
     font-family:"SansaNormal",sans-serif;
     font-size:14px;
     min-width:320px;
@@ -52,7 +52,7 @@ body{
 
 .navbar.header {
     overflow: visible;
-    background-color: #008fc5;
+    background-color: #fff;
     height:94px;
     color:#fff;
     padding: 8px;
@@ -126,7 +126,7 @@ a
 
 .sub-bar li a{
     font-size: 24px;
-    color:#666;
+    color:#080C80;
     text-decoration: none;
 }
 
@@ -150,7 +150,7 @@ a
 }
 
 form{
-    background: #e5eef2;
+    background: #F0F4FF;
     padding: 20px;
     margin-bottom:32px;
 }
@@ -171,7 +171,7 @@ form button,form input[type="submit"], .button {
     font-size:100%;
     text-transform:none;
     cursor:pointer;
-    background:#008fc5;
+    background:#080C80;
     color:#fff;
     line-height:40px;
     padding:0 20px;
@@ -247,11 +247,13 @@ thead, thead tr, thead td{
 }
 
 .footer{
-    background:#92b6c7;
+    background:#080C80;
     width:100%;
     height:128px;
 }
-
+.footer {
+    color: #fff;
+}
 .footer .misc-column{
     max-width: 500px;
     float:right;
@@ -371,7 +373,7 @@ thead, thead tr, thead td{
 }
 
 #kc-locale-dropdown a {
-    color: #fff;
+    color: #000;
     background: 0 0;
     padding: 0 15px 0 0;
     font-weight: 300;

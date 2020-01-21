@@ -4,9 +4,9 @@
         ${msg("doLogIn")}
     <#elseif section = "form">     
     
-        <p>
-        ${msg("loginWelcome")}
-        </p>
+<#--        <p>-->
+<#--        ${msg("loginWelcome")}-->
+<#--        </p>-->
 
         <div class="alert alert-error" id="validateId" style="display: none">
             <span class="kc-feedback-text">${msg("deltaresEmailNotAllowed")}</span>
@@ -46,7 +46,7 @@
                         </div>
                         <div class="${properties.kcFormOptionsWrapperClass!} align-right">
                             <#if realm.resetPasswordAllowed>
-                                <span><a tabindex="5"  href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a></span>
+                                <span></span>
                             </#if>
                         </div>
 
@@ -56,24 +56,24 @@
                     <input tabindex="4" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" name="login" id="kc-login" type="submit" value="${msg("doLogIn")}"/>
                   </div>
 
-                    <p>${msg("noAccount")}</p>
-
-                    <div class="${properties.kcFormGroupClass!}">
-                        <a tabindex="6" class="button" href="${url.registrationUrl}" >${msg("doRegister")}</a></span>
-                    </div>
-                  
-            </div>                  
             </form>
-
+            <a tabindex="5"  href="${url.registrationUrl}" >${msg("doRegister")}</a> <br />
+            <a tabindex="6"  href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a>
         </div>
         </#if>
         <#if realm.password && social.providers??>
 
+            <h1>Deltares login</h1>
         <p>
         ${msg("deltaresLogin")}
+                    <#list social.providers as p>
+                        <a href="${p.loginUrl}" id="zocial-${p.alias}" class="zocial ${p.providerId}"> <span>${p.displayName}</span></a>
+                    </#list>
         </p>
 
 
+
+<!--
             <div id="kc-social-providers" class="${properties.kcFormSocialAccountContentClass!} ${properties.kcFormSocialAccountClass!}">
                 <ul class="${properties.kcFormSocialAccountListClass!} <#if social.providers?size gt 4>${properties.kcFormSocialAccountDoubleListClass!}</#if>">
                     <#list social.providers as p>
@@ -81,6 +81,7 @@
                     </#list>
                 </ul>
             </div>
+-->
         </#if>
       </div>
     <#elseif section = "info" >
