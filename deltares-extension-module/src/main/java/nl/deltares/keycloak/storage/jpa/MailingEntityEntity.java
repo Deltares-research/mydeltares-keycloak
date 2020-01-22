@@ -1,5 +1,7 @@
 package nl.deltares.keycloak.storage.jpa;
 
+import org.keycloak.models.jpa.entities.RealmEntity;
+
 import javax.persistence.*;
 import java.util.Collection;
 import java.util.Objects;

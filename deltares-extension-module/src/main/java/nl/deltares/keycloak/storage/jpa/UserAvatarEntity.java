@@ -1,5 +1,8 @@
 package nl.deltares.keycloak.storage.jpa;
 
+import org.keycloak.models.jpa.entities.RealmEntity;
+import org.keycloak.models.jpa.entities.UserEntity;
+
 import javax.persistence.*;
 import java.util.Arrays;
 import java.util.Objects;
@@ -11,7 +14,7 @@ public class UserAvatarEntity {
     private byte[] avatar;
     private String contentType;
     private RealmEntity realmByRealmId;
-    private UserEntityEntity userEntityByUserId;
+    private UserEntity userEntityByUserId;
 
     @Id
     @Column(name = "ID")
@@ -71,11 +74,11 @@ public class UserAvatarEntity {
 
     @ManyToOne
     @JoinColumn(name = "USER_ID", referencedColumnName = "ID", nullable = false)
-    public UserEntityEntity getUserEntityByUserId() {
+    public UserEntity getUserEntityByUserId() {
         return userEntityByUserId;
     }
 
-    public void setUserEntityByUserId(UserEntityEntity userEntityByUserId) {
+    public void setUserEntityByUserId(UserEntity userEntityByUserId) {
         this.userEntityByUserId = userEntityByUserId;
     }
 }
