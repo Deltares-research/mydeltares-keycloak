@@ -18,12 +18,12 @@ public class LoginStatsRecordingRequiredActionProvider  implements RequiredActio
 
     private static final Logger LOG = Logger.getLogger(LoginStatsRecordingRequiredActionProvider.class);
 
-    private static final String PROVIDER_ID = "login_stats_action";
-    private static final String RECORD_LOGIN_STATISTICS_ACTION = "Record Login Statistics Action";
+    static final String PROVIDER_ID = "login_stats_action";
+    static final String RECORD_LOGIN_STATISTICS_ACTION = "Record Login Statistics Action";
 
-    private static final String LOGIN_LOGIN_COUNT = "login.login-count";
-    private static final String LOGIN_FIRST_LOGIN_DATE = "login.first-login-date";
-    private static final String LOGIN_RECENT_LOGIN_DATE = "login.recent-login-date";
+    static final String LOGIN_LOGIN_COUNT = "login.login-count";
+    static final String LOGIN_FIRST_LOGIN_DATE = "login.first-login-date";
+    static final String LOGIN_RECENT_LOGIN_DATE = "login.recent-login-date";
 
     private static final String ONE = "1";
 
