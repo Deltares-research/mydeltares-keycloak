@@ -36,6 +36,10 @@ html{
  /*   overflow-y: scroll;*/
 }
 
+select {
+    height: 30px;
+}
+
 body{
     padding:0;
     margin:0;
@@ -228,7 +232,7 @@ tr{
 
 th,td{
     border:0;
-    vertical-align:top;
+    vertical-align:middle;
     padding:8px 20px;
 }
 
