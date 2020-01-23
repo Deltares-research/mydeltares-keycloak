@@ -60,6 +60,12 @@ body{
     border-top: 1px solid #666;*/
 }
 
+.navbar-title{
+    font-size: 48px;
+    margin-top:0;
+    color: #92b6c7;
+}
+
 /* link style */
 a
 {
