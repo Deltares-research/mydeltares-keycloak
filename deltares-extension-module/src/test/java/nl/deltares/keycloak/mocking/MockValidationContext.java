@@ -19,6 +19,7 @@ public class MockValidationContext implements ValidationContext {
     private MultivaluedMap<String, String> formData;
     private List<FormMessage> errors;
     private boolean success;
+    private KeycloakSession session;
 
     public void setRequest(HttpRequest request) {
         this.request = request;
@@ -26,6 +27,10 @@ public class MockValidationContext implements ValidationContext {
 
     public void setEventBuilder(EventBuilder eventBuilder) {
         this.eventBuilder = eventBuilder;
+    }
+
+    public void setSession(KeycloakSession session){
+        this.session = session;
     }
 
     @Override
@@ -113,7 +118,7 @@ public class MockValidationContext implements ValidationContext {
 
     @Override
     public KeycloakSession getSession() {
-        return null;
+        return session;
     }
 
     @Override
