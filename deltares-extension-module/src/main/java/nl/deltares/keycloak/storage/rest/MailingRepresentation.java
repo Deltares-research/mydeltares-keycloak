@@ -23,8 +23,8 @@ public class MailingRepresentation {
     protected static List<String> deliveries;
 
     static {
-        frequencies = Arrays.asList("weekly", "monthly", "quarterly", "annually", "other");
-        deliveries = Arrays.asList("email", "post", "both");
+        frequencies = Arrays.asList("weekly", "monthly", "quarterly", "annually", "varying");
+        deliveries = Arrays.asList("e-mail", "post", "both");
     }
 
     public String getId() {
@@ -92,6 +92,9 @@ public class MailingRepresentation {
         return deliveries.get(delivery);
     }
 
+    public String getPreferredDeliveryTxt(){
+        return "e-mail";
+    }
     public void setDeliveryTxt(String deliveryTxt) {
         int delivery = this.deliveries.indexOf(deliveryTxt);
         this.delivery = delivery == -1 ? 0 : delivery;

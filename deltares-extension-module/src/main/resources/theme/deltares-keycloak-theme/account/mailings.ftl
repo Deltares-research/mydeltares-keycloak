@@ -50,14 +50,14 @@
                         </#list>
                     </select>
                 </td>
-                <td>${mailing.frequency}</td>
+                <td>${msg("${mailing.frequency}")}</td>
                 <td>
                     <select id="delivery${mailing?index}" onchange="enableSave(${mailing?index})">
                         <#list mailing.supportedDeliveries as delivery>
                             <#if mailing.delivery == delivery >
-                                <option selected value="${delivery}">${delivery}</option>
+                                <option selected value="${delivery}">${msg("${delivery}")}</option>
                             <#else>
-                                <option value="${delivery}">${delivery}</option>
+                                <option value="${delivery}">${msg("${delivery}")}</option>
                             </#if>
                         </#list>
                     </select>

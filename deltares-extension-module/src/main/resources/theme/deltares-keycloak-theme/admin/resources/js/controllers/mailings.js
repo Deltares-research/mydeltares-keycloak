@@ -95,8 +95,8 @@ module.controller('MailingDetailCtrl', function($scope, realm, mailing, BruteFor
 
     if ($scope.create) {
         $scope.mailing = {
-            supportedDeliveries: ["email", "post", "both"],
-            supportedFrequencies: ["weekly", "monthly", "quarterly", "annually", "other"]
+            supportedDeliveries: ["e-mail", "post", "both"],
+            supportedFrequencies: ["weekly", "monthly", "quarterly", "annually", "varying"]
         }
     } else {
         // convertAttributeValuesToString(user);

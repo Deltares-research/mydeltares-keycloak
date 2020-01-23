@@ -64,9 +64,7 @@ body{
 a
 {
     text-decoration: none;
-    color: #92b6c7;
-    font-weight: bold;
-
+    color: #080C80;
 }
 
 .navbar-header {
@@ -78,7 +76,7 @@ a
 .navbar-title{
     font-size: 48px;
     margin-top:0;
-    color: #92b6c7;
+    color: #080C80;
 }
 
 .navbar-nav {

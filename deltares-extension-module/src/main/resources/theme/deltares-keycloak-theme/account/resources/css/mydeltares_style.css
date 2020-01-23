@@ -67,15 +67,14 @@ body{
 .navbar-title{
     font-size: 48px;
     margin-top:0;
-    color: #92b6c7;
+    color: #080C80;
 }
 
 /* link style */
 a
 {
     text-decoration: none;
-    color: #92b6c7;
-    font-weight: bold;
+    color: #080C80;
 
 }
 
@@ -159,11 +158,7 @@ a
     max-width: 500px;
 }
 
-form{
-    background: #F0F4FF;
-    padding: 20px;
-    margin-bottom:32px;
-}
+
 
 form input[type="text"], input[type="password"]{
     padding:8px 4px;

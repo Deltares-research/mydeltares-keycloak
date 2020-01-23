@@ -65,7 +65,7 @@ public class UserMailingsBean {
         }
 
         public String getDelivery(){
-            return userMailing == null ? mailing.getDeliveryTxt() : userMailing.getDeliveryTxt();
+            return userMailing == null ? mailing.getPreferredDeliveryTxt() : userMailing.getDeliveryTxt();
         }
 
         public String getFrequency(){
