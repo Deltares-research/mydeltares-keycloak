@@ -45,7 +45,8 @@ public class RegistrationEmail implements FormAction, FormActionFactory {
         String eventError = Errors.INVALID_REGISTRATION;
 
         String email = formData.getFirst(Validation.FIELD_EMAIL);
-        if (email.toLowerCase().endsWith("@deltares.nl")) {
+        String lowerEmail = email.toLowerCase();
+        if (lowerEmail.endsWith("@deltares.nl") || lowerEmail.endsWith("@deltares.org") || lowerEmail.endsWith("@deltares.com")) {
             context.getEvent().detail(Details.EMAIL, email);
             errors.add(new FormMessage(RegistrationPage.FIELD_EMAIL, Messages.DELTARES_EMAIL));
         }
