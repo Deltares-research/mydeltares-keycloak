@@ -1,3 +1,5 @@
+package scripting;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.*;
@@ -58,7 +60,7 @@ public class KeycloakUtilsImpl {
         return basePath + KEYCLOAK_USERS_PATH;
     }
 
-    public String getUserId(String email) {
+    public String getUserId(String email) throws IOException {
         URL url;
         try {
             url = new URL(getUsersPath() + "?email=" + email);
@@ -67,25 +69,48 @@ public class KeycloakUtilsImpl {
             return null;
         }
 
-        try {
-            HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-            urlConnection.setDoInput(true);
-            urlConnection.setDoOutput(false);
-            urlConnection.setRequestMethod("GET");
-            urlConnection.setRequestProperty("Authorization", "Bearer " + getAccessToken());
-            int responseCode = urlConnection.getResponseCode();
-            if (responseCode != 200) {
-                throw new IOException("Error " + responseCode + ": " + readAll(urlConnection.getErrorStream()));
+        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+        urlConnection.setDoInput(true);
+        urlConnection.setDoOutput(false);
+        urlConnection.setRequestMethod("GET");
+        urlConnection.setRequestProperty("Authorization", "Bearer " + getAccessToken());
+        int responseCode = urlConnection.getResponseCode();
+        if (responseCode > 299) {
+            InputStream errorStream = urlConnection.getErrorStream();
+            if (errorStream != null) {
+                throw new IOException(String.format("Error getUserId for %s: %s %s", email, responseCode, readAll(errorStream)));
+            } else {
+                throw new IOException(String.format("Error getUserId for %s: %s", email, responseCode));
             }
-            String jsonResponse = readAll(urlConnection.getInputStream());
-            ObjectMapper mapper = new ObjectMapper();
-            List<Map<String, Object>> map = mapper.readValue(jsonResponse, mapper.getTypeFactory().constructCollectionType(List.class, Map.class));
-
+        }
+        String jsonResponse = readAll(urlConnection.getInputStream());
+        ObjectMapper mapper = new ObjectMapper();
+        List<Map<String, Object>> map = mapper.readValue(jsonResponse, mapper.getTypeFactory().constructCollectionType(List.class, Map.class));
+        if (map.size() > 0) {
             return (String) map.get(0).get("id");
-        } catch (IOException e) {
-            System.out.println(String.format("Error getting user avatar for %s: %s", email, e.getMessage()));
         }
         return null;
+    }
+
+    public void deleteUser(String id) throws IOException {
+        URL url = new URL(getUsersPath() + "/" + id);
+
+        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+        urlConnection.setDoOutput(true);
+        urlConnection.setConnectTimeout(1000);
+        urlConnection.setReadTimeout(2000);
+        urlConnection.setRequestMethod("DELETE");
+        urlConnection.setRequestProperty("Authorization", "Bearer " + getAccessToken());
+        int responseCode = urlConnection.getResponseCode();
+        if (responseCode > 299) {
+            InputStream errorStream = urlConnection.getErrorStream();
+            if (errorStream != null) {
+                throw new IOException("Error " + responseCode + ": " + readAll(errorStream));
+            } else {
+                throw new IOException("Error " + responseCode + ": no message");
+            }
+        }
+
     }
 
     public byte[] getUserAvatar(String email) {

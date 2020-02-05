@@ -1,10 +1,12 @@
+package scripting;
+
 import java.io.*;
 import java.util.Properties;
 
-public class UploadAvatars {
+public class DeleteUsers {
 
     /**
-     * Uploads Avatar images to the keycloak accounts database. Expected input properties file:
+     * Deletes users based on their email address. Expected input properties file:
      *
      * keycloak properties example:
      *
@@ -12,8 +14,7 @@ public class UploadAvatars {
      * keycloak.baseapiurl=http://keycloak.local.nl:8080/auth/admin/realms/liferay-portal/
      * keycloak.clientid= client id
      * keycloak.clientsecret= client secret
-     * avatar.dir= directory containing image files
-     * avatar.ids= file containing mapping email address and image id
+     * emails= csv file with list of email addresses to delete
      *
      * @param args
      */
@@ -24,37 +25,34 @@ public class UploadAvatars {
         if (properties == null) return;
         KeycloakUtilsImpl keycloakUtils = new KeycloakUtilsImpl(properties);
 
-        File userPortraitsDir = new File(properties.getProperty("avatar.dir").trim());
-        if (!userPortraitsDir.exists()){
-            throw new RuntimeException("Portraits dir does not exist: " + userPortraitsDir.getAbsolutePath());
-        }
+        File emailsFile = new File(properties.getProperty("emails"));
+        File failedEmails = new File(emailsFile.getParent(), "failedEmails.csv");
 
-        File userPortraitIdsFile = new File(properties.getProperty("avatar.ids"));
-        File failedEmails = new File(userPortraitIdsFile.getParent(), "failedEmails.csv");
+        if (failedEmails.exists()) failedEmails.renameTo(new File(emailsFile.getParent(), System.currentTimeMillis() + '_' +emailsFile.getName()));
         try(BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(failedEmails)))) {
-            writeFailed(bw, "email", "portraitId"); // write header
-            try (BufferedReader reader = new BufferedReader(new FileReader(userPortraitIdsFile))) {
-                String line = reader.readLine(); //skip header
-                line = reader.readLine();
+            writeResults(bw, "email", "result", "message"); // write header
+            try (BufferedReader reader = new BufferedReader(new FileReader(emailsFile))) {
+                String line = reader.readLine();
                 while (line != null) {
-                    String[] values = line.split(";");
-                    String email = values[0];
-                    String portraitId = values[1];
-
+                    String email = line.trim();
                     String userId = null;
                     try {
                         userId = keycloakUtils.getUserId(email);
-                    } catch (Exception e) {
-                        System.out.println(e.getMessage());
-                    }
-                    if (userId == null) writeFailed(bw, email, portraitId);
-                    else {
-                        try {
-                            File portraitFile = getPortraitFile(userPortraitsDir, portraitId);
-                            keycloakUtils.uploadUserAvatar(userId, portraitFile);
-                        } catch (Exception e) {
-                            writeFailed(bw, email, portraitId);
+                        if (userId == null) {
+                            writeResults(bw, email, "missing");
                         }
+                    } catch (Exception e) {
+                        writeResults(bw, email, "error");
+                    }
+
+                    try {
+                        if (userId != null) {
+                            keycloakUtils.deleteUser(userId);
+                            writeResults(bw, email, "success");
+                        }
+                    } catch (IOException e) {
+                        System.out.println(e.getMessage());
+                        writeResults(bw, email, "error");
                     }
                     line = reader.readLine();
                 }
@@ -94,9 +92,14 @@ public class UploadAvatars {
         return null;
     }
 
-    private static void writeFailed(BufferedWriter bw, String email, String portraitId) throws IOException {
+    private static void writeResults(BufferedWriter bw, String... args) throws IOException {
 
-        bw.write(String.format("%s;%s", email, portraitId));
+        StringBuilder format = new StringBuilder();
+        for (int i = 0; i < args.length; i++) {
+            format.append("%s;");
+        }
+        bw.write(String.format(format.toString(), args));
         bw.newLine();
+        bw.flush();
     }
 }
