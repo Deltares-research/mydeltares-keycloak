@@ -244,7 +244,7 @@ public class MailingAdminResource {
                 .getResultList();
     }
 
-    static List<Mailing> getMailingsByRealm(KeycloakSession session, String realmId) {
+    public static List<Mailing> getMailingsByRealm(KeycloakSession session, String realmId) {
         return getEntityManager(session).createNamedQuery("getAllMailingsByRealm", Mailing.class)
                 .setParameter("realmId", realmId)
                 .getResultList();

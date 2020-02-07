@@ -156,14 +156,14 @@ public class UserMailingResource {
         return Response.noContent().build();
     }
 
-    private static List<UserMailing> getUserMailings(KeycloakSession session, String realmId, String userId) {
+    public static List<UserMailing> getUserMailings(KeycloakSession session, String realmId, String userId) {
         return getEntityManager(session).createNamedQuery("findUserMailingByUserAndRealm", UserMailing.class)
                 .setParameter("realmId", realmId)
                 .setParameter("userId", userId)
                 .getResultList();
     }
 
-    private static UserMailing getUserMailing(KeycloakSession session, String realmId, String userId, String mailingId) {
+    public static UserMailing getUserMailing(KeycloakSession session, String realmId, String userId, String mailingId) {
         List<UserMailing> resultList = getEntityManager(session).createNamedQuery("getUserMailing", UserMailing.class)
                 .setParameter("realmId", realmId)
                 .setParameter("userId", userId)

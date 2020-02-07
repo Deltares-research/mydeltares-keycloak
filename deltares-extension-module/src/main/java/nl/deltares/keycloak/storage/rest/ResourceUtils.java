@@ -28,7 +28,7 @@ import java.io.*;
 import java.net.URLDecoder;
 import java.util.Properties;
 
-class ResourceUtils {
+public class ResourceUtils {
 
     private static final Logger logger = Logger.getLogger(ResourceUtils.class);
 
@@ -103,7 +103,7 @@ class ResourceUtils {
         return realmManager.getRealm(split[1]);
     }
 
-    static EntityManager getEntityManager(KeycloakSession session) {
+    public static EntityManager getEntityManager(KeycloakSession session) {
         return session.getProvider(JpaConnectionProvider.class).getEntityManager();
     }
 
