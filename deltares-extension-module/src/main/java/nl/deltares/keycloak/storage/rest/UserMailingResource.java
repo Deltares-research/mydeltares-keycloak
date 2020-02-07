@@ -162,18 +162,29 @@ public class UserMailingResource {
     }
 
     public static List<UserMailing> getUserMailings(KeycloakSession session, String realmId, String userId) {
-        return getEntityManager(session).createNamedQuery("findUserMailingByUserAndRealm", UserMailing.class)
-                .setParameter("realmId", realmId)
-                .setParameter("userId", userId)
-                .getResultList();
+        try {
+            return getEntityManager(session).createNamedQuery("findUserMailingByUserAndRealm", UserMailing.class)
+                    .setParameter("realmId", realmId)
+                    .setParameter("userId", userId)
+                    .getResultList();
+        } catch (Exception e) {
+            logger.warn(String.format("Failed to retrieve user-mailings userId=%s realmId=%s", userId, realmId));
+            return null;
+        }
     }
 
     public static UserMailing getUserMailing(KeycloakSession session, String realmId, String userId, String mailingId) {
-        List<UserMailing> resultList = getEntityManager(session).createNamedQuery("getUserMailing", UserMailing.class)
-                .setParameter("realmId", realmId)
-                .setParameter("userId", userId)
-                .setParameter("mailingId", mailingId)
-                .getResultList();
+        List<UserMailing> resultList;
+        try {
+            resultList = getEntityManager(session).createNamedQuery("getUserMailing", UserMailing.class)
+                    .setParameter("realmId", realmId)
+                    .setParameter("userId", userId)
+                    .setParameter("mailingId", mailingId)
+                    .getResultList();
+        } catch (Exception e) {
+            logger.warn(String.format("Failed to retrieve user-mailing mailingId=%s userId=%s realmId=%s", mailingId, userId, realmId));
+            return null;
+        }
         return resultList.isEmpty() ? null : resultList.get(0);
     }
 

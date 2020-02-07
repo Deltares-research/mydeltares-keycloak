@@ -395,15 +395,16 @@ public class KeycloakUtilsImpl {
                     BufferedReader httpResponseReader =
                             new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
                     String lineRead;
+                    batchCount += lineCount;
                     while ((lineRead = httpResponseReader.readLine()) != null) {
                         System.out.println(lineRead);
+                        System.out.println("Line count=" + batchCount);
                     }
-
                     // Close the streams
                     outputStream.close();
                     httpRequestBodyWriter.close();
                     urlConnection = null;
-                    batchCount += lineCount;
+
                     System.out.println("Finish writing " + batchCount);
                 }
 
