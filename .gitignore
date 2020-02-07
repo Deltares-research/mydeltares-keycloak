@@ -208,3 +208,5 @@ buildNumber.properties
 # End of https://www.gitignore.io/api/java,maven,eclipse,intellij+all,visualstudiocode
 /deltares-extension-module/src/test/resources/data-uploadavatars/donotupload-keycloak.properties
 /deltares-extension-module/src/test/resources/script-data/donotupload-keycloak.properties
+/deltares-extension-module/src/test/resources/script-data/data/usermailings/
+/deltares-extension-module/src/test/resources/script-data/export/

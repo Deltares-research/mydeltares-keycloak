@@ -25,7 +25,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import static nl.deltares.keycloak.storage.rest.ResourceUtils.*;
+import static nl.deltares.keycloak.storage.rest.ResourceUtils.getAuthResult;
+import static nl.deltares.keycloak.storage.rest.ResourceUtils.getEntityManager;
 
 public class UserMailingResource {
 
@@ -50,6 +51,13 @@ public class UserMailingResource {
     private List<MailingRepresentation> cachedMailings;
     private List<UserMailingRepresentation> cachedUserMailings;
 
+    @Path("/admin")
+    public UserMailingAdminResource admin() {
+        UserMailingAdminResource service = new UserMailingAdminResource(session);
+        ResteasyProviderFactory.getInstance().injectProperties(service);
+        service.init();
+        return service;
+    }
 
     @Path("/mailings-page")
     @GET
@@ -105,18 +113,15 @@ public class UserMailingResource {
             return ErrorResponse.exists(String.format("User mailing already exists for user %s and mailing %s", user.getId(), rep.getMailingId()));
         }
 
-        UserMailing userMailing = new UserMailing();
-        userMailing.setRealmId(realm.getId());
-        userMailing.setId(KeycloakModelUtils.generateId());
-        userMailing.setUserId(user.getId());
-        userMailing.setDelivery(rep.getDelivery());
-        userMailing.setLanguage(rep.getLanguage());
-        userMailing.setMailingId(rep.getMailingId());
-        logger.info("Adding user mailing : " + userMailing.getId());
-        getEntityManager(session).persist(userMailing);
+        rep.setUserId(user.getId());
+        rep.setRealmId(realm.getId());
+        rep.setId(KeycloakModelUtils.generateId());
+        logger.info("Adding user mailing : " + rep.getId());
+        insertUserMailing(session, rep);
 
         return Response.ok().status(Response.Status.CREATED).build();
     }
+
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
@@ -291,7 +296,23 @@ public class UserMailingResource {
         return Response.temporaryRedirect(uriBuilder.build()).build();
     }
 
-    Response badRequest() {
+    private Response badRequest() {
         return Response.seeOther(RealmsResource.accountUrl(session.getContext().getUri().getBaseUriBuilder()).build()).status(Response.Status.BAD_REQUEST).build();
+    }
+
+    static void insertUserMailing(KeycloakSession session, UserMailingRepresentation rep) {
+        UserMailing userMailing = new UserMailing();
+        userMailing.setRealmId(rep.getRealmId());
+        userMailing.setId(rep.getId());
+        userMailing.setUserId(rep.getUserId());
+        userMailing.setDelivery(rep.getDelivery());
+        if (rep.getLanguage() != null) userMailing.setLanguage(rep.getLanguage());
+        userMailing.setMailingId(rep.getMailingId());
+
+        try {
+            getEntityManager(session).persist(userMailing);
+        } catch (Exception e){
+            logger.warn(String.format("Failed to insert user-mailing mailingId=%s userId=%s", userMailing.getMailingId(), userMailing.getUserId()));
+        }
     }
 }
