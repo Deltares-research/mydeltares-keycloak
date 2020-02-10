@@ -75,7 +75,7 @@ module.controller('MailingListCtrl', function($scope, realm, Mailing, MailingSea
     };
 
     $scope.exportUserMailings = function(mailing) {
-        var exportUrl = authUrl + '/realms/' + realm.realm + '/mailing-provider/admin/export/usermailings/' + mailing.id;
+        var exportUrl = authUrl + '/realms/' + realm.realm + '/user-mailings/admin/export/' + mailing.id;
         var fileName = mailing.name + '-export.csv';
         $http.get(exportUrl)
             .then(function(response) {

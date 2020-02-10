@@ -1,18 +1,24 @@
 package nl.deltares.keycloak.storage.rest;
 
+import nl.deltares.keycloak.storage.jpa.Mailing;
 import nl.deltares.keycloak.storage.jpa.UserMailing;
+import nl.deltares.keycloak.storage.rest.model.ExportUserMailings;
+import nl.deltares.keycloak.storage.rest.serializers.ExportCsvSerializer;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
+import javax.persistence.TypedQuery;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -24,12 +30,18 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
-import static nl.deltares.keycloak.storage.rest.ResourceUtils.getAuth;
+import static nl.deltares.keycloak.storage.rest.MailingAdminResource.getMailingById;
+import static nl.deltares.keycloak.storage.rest.ResourceUtils.*;
 import static nl.deltares.keycloak.storage.rest.UserMailingResource.getUserMailing;
 import static nl.deltares.keycloak.storage.rest.UserMailingResource.insertUserMailing;
 
 public class UserMailingAdminResource {
+
+    private static String CSV_SEPARATOR = ";";
+    private static int MAX_RESULTS = 100;
+
     private static final String DATA_PARAMETER = "data";
 
     private static final Logger logger = Logger.getLogger(UserMailingAdminResource.class);
@@ -47,9 +59,15 @@ public class UserMailingAdminResource {
     //Realm from request path
     private RealmModel callerRealm;
 
-     UserMailingAdminResource(KeycloakSession session) {
+     UserMailingAdminResource(KeycloakSession session, Properties properties) {
         this.session = session;
-    }
+
+         if (properties != null){
+             MAX_RESULTS = Integer.parseInt(properties.getOrDefault("max_query_results", 100).toString());
+             CSV_SEPARATOR = (String) properties.getOrDefault("csv_separator", ";");
+         }
+
+     }
 
     public void init() {
         RealmModel realm = session.getContext().getRealm();
@@ -60,6 +78,39 @@ public class UserMailingAdminResource {
         session.getContext().setRealm(realm);
 
         callerRealm = ResourceUtils.getRealmFromPath(session);
+    }
+
+    @GET
+    @NoCache
+    @Path("/export/{mailing_id}")
+    @Produces("text/csv")
+    public Response downloadUserMailings(final @PathParam("mailing_id") String mailingId) {
+
+        realmAuth.users().requireQuery();
+        String realmId = callerRealm.getId();
+        UserProvider userProvider = session.userStorageManager();
+        ExportCsvSerializer serializer = new ExportCsvSerializer();
+
+        Mailing mailing = getMailingById(session, realmId, mailingId);
+        if (mailing == null){
+            return Response.status(Response.Status.NO_CONTENT).entity("no mailing for id: " + mailingId).build();
+        }
+        TypedQuery<UserMailing> query = getEntityManager(session).createNamedQuery("allUserMailingsByMailingAndRealm", UserMailing.class);
+        query.setParameter("realmId", realmId);
+        query.setParameter("mailingId", mailingId);
+
+        ExportUserMailings content = new ExportUserMailings(userProvider, callerRealm, query, mailing);
+        content.setMaxResults(MAX_RESULTS);
+        content.setSeparator(CSV_SEPARATOR);
+        try {
+            return Response.
+                    ok(getStreamingOutput(content, serializer)).
+                    type("text/csv").
+                    build();
+        } catch (Exception e){
+            return  Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
+        }
+
     }
 
     @POST

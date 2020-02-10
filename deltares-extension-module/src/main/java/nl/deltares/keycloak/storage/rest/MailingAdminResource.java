@@ -1,16 +1,12 @@
 package nl.deltares.keycloak.storage.rest;
 
 import nl.deltares.keycloak.storage.jpa.Mailing;
-import nl.deltares.keycloak.storage.jpa.UserMailing;
-import nl.deltares.keycloak.storage.rest.model.ExportUserMailings;
-import nl.deltares.keycloak.storage.rest.serializers.ExportCsvSerializer;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.Auth;
@@ -18,7 +14,6 @@ import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
-import javax.persistence.TypedQuery;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -27,15 +22,13 @@ import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
-import static nl.deltares.keycloak.storage.rest.ResourceUtils.*;
+import static nl.deltares.keycloak.storage.rest.ResourceUtils.getAuth;
+import static nl.deltares.keycloak.storage.rest.ResourceUtils.getEntityManager;
 
 public class MailingAdminResource {
     private static final Logger logger = Logger.getLogger(MailingAdminResource.class);
     private static final String SEARCH_ID_PARAMETER = "id:";
-    private static String CSV_SEPARATOR = ";";
-    private static int MAX_RESULTS = 100;
     private final KeycloakSession session;
     private AdminPermissionEvaluator realmAuth;
 
@@ -48,14 +41,8 @@ public class MailingAdminResource {
     private AdminAuth adminAuth;
     private RealmModel callerRealm;
 
-    MailingAdminResource(KeycloakSession session, Properties properties) {
+    MailingAdminResource(KeycloakSession session) {
         this.session = session;
-
-        if (properties != null){
-            MAX_RESULTS = Integer.parseInt(properties.getOrDefault("max_query_results", 100).toString());
-            CSV_SEPARATOR = (String) properties.getOrDefault("csv_separator", ";");
-        }
-
     }
 
     public void init() {
@@ -177,39 +164,6 @@ public class MailingAdminResource {
         return reps;
     }
 
-    @GET
-    @NoCache
-    @Path("/export/usermailings/{id}")
-    @Produces("text/csv")
-    public Response downloadUserMailings(final @PathParam("id") String id) {
-
-        realmAuth.users().requireQuery();
-        String realmId = callerRealm.getId();
-        UserProvider userProvider = session.userStorageManager();
-        ExportCsvSerializer serializer = new ExportCsvSerializer();
-
-        Mailing mailing = getMailingById(session, realmId, id);
-        if (mailing == null){
-            return Response.status(Response.Status.NO_CONTENT).entity("no mailing for id: " + id).build();
-        }
-        TypedQuery<UserMailing> query = getEntityManager(session).createNamedQuery("allUserMailingsByMailingAndRealm", UserMailing.class);
-        query.setParameter("realmId", realmId);
-        query.setParameter("mailingId", id);
-
-        ExportUserMailings content = new ExportUserMailings(userProvider, callerRealm, query, mailing);
-        content.setMaxResults(MAX_RESULTS);
-        content.setSeparator(CSV_SEPARATOR);
-        try {
-            return Response.
-                    ok(getStreamingOutput(content, serializer)).
-                    type("text/csv").
-                    build();
-        } catch (Exception e){
-            return  Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
-        }
-
-    }
-
     private void setMailingValues(MailingRepresentation rep, Mailing mailing) {
         mailing.setName(rep.getName());
         mailing.setDescription(rep.getDescription());
@@ -219,7 +173,7 @@ public class MailingAdminResource {
         mailing.setCreatedTimestamp(System.currentTimeMillis());
     }
 
-    static Mailing getMailingById(KeycloakSession session, String realmId, String id) {
+    protected static Mailing getMailingById(KeycloakSession session, String realmId, String id) {
         List<Mailing> resultList = getEntityManager(session).createNamedQuery("findMailingByIdAndRealm", Mailing.class)
                 .setParameter("id", id)
                 .setParameter("realmId", realmId)
