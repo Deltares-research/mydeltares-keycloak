@@ -166,7 +166,7 @@ public class ResourceUtils {
                 try {
                     textSerializer.serialize(content, writer);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    logger.warn("Error serializing csv content: %s", e);
                 }
                 writer.flush();
             };
