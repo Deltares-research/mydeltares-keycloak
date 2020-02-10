@@ -26,11 +26,25 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.*;
 import java.net.URLDecoder;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 
 public class ResourceUtils {
 
     private static final Logger logger = Logger.getLogger(ResourceUtils.class);
+
+    protected static List<String> frequencies;
+    protected static List<String> deliveries;
+
+    static {
+        frequencies = Arrays.asList("weekly", "monthly", "quarterly", "annually", "varying");
+        deliveries = Arrays.asList("e-mail", "post", "both");
+    }
+
+    public static int getPreferredMailingDelivery() {return 0;}
+
+    public static String getPreferredMailingDeliveryText() {return "e-mail";}
 
     private static AuthenticationManager.AuthResult resolveAuthentication(KeycloakSession keycloakSession) {
         AppAuthManager appAuthManager = new AppAuthManager();

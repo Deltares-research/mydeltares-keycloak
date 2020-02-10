@@ -61,11 +61,11 @@ public class UserMailingRepresentation {
     }
 
     public String getDeliveryTxt() {
-        return MailingRepresentation.deliveries.get(delivery);
+        return ResourceUtils.deliveries.get(delivery);
     }
 
     public void setDeliveryTxt(String deliveryTxt) {
-        int delivery = MailingRepresentation.deliveries.indexOf(deliveryTxt);
+        int delivery = ResourceUtils.deliveries.indexOf(deliveryTxt);
         this.delivery = delivery == -1 ? 0 : delivery;
     }
 }

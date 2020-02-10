@@ -3,7 +3,6 @@ package nl.deltares.keycloak.storage.rest;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -19,13 +18,6 @@ public class MailingRepresentation {
     protected int delivery = 0;
     protected Long createdTimestamp;
     private Map<String, Boolean> access;
-    protected static List<String> frequencies;
-    protected static List<String> deliveries;
-
-    static {
-        frequencies = Arrays.asList("weekly", "monthly", "quarterly", "annually", "varying");
-        deliveries = Arrays.asList("e-mail", "post", "both");
-    }
 
     public String getId() {
         return id;
@@ -72,11 +64,11 @@ public class MailingRepresentation {
     }
 
     public String getFrequencyTxt() {
-        return frequencies.get(frequency);
+        return ResourceUtils.frequencies.get(frequency);
     }
 
     public void setFrequencyTxt(String frequencies) {
-        int frequency = this.frequencies.indexOf(frequencies);
+        int frequency = ResourceUtils.frequencies.indexOf(frequencies);
         this.frequency = frequency == -1 ? 4 : frequency;
     }
 
@@ -89,14 +81,14 @@ public class MailingRepresentation {
     }
 
     public String getDeliveryTxt() {
-        return deliveries.get(delivery);
+        return ResourceUtils.deliveries.get(delivery);
     }
 
     public String getPreferredDeliveryTxt(){
-        return "e-mail";
+        return ResourceUtils.frequencies.get(ResourceUtils.getPreferredMailingDelivery());
     }
     public void setDeliveryTxt(String deliveryTxt) {
-        int delivery = this.deliveries.indexOf(deliveryTxt);
+        int delivery = ResourceUtils.deliveries.indexOf(deliveryTxt);
         this.delivery = delivery == -1 ? 0 : delivery;
     }
     public void setDelivery(int delivery) {
@@ -120,11 +112,11 @@ public class MailingRepresentation {
     }
 
     public List<String> getSupportedFrequencies() {
-        return new ArrayList<>(frequencies);
+        return new ArrayList<>(ResourceUtils.frequencies);
     }
 
     public List<String> getSupportedDeliveries() {
-        return new ArrayList<>(deliveries);
+        return new ArrayList<>(ResourceUtils.deliveries);
     }
 
 }

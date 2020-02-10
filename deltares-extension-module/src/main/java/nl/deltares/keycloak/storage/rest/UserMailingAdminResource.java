@@ -104,6 +104,7 @@ public class UserMailingAdminResource {
                     rep.setUserId(userId);
                     rep.setRealmId(realmId);
                     rep.setMailingId(mailingId);
+                    rep.setDelivery(ResourceUtils.getPreferredMailingDelivery());
                     rep.setId(KeycloakModelUtils.generateId());
                     insertUserMailing(session, rep);
                 } //skip existing
