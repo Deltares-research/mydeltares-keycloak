@@ -14,7 +14,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 import static nl.deltares.keycloak.storage.rest.MailingAdminResource.*;
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.getAuthResult;
@@ -22,7 +21,6 @@ import static nl.deltares.keycloak.storage.rest.ResourceUtils.getAuthResult;
 public class MailingResource {
     private static final String SEARCH_ID_PARAMETER = "id:";
     private final KeycloakSession session;
-    private final Properties properties;
 
     private AuthenticationManager.AuthResult authResult;
 
@@ -32,9 +30,8 @@ public class MailingResource {
     @Context
     private ClientConnection clientConnection;
 
-    MailingResource(KeycloakSession session, Properties properties) {
+    MailingResource(KeycloakSession session) {
         this.session = session;
-        this.properties = properties;
     }
 
     public void init() {
@@ -44,7 +41,7 @@ public class MailingResource {
 
     @Path("/admin")
     public MailingAdminResource admin() {
-        MailingAdminResource service = new MailingAdminResource(session, properties);
+        MailingAdminResource service = new MailingAdminResource(session);
         ResteasyProviderFactory.getInstance().injectProperties(service);
         service.init();
         return service;

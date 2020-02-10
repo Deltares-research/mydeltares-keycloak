@@ -12,17 +12,14 @@ import static org.keycloak.Config.Scope;
 
 public class MailingResourceProviderFactory implements RealmResourceProviderFactory {
 
-    private Properties properties = new Properties();
 
     @Override
     public RealmResourceProvider create(KeycloakSession keycloakSession) {
-        return new MailingResourceProvider(keycloakSession, properties);
+        return new MailingResourceProvider(keycloakSession);
     }
 
     @Override
-    public void init(Scope scope) {
-        properties = getResourceProperties("deltares-extention.properties");
-    }
+    public void init(Scope scope) {}
 
     @Override
     public void postInit(KeycloakSessionFactory keycloakSessionFactory) {

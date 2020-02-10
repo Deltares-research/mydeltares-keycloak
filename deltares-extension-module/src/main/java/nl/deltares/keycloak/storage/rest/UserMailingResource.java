@@ -24,6 +24,7 @@ import javax.ws.rs.core.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Properties;
 
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.getAuthResult;
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.getEntityManager;
@@ -38,6 +39,7 @@ public class UserMailingResource {
     private AccountProvider account;
     private String stateChecker;
     private RealmModel realm;
+    private final Properties properties;
 
     @Context
     private HttpHeaders httpHeaders;
@@ -53,7 +55,7 @@ public class UserMailingResource {
 
     @Path("/admin")
     public UserMailingAdminResource admin() {
-        UserMailingAdminResource service = new UserMailingAdminResource(session);
+        UserMailingAdminResource service = new UserMailingAdminResource(session, properties);
         ResteasyProviderFactory.getInstance().injectProperties(service);
         service.init();
         return service;
@@ -225,10 +227,11 @@ public class UserMailingResource {
         return cachedMailings;
     }
 
-    UserMailingResource(KeycloakSession session) {
+    UserMailingResource(KeycloakSession session, Properties properties) {
         this.session = session;
         this.authManager = new AppAuthManager();
         ResteasyProviderFactory.getInstance().injectProperties(this);
+        this.properties = properties;
     }
 
     void init(){
