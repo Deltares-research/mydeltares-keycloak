@@ -22,7 +22,6 @@ module.controller('MailingListCtrl', function($scope, realm, Mailing, MailingSea
         MailingSearchState.query.realm = realm.realm;
         $scope.query = MailingSearchState.query;
         $scope.query.briefRepresentation = 'true';
-
         if (!MailingSearchState.isFirstSearch) $scope.searchQuery();
     };
 
@@ -79,8 +78,7 @@ module.controller('MailingListCtrl', function($scope, realm, Mailing, MailingSea
         var fileName = mailing.name + '-export.csv';
         $http.get(exportUrl)
             .then(function(response) {
-                var download = response.data;
-                saveAs(new Blob([download], { type: 'text/csv' }), fileName);
+                saveAs(new Blob([response.data], { type: 'application/octet-stream' }), fileName);
             }).catch(function(err) {
             Notifications.error("Sorry, something went wrong: "  + err);
         });

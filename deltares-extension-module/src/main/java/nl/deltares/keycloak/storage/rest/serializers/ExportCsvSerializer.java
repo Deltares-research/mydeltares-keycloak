@@ -16,8 +16,10 @@ public class ExportCsvSerializer implements TextSerializer<ExportCsvContent> {
         }
         while (content.hasNextLine()){
             String line = content.nextLine();
-            writer.append(line);
-            writer.newLine();
+            if (line != null) {
+                writer.append(line);
+                writer.newLine();
+            }
         }
     }
 

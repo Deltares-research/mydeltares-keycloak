@@ -1,7 +1,7 @@
 package nl.deltares.keycloak.storage.rest.model;
 
-import nl.deltares.keycloak.storage.jpa.Mailing;
 import nl.deltares.keycloak.storage.jpa.UserMailing;
+import org.jboss.logging.Logger;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
@@ -11,28 +11,26 @@ import java.util.List;
 
 public class ExportUserMailings implements ExportCsvContent {
 
-    private final String[] headers = new String[]{"mailing", "firstName", "lastName", "email", "salutation", "organization", "country"};
+    private static final Logger logger = Logger.getLogger(ExportUserMailings.class);
+    private final String[] headers = new String[]{"firstName", "lastName", "email", "salutation", "organization", "country"};
     private final String[] values;
-    private final Mailing mailing;
     private final UserProvider userProvider;
     private final RealmModel realm;
     private final TypedQuery<UserMailing> query;
 
-    private String emptyLine = null;
     private String separator = ";";
     private int totalCount = 0;
     private int rsCount = 0;
+    private int consecutiveErrorsCount = 0;
     private List<UserMailing> userMailings = null;
 
-    public ExportUserMailings(UserProvider userProvider, RealmModel realmModel, TypedQuery<UserMailing> query, Mailing mailing) {
+    public ExportUserMailings(UserProvider userProvider, RealmModel realmModel, TypedQuery<UserMailing> query) {
         this.userProvider = userProvider;
         this.realm = realmModel;
         this.query = query;
         this.query.setMaxResults(100);
         this.query.setFirstResult(0);
-        this.mailing = mailing;
         values = new String[headers.length];
-        values[0] = mailing.getName();
     }
 
     public void setMaxResults(int maxResults) {
@@ -66,6 +64,7 @@ public class ExportUserMailings implements ExportCsvContent {
         if (rsCount < userMailings.size()) return true;
 
         //Reached end of list get more elements
+        if (logger.isDebugEnabled()) logger.debug(String.format("Downloading mailings: start index=%d", totalCount));
         query.setFirstResult(totalCount);
         rsCount = 0;
         userMailings = query.getResultList();
@@ -80,29 +79,36 @@ public class ExportUserMailings implements ExportCsvContent {
         totalCount++;
         UserMailing userMailing = userMailings.get(curr);
 
-        UserModel user = userProvider.getUserById(userMailing.getUserId(), realm);
-        if (user == null) return emptyLine();
+        UserModel user;
+        try {
+            user = userProvider.getUserById(userMailing.getUserId(), realm);
+            if (user == null) {
+                return null;
+            }
+        } catch (Exception e){
+            consecutiveErrorsCount++;
+            if (consecutiveErrorsCount > 100){
+                throw e; //if there is a real problem then do not continue.
+            }
+            logger.warn(String.format("Error getUserById for id %s: %s", userMailing.getUserId(), e.getMessage()));
+            return null;
+        }
+        consecutiveErrorsCount=0;
 
-        values[1] = user.getFirstName();
-        values[2] = user.getLastName();
-        values[3] = user.getEmail();
+        values[0] = user.getFirstName();
+        values[1] = user.getLastName();
+        values[2] = user.getEmail();
 
         List<String> salutation = user.getAttribute("academicTitle");
-        values[4] = salutation.size() > 0 ? salutation.get(0) : "";
+        values[3] = salutation.size() > 0 ? salutation.get(0) : "";
 
         List<String> organization = user.getAttribute("org_name");
-        values[5] = organization.size() > 0 ? organization.get(0) : "";
+        values[4] = organization.size() > 0 ? organization.get(0) : "";
 
         List<String> country = user.getAttribute("org_country");
-        values[6] = country.size() > 0 ? country.get(0) : "";
+        values[5] = country.size() > 0 ? country.get(0) : "";
 
         return String.join(separator, values);
     }
 
-    private String emptyLine() {
-        if (emptyLine == null){
-            emptyLine = String.join(separator, new String[]{mailing.getName(), "", "", "", "", "", ""});
-        }
-        return emptyLine;
-    }
 }

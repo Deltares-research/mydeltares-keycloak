@@ -83,7 +83,7 @@ public class UserMailingAdminResource {
     @GET
     @NoCache
     @Path("/export/{mailing_id}")
-    @Produces("text/csv")
+    @Produces("text/plain")
     public Response downloadUserMailings(final @PathParam("mailing_id") String mailingId) {
 
         realmAuth.users().requireQuery();
@@ -99,7 +99,8 @@ public class UserMailingAdminResource {
         query.setParameter("realmId", realmId);
         query.setParameter("mailingId", mailingId);
 
-        ExportUserMailings content = new ExportUserMailings(userProvider, callerRealm, query, mailing);
+        logger.info("Start downloading user mailings for " + mailing.getName());
+        ExportUserMailings content = new ExportUserMailings(userProvider, callerRealm, query);
         content.setMaxResults(MAX_RESULTS);
         content.setSeparator(CSV_SEPARATOR);
         try {
