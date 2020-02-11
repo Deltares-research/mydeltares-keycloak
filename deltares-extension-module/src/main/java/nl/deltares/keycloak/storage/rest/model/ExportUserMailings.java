@@ -17,6 +17,7 @@ public class ExportUserMailings implements ExportCsvContent {
     private final UserProvider userProvider;
     private final RealmModel realm;
     private final TypedQuery<UserMailing> query;
+    private final String mailingName;
 
     private String separator = ";";
     private int totalCount = 0;
@@ -24,12 +25,13 @@ public class ExportUserMailings implements ExportCsvContent {
     private int consecutiveErrorsCount = 0;
     private List<UserMailing> userMailings = null;
 
-    public ExportUserMailings(UserProvider userProvider, RealmModel realmModel, TypedQuery<UserMailing> query) {
+    public ExportUserMailings(UserProvider userProvider, RealmModel realmModel, TypedQuery<UserMailing> query, String name) {
         this.userProvider = userProvider;
         this.realm = realmModel;
         this.query = query;
         this.query.setMaxResults(100);
         this.query.setFirstResult(0);
+        this.mailingName = name;
         values = new String[headers.length];
     }
 
@@ -58,17 +60,22 @@ public class ExportUserMailings implements ExportCsvContent {
 
         //Not initialized yet
         if (userMailings == null){
+            logger.info("Start downloading user mailings for " + mailingName);
             userMailings = query.getResultList();
         }
         //Check if all list items have been processed
         if (rsCount < userMailings.size()) return true;
 
         //Reached end of list get more elements
-        if (logger.isDebugEnabled()) logger.debug(String.format("Downloading mailings: start index=%d", totalCount));
+        logger.info(String.format("%d user mailings downloaded", totalCount));
         query.setFirstResult(totalCount);
         rsCount = 0;
         userMailings = query.getResultList();
-        return userMailings.size() > 0;
+        boolean hasNext = userMailings.size() > 0;
+        if (!hasNext){
+            logger.info(String.format("Finished downloading %d user mailings for %s", totalCount, mailingName));
+        }
+        return hasNext;
     }
 
     @Override

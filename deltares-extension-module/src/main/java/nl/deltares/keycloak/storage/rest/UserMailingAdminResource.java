@@ -99,8 +99,7 @@ public class UserMailingAdminResource {
         query.setParameter("realmId", realmId);
         query.setParameter("mailingId", mailingId);
 
-        logger.info("Start downloading user mailings for " + mailing.getName());
-        ExportUserMailings content = new ExportUserMailings(userProvider, callerRealm, query);
+        ExportUserMailings content = new ExportUserMailings(userProvider, callerRealm, query, mailing.getName());
         content.setMaxResults(MAX_RESULTS);
         content.setSeparator(CSV_SEPARATOR);
         try {
