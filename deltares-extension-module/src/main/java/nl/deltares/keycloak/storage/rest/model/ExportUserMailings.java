@@ -24,6 +24,7 @@ public class ExportUserMailings implements ExportCsvContent {
     private int rsCount = 0;
     private int consecutiveErrorsCount = 0;
     private List<UserMailing> userMailings = null;
+    private List<UserModel> allUsers = null;
 
     public ExportUserMailings(UserProvider userProvider, RealmModel realmModel, TypedQuery<UserMailing> query, String name) {
         this.userProvider = userProvider;
@@ -62,6 +63,9 @@ public class ExportUserMailings implements ExportCsvContent {
         if (userMailings == null){
             logger.info("Start downloading user mailings for " + mailingName);
             userMailings = query.getResultList();
+            if (userMailings.size() > 0){
+                allUsers = userProvider.getUsers(realm, false);
+            }
         }
         //Check if all list items have been processed
         if (rsCount < userMailings.size()) return true;
@@ -86,9 +90,16 @@ public class ExportUserMailings implements ExportCsvContent {
         totalCount++;
         UserMailing userMailing = userMailings.get(curr);
 
-        UserModel user;
+        UserModel user = null;
         try {
-            user = userProvider.getUserById(userMailing.getUserId(), realm);
+            for (UserModel userModel : allUsers) {
+                if (userModel.getId().equals(userMailing.getId())) {
+                    user = userModel;
+                    break;
+                }
+            }
+
+//            user[0] = userProvider.getUserById(userMailing.getUserId(), realm);
             if (user == null) {
                 return null;
             }
