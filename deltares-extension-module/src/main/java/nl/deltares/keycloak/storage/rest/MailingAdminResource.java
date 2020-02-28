@@ -83,13 +83,13 @@ public class MailingAdminResource {
         // Double-check duplicated name
         Mailing mailing = getMailingById(session, realmId, rep.getId());
         if (mailing == null) {
-            return ErrorResponse.exists("Mailing does not exist with id " + rep.getId());
+            return Response.notModified().build();
         }
         setMailingValues(rep, mailing);
 
         logger.info("Updating mailing : " + rep.getName());
         getEntityManager(session).persist(mailing);
-        return Response.noContent().build();
+        return Response.ok().build();
     }
 
     @DELETE
@@ -101,12 +101,12 @@ public class MailingAdminResource {
         // Double-check duplicated name
         Mailing mailing = getMailingById(session, realmId, mailingId);
         if (mailing == null) {
-            return ErrorResponse.exists("Mailing does not exist with id " + mailingId);
+            return Response.notModified().build();
         }
 
         logger.info("Delete mailing : " + mailingId);
         getEntityManager(session).remove(mailing);
-        return Response.noContent().build();
+        return Response.ok().build();
     }
 
     /**
@@ -116,24 +116,24 @@ public class MailingAdminResource {
     @NoCache
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public MailingRepresentation getMailing(final @PathParam("id") String id) {
+    public Response getMailing(final @PathParam("id") String id) {
         realmAuth.users().requireQuery();
         String realmId = callerRealm.getId();
         Mailing mailing = getMailingById(session, realmId, id);
         if (mailing == null) {
-            throw new NotFoundException("Mailing not found for id " + id);
+            return Response.noContent().build();
         }
         UserModel user = adminAuth.getUser();
         MailingRepresentation mailingRepresentation = toRepresentation(mailing, realmAuth.users().getAccess(user));
         mailingRepresentation.setAccess(realmAuth.users().getAccess(user));
 
-        return mailingRepresentation;
+        return Response.ok(mailingRepresentation).build();
     }
 
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public List<MailingRepresentation> getMailings(@QueryParam("search") String search, @QueryParam("name") String name) {
+    public Response getMailings(@QueryParam("search") String search, @QueryParam("name") String name) {
         realmAuth.users().requireQuery();
         String realmId = callerRealm.getId();
         List<MailingRepresentation> reps = new ArrayList<>();
@@ -150,18 +150,21 @@ public class MailingAdminResource {
 
                 resultList.forEach(mailing -> reps.add(toRepresentation(mailing, access)));
             }
-            return reps;
-        }
-
-        if (name != null) {
+        } else if (name != null) {
             Mailing mailing = getMailingByName(session, realmId, name);
-            if (mailing == null) throw new NotFoundException("Mailing not found for name " + name);
-            reps.add(toRepresentation(mailing, access));
+            if (mailing != null) {
+                reps.add(toRepresentation(mailing, access));
+            }
+
         } else {
             List<Mailing> resultList = getMailingsByRealm(session, realmId);
             resultList.forEach(mailing -> reps.add(toRepresentation(mailing, access)));
         }
-        return reps;
+        if (reps.size() == 0) {
+            return Response.noContent().build();
+        } else {
+            return Response.ok(reps).build();
+        }
     }
 
     private void setMailingValues(MailingRepresentation rep, Mailing mailing) {
@@ -194,7 +197,7 @@ public class MailingAdminResource {
     static List<Mailing> searchForMailings(KeycloakSession session, String realmId, String search) {
         return getEntityManager(session).createNamedQuery("searchForMailing", Mailing.class)
                 .setParameter("realmId", realmId)
-                .setParameter("search", search)
+                .setParameter("search", "%" + search.toLowerCase() + "%")
                 .getResultList();
     }
 
