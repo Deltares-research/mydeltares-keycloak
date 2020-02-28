@@ -1,5 +1,7 @@
 package scripting;
 
+import nl.deltares.keycloak.utils.KeycloakUtilsImpl;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;

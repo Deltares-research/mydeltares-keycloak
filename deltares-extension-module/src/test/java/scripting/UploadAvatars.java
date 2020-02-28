@@ -1,5 +1,7 @@
 package scripting;
 
+import nl.deltares.keycloak.utils.KeycloakUtilsImpl;
+
 import java.io.*;
 import java.util.Properties;
 
@@ -53,7 +55,7 @@ public class UploadAvatars {
                     else {
                         try {
                             File portraitFile = getPortraitFile(userPortraitsDir, portraitId);
-                            keycloakUtils.uploadUserAvatar(userId, portraitFile);
+                            keycloakUtils.uploadUserAvatarAdminApi(userId, portraitFile);
                         } catch (Exception e) {
                             writeFailed(bw, email, portraitId);
                         }

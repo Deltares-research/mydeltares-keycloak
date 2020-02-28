@@ -1,6 +1,7 @@
 package scripting;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import nl.deltares.keycloak.utils.KeycloakUtilsImpl;
 
 import java.io.*;
 import java.util.List;

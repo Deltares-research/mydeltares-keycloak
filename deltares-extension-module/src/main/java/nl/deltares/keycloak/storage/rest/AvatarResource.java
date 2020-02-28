@@ -80,14 +80,16 @@ public class AvatarResource extends AbstractAvatarResource {
         if (!isValidStateChecker(input)) {
             return badRequest();
         }
-        if (input.getFormDataMap().get("deleteAction") != null){
-            return deleteCurrentUserAvatarImage(uriInfo);
-        }
         String realmName = authResult.getSession().getRealm().getId();
 
         try {
-            String userId = authResult.getUser().getId();
-            setAvatarImage(realmName, userId, input);
+            if (input.getFormDataMap().get("deleteAction") != null){
+                Response response = deleteCurrentUserAvatarImage(uriInfo);
+                if (response.getStatus() == 500) return response;
+            } else {
+                String userId = authResult.getUser().getId();
+                setAvatarImage(realmName, userId, input);
+            }
             UriBuilder builder = RealmsResource.accountUrl(session.getContext().getUri().getBaseUriBuilder());
             return Response.seeOther(builder.build(realmName)).build();
         } catch (MaxSizeExceededException e){
@@ -104,13 +106,11 @@ public class AvatarResource extends AbstractAvatarResource {
         if (authResult == null) {
             return badRequest();
         }
-
         try {
             String realmName = authResult.getSession().getRealm().getId();
             String userId = authResult.getUser().getId();
             deleteAvatarImage(realmName, userId);
-            UriBuilder builder = RealmsResource.accountUrl(session.getContext().getUri().getBaseUriBuilder());
-            return Response.seeOther(builder.build(realmName)).build();
+            return Response.ok().build();
         }  catch (Exception ex) {
             return Response.serverError().build();
         }

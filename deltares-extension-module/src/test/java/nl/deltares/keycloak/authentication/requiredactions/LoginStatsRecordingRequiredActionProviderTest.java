@@ -1,10 +1,12 @@
 package nl.deltares.keycloak.authentication.requiredactions;
 
+import nl.deltares.keycloak.UnitTestCategory;
 import nl.deltares.keycloak.mocking.MockRealmModel;
 import nl.deltares.keycloak.mocking.MockRequiredActionContext;
 import nl.deltares.keycloak.mocking.MockUserModel;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
@@ -14,6 +16,7 @@ import org.keycloak.services.DefaultKeycloakSessionFactory;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
+@Category(UnitTestCategory.class)
 public class LoginStatsRecordingRequiredActionProviderTest {
 
     @Test

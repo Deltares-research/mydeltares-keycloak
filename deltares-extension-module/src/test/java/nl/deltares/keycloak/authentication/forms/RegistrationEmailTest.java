@@ -1,11 +1,13 @@
 package nl.deltares.keycloak.authentication.forms;
 
+import nl.deltares.keycloak.UnitTestCategory;
 import nl.deltares.keycloak.mocking.MockClientConnection;
 import nl.deltares.keycloak.mocking.MockRealmModel;
 import nl.deltares.keycloak.mocking.MockValidationContext;
 import org.jboss.resteasy.mock.MockHttpRequest;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -16,6 +18,7 @@ import org.keycloak.services.validation.Validation;
 
 import java.net.URISyntaxException;
 
+@Category(UnitTestCategory.class)
 public class RegistrationEmailTest {
 
     @Test

@@ -1,5 +1,6 @@
 package nl.deltares.keycloak.authentication.forms;
 
+import nl.deltares.keycloak.UnitTestCategory;
 import nl.deltares.keycloak.mocking.MockClientConnection;
 import nl.deltares.keycloak.mocking.MockKeycloakSession;
 import nl.deltares.keycloak.mocking.MockRealmModel;
@@ -7,21 +8,19 @@ import nl.deltares.keycloak.mocking.MockValidationContext;
 import org.jboss.resteasy.mock.MockHttpRequest;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.authorization.common.KeycloakIdentity;
+import org.junit.experimental.categories.Category;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserProvider;
-import org.keycloak.services.DefaultKeycloakSession;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.validation.Validation;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.net.URISyntaxException;
 
+@Category(UnitTestCategory.class)
 public class RegistrationUsernameTest {
 
     @Test

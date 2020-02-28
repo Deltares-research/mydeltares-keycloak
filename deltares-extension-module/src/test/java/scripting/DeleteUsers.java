@@ -1,5 +1,7 @@
 package scripting;
 
+import nl.deltares.keycloak.utils.KeycloakUtilsImpl;
+
 import java.io.*;
 import java.util.Properties;
 
