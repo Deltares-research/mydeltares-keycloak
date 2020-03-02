@@ -1,5 +1,6 @@
 package nl.deltares.keycloak.forms.account.freemarker.model;
 
+import nl.deltares.keycloak.storage.jpa.Mailing;
 import nl.deltares.keycloak.storage.rest.MailingRepresentation;
 import nl.deltares.keycloak.storage.rest.ResourceUtils;
 import nl.deltares.keycloak.storage.rest.UserMailingRepresentation;
@@ -66,7 +67,7 @@ public class UserMailingsBean {
         }
 
         public String getDelivery(){
-            return userMailing == null ? ResourceUtils.getPreferredMailingDeliveryText() : userMailing.getDeliveryTxt();
+            return userMailing == null ? Mailing.getPreferredMailingDeliveryText() : userMailing.getDeliveryTxt();
         }
 
         public String getFrequency(){

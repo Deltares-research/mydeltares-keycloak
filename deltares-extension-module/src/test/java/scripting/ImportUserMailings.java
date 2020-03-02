@@ -2,10 +2,7 @@ package scripting;
 
 import nl.deltares.keycloak.utils.KeycloakUtilsImpl;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.Properties;
 
 public class ImportUserMailings {
@@ -34,8 +31,9 @@ public class ImportUserMailings {
 
         File csvFile = new File(properties.getProperty("import.user.mailings.file"));
         String mailingId = properties.getProperty("import.mailingId");
-        try {
-            keycloakUtils.importUserMailings(mailingId, csvFile);
+
+        try (FileReader reader = new FileReader(csvFile)){
+            keycloakUtils.setMailingForUserIdsAdminApi(mailingId, reader);
         } catch (IOException e) {
             System.out.println("Failed to import user mailings for mailing: " + mailingId + ": " + e.getMessage());
         }

@@ -55,7 +55,6 @@ public class UserMailingAdminResource {
     @Context
     private ClientConnection clientConnection;
 
-    private AdminAuth adminAuth;
     //Realm from request path
     private RealmModel callerRealm;
 
@@ -73,7 +72,7 @@ public class UserMailingAdminResource {
         RealmModel realm = session.getContext().getRealm();
         if (realm == null) throw new NotFoundException("Realm not found.");
         Auth auth = getAuth(httpHeaders, session, clientConnection);
-        adminAuth = new AdminAuth(auth.getRealm(), auth.getToken(), auth.getUser(), auth.getClient());
+        AdminAuth adminAuth = new AdminAuth(auth.getRealm(), auth.getToken(), auth.getUser(), auth.getClient());
         realmAuth = AdminPermissions.evaluator(session, realm, adminAuth);
         session.getContext().setRealm(realm);
 
@@ -85,7 +84,6 @@ public class UserMailingAdminResource {
     @Path("/export/{mailing_id}")
     @Produces("text/plain")
     public Response downloadUserMailings(final @PathParam("mailing_id") String mailingId) {
-
         realmAuth.users().requireQuery();
         String realmId = callerRealm.getId();
         UserProvider userProvider = session.userStorageManager();
@@ -117,25 +115,20 @@ public class UserMailingAdminResource {
     @Path("/import/{mailing_id}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response uploadUserMailings(@PathParam("mailing_id") String mailingId, MultipartFormDataInput input){
-
+        realmAuth.users().requireManage();
         try {
-            if (adminAuth == null) {
-                return Response.status(Response.Status.UNAUTHORIZED).build();
+            int written = importUserMailings(callerRealm.getId(), mailingId, input);
+            if (written == 0){
+                return Response.notModified().build();
             }
-            canManageUsers();
-
-            importUserMailings(callerRealm.getId(), mailingId, input);
-        } catch (ForbiddenException e) {
-            return Response.status(Response.Status.FORBIDDEN).entity(e.getMessage()).build();
         } catch (Exception e) {
             logger.error("error importing user mailings", e);
             return Response.serverError().entity(e.getMessage()).build();
         }
-
         return Response.ok().build();
     }
 
-    private void importUserMailings(String realmId, String mailingId, MultipartFormDataInput input) throws IOException {
+    private int importUserMailings(String realmId, String mailingId, MultipartFormDataInput input) throws IOException {
         Map<String, List<InputPart>> formDataMap = input.getFormDataMap();
         List<InputPart> inputParts = formDataMap.get(DATA_PARAMETER);
         if (inputParts == null || inputParts.isEmpty()){
@@ -144,8 +137,9 @@ public class UserMailingAdminResource {
         InputPart inputPart = inputParts.get(0);
         InputStream inputStream = inputPart.getBody(InputStream.class, null);
         if (inputStream.available() == 0){
-            return; //save pressed when no image selected
+            return 0; //save pressed when no image selected
         }
+        int writeCount = 0;
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
             String userId;
             while ((userId = reader.readLine()) != null) {
@@ -155,19 +149,14 @@ public class UserMailingAdminResource {
                     rep.setUserId(userId);
                     rep.setRealmId(realmId);
                     rep.setMailingId(mailingId);
-                    rep.setDelivery(ResourceUtils.getPreferredMailingDelivery());
+                    rep.setDelivery(Mailing.getPreferredMailingDelivery());
                     rep.setId(KeycloakModelUtils.generateId());
                     insertUserMailing(session, rep);
+                    writeCount++;
                 } //skip existing
             }
         }
-    }
-
-    private void canManageUsers() {
-        if (!realmAuth.users().canManage()) {
-            logger.info("user does not have permission to manage users");
-            throw new ForbiddenException("user does not have permission to manage users");
-        }
+        return writeCount;
     }
 
 }

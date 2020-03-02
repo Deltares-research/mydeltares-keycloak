@@ -60,7 +60,7 @@ public class UserEventListenerProvider implements EventListenerProvider {
         representation.setId(KeycloakModelUtils.generateId());
         representation.setUserId(newUser.getId());
         representation.setMailingId(mailing.getId());
-        representation.setDelivery(ResourceUtils.getPreferredMailingDelivery());
+        representation.setDelivery(Mailing.getPreferredMailingDelivery());
         representation.setRealmId(mailing.getRealmId());
         representation.setLanguage(mailing.getLanguages()[0]);
         return representation;

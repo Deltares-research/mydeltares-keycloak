@@ -2,6 +2,8 @@ package nl.deltares.keycloak.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import nl.deltares.keycloak.storage.rest.MailingRepresentation;
+import nl.deltares.keycloak.storage.rest.UserMailingRepresentation;
+import nl.deltares.keycloak.storage.rest.UserMailingResource;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -18,6 +20,7 @@ public class KeycloakUtilsImpl {
     private static final String KEYCLOAK_MAILING_PATH = "mailing-provider";
     private static final String KEYCLOAK_AVATAR_PATH = "avatar-provider";
     private static final String KEYCLOAK_USERS_PATH = "users";
+    private static final String KEYCLOAK_ADMIN_USER_MAILING_PATH = KEYCLOAK_USER_MAILING_PATH + "/admin";
     private static final String KEYCLOAK_ADMIN_MAILING_PATH = KEYCLOAK_MAILING_PATH + "/admin";
     private static final String KEYCLOAK_ADMIN_AVATAR_PATH = KEYCLOAK_AVATAR_PATH + "/admin";
     private static final String KEYCLOAK_OPENID_TOKEN_PATH = "protocol/openid-connect/token";
@@ -34,6 +37,16 @@ public class KeycloakUtilsImpl {
 
     public KeycloakUtilsImpl(Properties properties) {
         this.properties = properties;
+    }
+
+    private String getAdminUserMailingPath() {
+        String basePath = getKeycloakBasePath();
+        return basePath + KEYCLOAK_ADMIN_USER_MAILING_PATH;
+    }
+
+    private String getUserMailingPath() {
+        String basePath = getKeycloakBasePath();
+        return basePath + KEYCLOAK_USER_MAILING_PATH;
     }
 
     private String getAdminMailingPath() {
@@ -136,12 +149,12 @@ public class KeycloakUtilsImpl {
     /**
      * Write usermailings for users in input file to the server. Input needs to be chunked to avoid exceptions.
      * @param mailingId mailing id of import values
-     * @param csvUserIds csv file containing user information
+     * @param reader csv reader containing user mailings records
      * @throws IOException Exception
      */
-    public void importUserMailings(String mailingId, File csvUserIds) throws IOException {
+    public int setMailingForUserIdsAdminApi(String mailingId, Reader reader) throws IOException {
 
-        URL url = new URL(getMailingPath() + "/admin/import/" + mailingId);
+        URL url = new URL(getAdminUserMailingPath() + "/import/" + mailingId);
         String boundaryString = "----ImportUserMailings";
 
         Map<String, String> map = new HashMap<>();
@@ -151,66 +164,63 @@ public class KeycloakUtilsImpl {
         int maxLinesPerRequest = 1000;
         int lineCount = 0;
         int batchCount = 0;
+        int status = 500;
         HttpURLConnection urlConnection = null;
         OutputStream outputStream = null ;
         BufferedWriter httpRequestBodyWriter = null;
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(csvUserIds))) {
-            String line = reader.readLine();
-            while (line != null) {
-                if (urlConnection == null) {
-                    //---- open new request -----//
-                    urlConnection = getHttpConnection(url, "POST", map);
-                    urlConnection.setRequestProperty("Authorization", "Bearer " + getAccessToken());
-                    outputStream = urlConnection.getOutputStream();
-                    httpRequestBodyWriter =
-                            new BufferedWriter(new OutputStreamWriter(outputStream));
+        BufferedReader br;
+        if (reader instanceof BufferedReader) {
+            br = (BufferedReader) reader;
+        } else {
+            br = new BufferedReader(reader);
+        }
+        String line = br.readLine();
+        while (line != null) {
+            if (urlConnection == null) {
+                //---- open new request -----//
+                urlConnection = getHttpConnection(url, "POST", map);
+                urlConnection.setRequestProperty("Authorization", "Bearer " + getAccessToken());
+                outputStream = urlConnection.getOutputStream();
+                httpRequestBodyWriter =
+                        new BufferedWriter(new OutputStreamWriter(outputStream));
 
-                    // Include the section to describe the file
-                    httpRequestBodyWriter.write("\n--" + boundaryString + "\n");
-                    httpRequestBodyWriter.write("Content-Disposition: form-data;"
-                            + "name=\"data\";"
-                            + "filename=\"" + csvUserIds + "\""
-                            + "\nContent-Type: text/csv\n\n");
-                    httpRequestBodyWriter.flush();
-                    lineCount = 0;
-
-                }
-
-                outputStream.write(line.getBytes());
-                outputStream.write('\n');
-                lineCount++;
-
-                line = reader.readLine();
-
-                if (lineCount == maxLinesPerRequest || line == null) {
-                    //----  send request ---//
-                    // Mark the end of the multipart http request
-                    httpRequestBodyWriter.write("\n--" + boundaryString + "--\n");
-                    httpRequestBodyWriter.flush();
-                    // Read response from web server, which will trigger the multipart HTTP request to be sent.
-                    BufferedReader httpResponseReader =
-                            new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
-                    String lineRead;
-                    batchCount += lineCount;
-                    while ((lineRead = httpResponseReader.readLine()) != null) {
-                        System.out.println(lineRead);
-                        System.out.println("Line count=" + batchCount);
-                    }
-                    // Close the streams
-                    outputStream.close();
-                    httpRequestBodyWriter.close();
-                    urlConnection = null;
-
-                    System.out.println("Finish writing " + batchCount);
-                }
+                // Include the section to describe the file
+                httpRequestBodyWriter.write("\n--" + boundaryString + "\n");
+                httpRequestBodyWriter.write("Content-Disposition: form-data;"
+                        + "name=\"data\";"
+                        + "filename=\"" + mailingId + ".csv\""
+                        + "\nContent-Type: text/csv\n\n");
+                httpRequestBodyWriter.flush();
+                lineCount = 0;
 
             }
 
-        } catch (Exception e){
-            throw new IOException(String.format("Error importing user mailing %s: %s", mailingId, e.getMessage()));
+            outputStream.write(line.getBytes());
+            outputStream.write('\n');
+            lineCount++;
+
+            line = br.readLine();
+
+            if (lineCount == maxLinesPerRequest || line == null) {
+                //----  send request ---//
+                // Mark the end of the multipart http request
+                httpRequestBodyWriter.write("\n--" + boundaryString + "--\n");
+                httpRequestBodyWriter.flush();
+                // Read response from web server, which will trigger the multipart HTTP request to be sent.
+                status = checkResponse(urlConnection);
+
+                batchCount += lineCount;
+                // Close the streams
+                outputStream.close();
+                httpRequestBodyWriter.close();
+                urlConnection = null;
+
+                System.out.println("Finish writing " + batchCount);
+            }
         }
 
+        return status;
     }
 
     public MailingRepresentation getMailingAdminApi(String id) throws IOException {
@@ -279,6 +289,53 @@ public class KeycloakUtilsImpl {
         HttpURLConnection urlConnection = getConnection(getAdminMailingPath(), "PUT", getAccessToken(), map);
         ObjectMapper mapper = new ObjectMapper();
         mapper.writeValue(urlConnection.getOutputStream(), mailing);
+        return checkResponse(urlConnection);
+    }
+
+    public int exportUserMailingsAdminApi(Writer writer, String mailingId) throws IOException {
+        HashMap<String, String> map = new HashMap<>();
+        map.put("Content-Type", MediaType.TEXT_HTML);
+        HttpURLConnection urlConnection = getConnection(getAdminUserMailingPath() + "/export/" + mailingId, "GET", getAccessToken(), map);
+
+        int status = checkResponse(urlConnection);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+        String line;
+        while ((line = reader.readLine()) != null){
+            writer.write(line);
+            writer.write('\n');
+        }
+        writer.flush();
+        return status;
+
+    }
+
+    public UserMailingRepresentation getUserMailingUserApi(String mailingId, String userName, String password) throws IOException {
+        HttpURLConnection urlConnection = getConnection( getUserMailingPath() + '/' + mailingId,  "GET", getAccessToken(userName, password), null);
+        int response = checkResponse(urlConnection);
+        if (response == Response.Status.NO_CONTENT.getStatusCode()) {
+            return null;
+        }
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(urlConnection.getInputStream(), mapper.getTypeFactory().constructType(UserMailingRepresentation.class));
+    }
+
+    public int createUserMailingUserApi(UserMailingRepresentation userMailing, String userName, String password) throws IOException {
+
+        HashMap<String, String> map = new HashMap<>();
+        map.put("Content-Type", MediaType.APPLICATION_JSON);
+        HttpURLConnection urlConnection = getConnection(getUserMailingPath(), "POST", getAccessToken(userName, password), map);
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(urlConnection.getOutputStream(), userMailing);
+        return checkResponse(urlConnection);
+    }
+
+    public int updateUserMailingUserApi(UserMailingRepresentation userMailing, String userName, String password) throws IOException {
+
+        HashMap<String, String> map = new HashMap<>();
+        map.put("Content-Type", MediaType.APPLICATION_JSON);
+        HttpURLConnection urlConnection = getConnection(getUserMailingPath(), "PUT", getAccessToken(userName, password), map);
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(urlConnection.getOutputStream(), userMailing);
         return checkResponse(urlConnection);
     }
 
@@ -479,12 +536,6 @@ public class KeycloakUtilsImpl {
         OutputStream outputStream = urlConnection.getOutputStream();
         BufferedWriter httpRequestBodyWriter =
                 new BufferedWriter(new OutputStreamWriter(outputStream));
-
-//            // Include value from the myFileDescription text area in the post data
-//            httpRequestBodyWriter.write("\n\n--" + boundaryString + "\n");
-//            httpRequestBodyWriter.write("Content-Disposition: form-data; name=\"userAvatar\"");
-//            httpRequestBodyWriter.write("\n\n");
-//
 
         // Include the section to describe the file
         httpRequestBodyWriter.write("\n--" + boundaryString + "\n");

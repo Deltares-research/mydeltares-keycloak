@@ -1,6 +1,7 @@
 package nl.deltares.keycloak.storage.rest;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import nl.deltares.keycloak.storage.jpa.Mailing;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UserMailingRepresentation {
@@ -61,11 +62,11 @@ public class UserMailingRepresentation {
     }
 
     public String getDeliveryTxt() {
-        return ResourceUtils.deliveries.get(delivery);
+        return Mailing.deliveries.get(delivery);
     }
 
-    public void setDeliveryTxt(String deliveryTxt) {
-        int delivery = ResourceUtils.deliveries.indexOf(deliveryTxt);
-        this.delivery = delivery == -1 ? 0 : delivery;
-    }
+//    public void setDeliveryTxt(String deliveryTxt) {
+//        int delivery = Mailing.deliveries.indexOf(deliveryTxt);
+//        this.delivery = delivery == -1 ? 0 : delivery;
+//    }
 }

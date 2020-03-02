@@ -1,6 +1,10 @@
 package nl.deltares.keycloak.storage.jpa;
 
+import org.apache.log4j.lf5.util.ResourceUtils;
+
 import javax.persistence.*;
+import java.util.Arrays;
+import java.util.List;
 
 @NamedQueries({
     @NamedQuery(name = "getAllMailingsByRealm", query = "select m from Mailing m where m.realmId = :realmId order by m.name"),
@@ -12,6 +16,19 @@ import javax.persistence.*;
 @Entity
 @Table(name = "MAILING_ENTITY")
 public class Mailing {
+
+    public static List<String> frequencies;
+    public static List<String> deliveries;
+
+    public static int getPreferredMailingDelivery() {return 0;}
+
+    public static String getPreferredMailingDeliveryText() {return deliveries.get(getPreferredMailingDelivery());}
+
+
+    static {
+        frequencies = Arrays.asList("weekly", "monthly", "quarterly", "annually", "varying");
+        deliveries = Arrays.asList("e-mail", "post", "both");
+    }
 
     @Id
     @Column(name = "ID")
@@ -102,6 +119,16 @@ public class Mailing {
         if (delivery < 0 || delivery > 2) throw new IllegalArgumentException("invalid delivery " + frequency);
 
         this.delivery = delivery;
+    }
+
+    public boolean isValidDelivery(int delivery){
+        if (this.delivery == delivery) return true; //same
+        if (delivery < 0 || delivery > 2) return false; //out of bounds
+        return this.delivery == deliveries.indexOf("both"); //is mailing = 'both' the user mailing can be all options
+    }
+
+    public boolean isValidLanguage(String language){
+        return Arrays.asList(getLanguages()).contains(language);
     }
 
     public Long getCreatedTimestamp() {

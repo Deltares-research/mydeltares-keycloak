@@ -17,14 +17,11 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.resources.RealmsResource;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Properties;
+import java.io.IOException;
+import java.util.*;
 
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.getAuthResult;
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.getEntityManager;
@@ -37,7 +34,6 @@ public class UserMailingResource {
 
     private AuthenticationManager.AuthResult authResult;
     private AccountProvider account;
-    private String stateChecker;
     private RealmModel realm;
     private final Properties properties;
 
@@ -86,19 +82,18 @@ public class UserMailingResource {
      */
     @GET
     @NoCache
-    @Path("{id}")
+    @Path("{mailing_id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getUserMailing(final @PathParam("id") String id) {
+    public Response getUserMailing(final @PathParam("mailing_id") String mailingId) {
 
         if (authResult == null) {
-            return badRequest();
+            return redirectLogin();
         }
-
-        UserMailing mailing = getUserMailingById(session, id);
+        UserModel user = authResult.getUser();
+        UserMailing mailing = getUserMailing(session, realm.getId(), user.getId(), mailingId);
         if (mailing == null) {
-            throw new NotFoundException("User mailing not found for id " + id);
+            return Response.status(Response.Status.NOT_FOUND).build();
         }
-
         return Response.ok(toRepresentation(mailing), MediaType.APPLICATION_JSON).build();
     }
 
@@ -109,12 +104,19 @@ public class UserMailingResource {
         if (authResult == null) {
             return redirectLogin();
         }
+        if (rep.getMailingId() == null){
+            return ErrorResponse.error("No mailing id set for user mailing!", Response.Status.BAD_REQUEST);
+        }
+        try {
+            validateUserMailing(rep);
+        } catch (IOException e) {
+            return ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
+        }
         // Double-check duplicated name
         UserModel user = authResult.getUser();
-        if (rep.getMailingId() != null && getUserMailing(session, realm.getId(), user.getId(), rep.getMailingId()) != null) {
+        if (getUserMailing(session, realm.getId(), user.getId(), rep.getMailingId()) != null) {
             return ErrorResponse.exists(String.format("User mailing already exists for user %s and mailing %s", user.getId(), rep.getMailingId()));
         }
-
         rep.setUserId(user.getId());
         rep.setRealmId(realm.getId());
         rep.setId(KeycloakModelUtils.generateId());
@@ -124,7 +126,6 @@ public class UserMailingResource {
         return Response.ok().status(Response.Status.CREATED).build();
     }
 
-
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public Response updateUserMailing(final UserMailingRepresentation rep) {
@@ -133,16 +134,37 @@ public class UserMailingResource {
             return redirectLogin();
         }
         String userId = authResult.getUser().getId();
-        UserMailing userMailing = getUserMailing(session, realm.getId(), userId, rep.getMailingId());
-        if (userMailing == null) {
-            return ErrorResponse.exists(String.format("User mailing does not exist for user %s and mailing %s ", userId, rep.getMailingId()));
+        if (!userId.equals(rep.getUserId())){
+            return Response.status(Response.Status.FORBIDDEN).build();
         }
-        setMailingValues(rep, userMailing);
+        String id = rep.getId();
+        UserMailing mailing = getUserMailingById(session, id);
+        if (mailing == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        try {
+            validateUserMailing(rep);
+        } catch (IOException e) {
+            return ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
+        }
+
+        setMailingValues(rep, mailing);
         logger.infof("Updating mailing %s for user %s.", rep.getMailingId(), userId);
 
-        getEntityManager(session).persist(userMailing);
-        return Response.noContent().build();
+        getEntityManager(session).persist(mailing);
+        return Response.ok().build();
 
+    }
+
+    private void validateUserMailing(UserMailingRepresentation userMailing) throws IOException {
+        Mailing mailing = MailingAdminResource.getMailingById(session, realm.getId(), userMailing.getMailingId());
+        assert mailing != null;
+        if (!mailing.isValidDelivery(userMailing.getDelivery())){
+            throw new IOException(String.format("Invalid delivery %s! Expected %s", userMailing.getDeliveryTxt(), Mailing.deliveries.get(mailing.getDelivery())));
+        }
+        if (!mailing.isValidLanguage(userMailing.getLanguage())){
+            throw new IOException(String.format("Invalid language %s! Expected one of %s", userMailing.getLanguage(), Arrays.toString(mailing.getLanguages())));
+        }
     }
 
     @DELETE
@@ -155,7 +177,7 @@ public class UserMailingResource {
 
         UserMailing mailing = getUserMailingById(session, mailingId);
         if (mailing == null) {
-            return ErrorResponse.exists("User mailing does not exist with id " + mailingId);
+            return Response.status(Response.Status.NOT_FOUND).build();
         }
 
         logger.info("Delete mailing : " + mailingId);
@@ -163,7 +185,7 @@ public class UserMailingResource {
         return Response.noContent().build();
     }
 
-    public static List<UserMailing> getUserMailings(KeycloakSession session, String realmId, String userId) {
+    private static List<UserMailing> getUserMailings(KeycloakSession session, String realmId, String userId) {
         try {
             return getEntityManager(session).createNamedQuery("findUserMailingByUserAndRealm", UserMailing.class)
                     .setParameter("realmId", realmId)
@@ -201,6 +223,7 @@ public class UserMailingResource {
         if (cachedUserMailings != null) return cachedUserMailings;
         List<UserMailing> userMailings = getUserMailings(session, session.getContext().getRealm().getId(), authResult.getUser().getId());
         cachedUserMailings = new ArrayList<>();
+        if (userMailings == null) return cachedUserMailings;
         for (UserMailing userMailing : userMailings) {
             cachedUserMailings.add(toRepresentation(userMailing));
         }
@@ -210,6 +233,8 @@ public class UserMailingResource {
     private static UserMailingRepresentation toRepresentation(UserMailing mailing) {
         UserMailingRepresentation rep = new UserMailingRepresentation();
         rep.setId(mailing.getId());
+        rep.setUserId(mailing.getUserId());
+        rep.setRealmId(mailing.getRealmId());
         rep.setMailingId(mailing.getMailingId());
         rep.setDelivery(mailing.getDelivery());
         rep.setLanguage(mailing.getLanguage());
@@ -282,7 +307,7 @@ public class UserMailingResource {
         account.setReferrer(ResourceUtils.getReferrer(session));
         authResult = authManager.authenticateIdentityCookie(session, realm);
         if (authResult != null) {
-            stateChecker = (String) session.getAttribute("state_checker");
+            String stateChecker = (String) session.getAttribute("state_checker");
             account.setStateChecker(stateChecker);
             Auth auth = new Auth(realm, authResult.getToken(), authResult.getUser(), client, authResult.getSession(), true);
             UserSessionModel userSession = authResult.getSession();
@@ -308,10 +333,6 @@ public class UserMailingResource {
     private Response redirectLogin() {
         UriBuilder uriBuilder = UriBuilder.fromUri(session.getContext().getUri().getBaseUri()).path("realms").path(realm.getName()).path("account");
         return Response.temporaryRedirect(uriBuilder.build()).build();
-    }
-
-    private Response badRequest() {
-        return Response.seeOther(RealmsResource.accountUrl(session.getContext().getUri().getBaseUriBuilder()).build()).status(Response.Status.BAD_REQUEST).build();
     }
 
     static void insertUserMailing(KeycloakSession session, UserMailingRepresentation rep) {

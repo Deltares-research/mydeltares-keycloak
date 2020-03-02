@@ -1,6 +1,7 @@
 package nl.deltares.keycloak.storage.rest;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import nl.deltares.keycloak.storage.jpa.Mailing;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,11 +65,11 @@ public class MailingRepresentation {
     }
 
     public String getFrequencyTxt() {
-        return ResourceUtils.frequencies.get(frequency);
+        return Mailing.frequencies.get(frequency);
     }
 
     public void setFrequencyTxt(String frequencies) {
-        int frequency = ResourceUtils.frequencies.indexOf(frequencies);
+        int frequency = Mailing.frequencies.indexOf(frequencies);
         this.frequency = frequency == -1 ? 4 : frequency;
     }
 
@@ -81,14 +82,14 @@ public class MailingRepresentation {
     }
 
     public String getDeliveryTxt() {
-        return ResourceUtils.deliveries.get(delivery);
+        return Mailing.deliveries.get(delivery);
     }
 
     public String getPreferredDeliveryTxt(){
-        return ResourceUtils.frequencies.get(ResourceUtils.getPreferredMailingDelivery());
+        return Mailing.frequencies.get(Mailing.getPreferredMailingDelivery());
     }
     public void setDeliveryTxt(String deliveryTxt) {
-        int delivery = ResourceUtils.deliveries.indexOf(deliveryTxt);
+        int delivery = Mailing.deliveries.indexOf(deliveryTxt);
         this.delivery = delivery == -1 ? 0 : delivery;
     }
     public void setDelivery(int delivery) {
@@ -112,11 +113,11 @@ public class MailingRepresentation {
     }
 
     public List<String> getSupportedFrequencies() {
-        return new ArrayList<>(ResourceUtils.frequencies);
+        return new ArrayList<>(Mailing.frequencies);
     }
 
     public List<String> getSupportedDeliveries() {
-        return new ArrayList<>(ResourceUtils.deliveries);
+        return new ArrayList<>(Mailing.deliveries);
     }
 
 }
