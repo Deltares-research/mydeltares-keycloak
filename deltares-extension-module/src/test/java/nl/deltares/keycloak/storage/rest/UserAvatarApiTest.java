@@ -48,8 +48,8 @@ public class UserAvatarApiTest {
         URL keycloakResource = KeycloakTestServer.class.getClassLoader().getResource("testdata/avatar.jpg");
         Assert.assertNotNull(keycloakResource);
         File avatar = new File(keycloakResource.getFile());
-        keycloakUtils.uploadUserAvatarAdminApi("d09b8604-aa71-4fb5-9d8c-496ed69688a3", avatar);
-
+        int status = keycloakUtils.uploadUserAvatarAdminApi("d09b8604-aa71-4fb5-9d8c-496ed69688a3", avatar);
+        Assert.assertEquals(200, status);
         userAvatar = keycloakUtils.getUserAvatarAdminApi("admin-uploadavatar@test.nl");
         Assert.assertNotNull(userAvatar);
         Assert.assertEquals(userAvatar.length, avatar.length());
@@ -144,7 +144,7 @@ public class UserAvatarApiTest {
         Assert.assertNotNull(keycloakResource);
         File avatar = new File(keycloakResource.getFile());
         try {
-            int status = keycloakUtils.uploadUserAvatarUserApi(avatar, "user-uploadavatar", "wrong");
+            keycloakUtils.uploadUserAvatarUserApi(avatar, "user-uploadavatar", "wrong");
             Assert.fail();
         } catch (IOException e){
             Assert.assertTrue(e.getMessage().contains("Error 401"));
