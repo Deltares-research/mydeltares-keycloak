@@ -14,13 +14,10 @@ public class KeycloakUtilsImpl {
 
     private static final String KEYCLOAK_BASEURL_KEY = "keycloak.baseurl";
     private static final String KEYCLOAK_BASEAPIURL_KEY = "keycloak.baseapiurl";
-    private static final String KEYCLOAK_ACCOUNT_PATH = "account";
     private static final String KEYCLOAK_USER_MAILING_PATH = "user-mailings";
     private static final String KEYCLOAK_MAILING_PATH = "mailing-provider";
     private static final String KEYCLOAK_AVATAR_PATH = "avatar-provider";
     private static final String KEYCLOAK_USERS_PATH = "users";
-
-    private static final String KEYCLOAK_ADMIN_USER_MAILING_PATH = KEYCLOAK_USER_MAILING_PATH + "/admin";
     private static final String KEYCLOAK_ADMIN_MAILING_PATH = KEYCLOAK_MAILING_PATH + "/admin";
     private static final String KEYCLOAK_ADMIN_AVATAR_PATH = KEYCLOAK_AVATAR_PATH + "/admin";
     private static final String KEYCLOAK_OPENID_TOKEN_PATH = "protocol/openid-connect/token";
@@ -39,32 +36,27 @@ public class KeycloakUtilsImpl {
         this.properties = properties;
     }
 
-    public String getAccountPath() {
-        String basePath = getKeycloakBasePath();
-        return basePath + KEYCLOAK_ACCOUNT_PATH;
-    }
-
-    public String getAdminMailingPath() {
+    private String getAdminMailingPath() {
         String basePath = getKeycloakBasePath();
         return basePath + KEYCLOAK_ADMIN_MAILING_PATH;
     }
 
-    public String getMailingPath() {
+    private String getMailingPath() {
         String basePath = getKeycloakBasePath();
         return basePath + KEYCLOAK_MAILING_PATH;
     }
 
-    public String getAvatarPath() {
+    private String getAvatarPath() {
         String basePath = getKeycloakBasePath();
         return basePath + KEYCLOAK_AVATAR_PATH;
     }
 
-    public String getAdminAvatarPath() {
+    private String getAdminAvatarPath() {
         String basePath = getKeycloakBasePath();
         return basePath + KEYCLOAK_ADMIN_AVATAR_PATH;
     }
 
-    public String getUsersPath() {
+    private String getUsersPath() {
         String basePath = getKeycloakBaseApiPath();
         return basePath + KEYCLOAK_USERS_PATH;
     }
@@ -143,9 +135,9 @@ public class KeycloakUtilsImpl {
 
     /**
      * Write usermailings for users in input file to the server. Input needs to be chunked to avoid exceptions.
-     * @param mailingId dadd
-     * @param csvUserIds dads
-     * @throws IOException
+     * @param mailingId mailing id of import values
+     * @param csvUserIds csv file containing user information
+     * @throws IOException Exception
      */
     public void importUserMailings(String mailingId, File csvUserIds) throws IOException {
 
@@ -231,18 +223,32 @@ public class KeycloakUtilsImpl {
         return mapper.readValue(urlConnection.getInputStream(), mapper.getTypeFactory().constructType(MailingRepresentation.class));
     }
 
-    public List<MailingRepresentation> getMailingsAdminApi(String search, String name) throws IOException {
+    public MailingRepresentation getMailingUserApi(String id, String userName, String password) throws IOException {
+        HttpURLConnection urlConnection = getConnection(getMailingPath() + '/' + id, "GET", getAccessToken(userName, password), null);
+        int response = checkResponse(urlConnection);
+        if (response == Response.Status.NO_CONTENT.getStatusCode()) {
+            return null;
+        }
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(urlConnection.getInputStream(), mapper.getTypeFactory().constructType(MailingRepresentation.class));
+    }
 
-        String path;
+    public List<MailingRepresentation> getMailingsAdminApi(String search, String name) throws IOException {
+        return getMailings(search, name, getAdminMailingPath(), getAccessToken());
+    }
+
+    public List<MailingRepresentation> getMailingsUserApi(String search, String name, String userName, String password) throws IOException {
+        return getMailings(search, name, getMailingPath(), getAccessToken(userName, password));
+    }
+
+    private List<MailingRepresentation> getMailings(String search, String name, String path, String accessToken) throws IOException {
         if (search != null) {
-            path = "?search=" + search;
+            path += "?search=" + search;
         } else if (name != null){
-            path = "?name=" + name;
-        } else {
-            path = "";
+            path += "?name=" + name;
         }
 
-        HttpURLConnection urlConnection = getConnection(getAdminMailingPath() + path, "GET", getAccessToken(), null);
+        HttpURLConnection urlConnection = getConnection( path,  "GET", accessToken, null);
         int response = checkResponse(urlConnection);
         if (response == Response.Status.NO_CONTENT.getStatusCode()) {
             return Collections.emptyList();
@@ -306,18 +312,7 @@ public class KeycloakUtilsImpl {
     private int deleteUserAvatar(URL url, String accessToken) throws IOException {
         HttpURLConnection urlConnection = getHttpConnection(url, "DELETE", null);
         urlConnection.setRequestProperty("Authorization", "Bearer " + accessToken);
-        try {
-            urlConnection.getInputStream();
-            return urlConnection.getResponseCode();
-        } catch (Exception e) {
-            int responseCode = urlConnection.getResponseCode();
-            InputStream errorStream = urlConnection.getErrorStream();
-            if (errorStream != null) {
-                throw new IOException("Error " + responseCode + ": " + readAll(errorStream));
-            } else {
-                throw new IOException("Error " + responseCode + ": no message");
-            }
-        }
+        return readResponse(urlConnection);
 
     }
 
@@ -519,8 +514,11 @@ public class KeycloakUtilsImpl {
         outputStream.close();
         httpRequestBodyWriter.close();
 
-
         // Read response from web server, which will trigger the multipart HTTP request to be sent.
+        return readResponse(urlConnection);
+    }
+
+    private int readResponse(HttpURLConnection urlConnection) throws IOException {
         try {
             urlConnection.getInputStream();
             return urlConnection.getResponseCode();
