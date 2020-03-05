@@ -175,14 +175,14 @@ public class UserMailingResource {
             return redirectLogin();
         }
 
-        UserMailing mailing = getUserMailingById(session, mailingId);
+        UserMailing mailing = getUserMailing(session, realm.getId(), authResult.getUser().getId(), mailingId);
         if (mailing == null) {
-            return Response.status(Response.Status.NOT_FOUND).build();
+            return Response.status(Response.Status.NOT_MODIFIED).build();
         }
 
         logger.info("Delete mailing : " + mailingId);
         getEntityManager(session).remove(mailing);
-        return Response.noContent().build();
+        return Response.ok().build();
     }
 
     private static List<UserMailing> getUserMailings(KeycloakSession session, String realmId, String userId) {

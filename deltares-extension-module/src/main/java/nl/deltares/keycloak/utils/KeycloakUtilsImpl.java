@@ -319,6 +319,11 @@ public class KeycloakUtilsImpl {
         return mapper.readValue(urlConnection.getInputStream(), mapper.getTypeFactory().constructType(UserMailingRepresentation.class));
     }
 
+    public int deleteUserMailingUserApi(String mailingId, String userName, String password) throws IOException {
+        HttpURLConnection urlConnection = getConnection( getUserMailingPath() + '/' + mailingId,  "DELETE", getAccessToken(userName, password), null);
+        return checkResponse(urlConnection);
+    }
+
     public int createUserMailingUserApi(UserMailingRepresentation userMailing, String userName, String password) throws IOException {
 
         HashMap<String, String> map = new HashMap<>();

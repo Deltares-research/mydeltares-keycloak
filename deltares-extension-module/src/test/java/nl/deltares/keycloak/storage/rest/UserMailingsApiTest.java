@@ -197,6 +197,22 @@ public class UserMailingsApiTest {
     }
 
     @Test
+    public void userApiCreateUserMailingUnauthorized() {
+        KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getUserKeycloakUtils();
+
+        UserMailingRepresentation rep = new UserMailingRepresentation();
+        rep.setMailingId("1f57461d-ac02-497a-acfd-14d68c88f9bf");
+        rep.setLanguage("nl");
+        rep.setDelivery(1);
+        try {
+            keycloakUtils.createUserMailingUserApi(rep, "user-createusermailing", "wrong");
+            Assert.fail();
+        } catch (IOException e) {
+            Assert.assertTrue(e.getMessage().startsWith("Error 401"));
+        }
+    }
+
+    @Test
     public void userApiUpdateMailing() throws IOException {
         KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getUserKeycloakUtils();
 
@@ -220,4 +236,39 @@ public class UserMailingsApiTest {
         Assert.assertEquals(1, updated.getDelivery());
 
     }
+
+    @Test
+    /**
+     * Get existing mailing and upload this using a different user account
+     */
+    public void userApiUpdateMailingUnauthorized() throws IOException {
+        KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getUserKeycloakUtils();
+        UserMailingRepresentation existing = keycloakUtils.getUserMailingUserApi("db0be0a5-e96e-40b6-b687-fdb12304b69a", "export-usermailing1", "test");
+
+        try {
+            keycloakUtils.updateUserMailingUserApi(existing, "export-usermailing2", "test");
+            Assert.fail();
+        } catch (IOException e) {
+            Assert.assertTrue(e.getMessage().startsWith("Error 403"));
+        }
+    }
+
+    @Test
+    public void userApiDeleteUserMailing() throws IOException {
+        KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getUserKeycloakUtils();
+        int response = keycloakUtils.deleteUserMailingUserApi("cb36038e-f139-43e0-a51b-874115fce148", "user-deletemailing", "test");
+        Assert.assertEquals(200, response);
+    }
+
+    @Test
+    public void userApiDeleteUserMailingUnauthorized() {
+        KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getUserKeycloakUtils();
+        try {
+            keycloakUtils.deleteUserMailingUserApi("cb36038e-f139-43e0-a51b-874115fce148", "user-deletemailing", "wrong");
+            Assert.fail();
+        } catch (IOException e) {
+            Assert.assertTrue(e.getMessage().startsWith("Error 401"));
+        }
+    }
+
 }

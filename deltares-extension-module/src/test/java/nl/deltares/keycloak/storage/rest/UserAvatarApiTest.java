@@ -8,14 +8,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 
 @Category(IntegrationTestCategory.class)
 public class UserAvatarApiTest {
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp()  {
         Assert.assertTrue(KeycloakTestServer.isRunning());
     }
 
