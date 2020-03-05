@@ -54,6 +54,17 @@ public class KeycloakTestServer {
         System.setProperty(JBOSS_SERVER_DATA_DIR, dataDir);
         KeycloakServer.configureDataDirectory();
 
+        URL themesResource = KeycloakTestServer.class.getClassLoader().getResource("themes.zip");
+        Assert.assertNotNull(themesResource);
+        File themesZip = new File(themesResource.getFile());
+        Assert.assertTrue(themesZip.exists());
+        File themesDir = new File(themesZip.getParent(), "keycloak/themes");
+        if (themesDir.exists()){
+            FileUtils.deleteDirectory(themesDir);
+        }
+        unzipArchive(themesZip, themesDir);
+        System.setProperty("keycloak.theme.dir", themesDir.getAbsolutePath());
+
         URL serverConfigResource = KeycloakTestServer.class.getClassLoader().getResource("META-INF/keycloak-server.json");
         Assert.assertNotNull(serverConfigResource);
         searchAndReplace(new File(serverConfigResource.getFile()), "@JBOSS_SERVER_DATA_DIR@", dataDir);
