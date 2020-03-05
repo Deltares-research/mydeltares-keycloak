@@ -3,6 +3,8 @@ package nl.deltares.keycloak;
 import com.googlecode.junittoolbox.SuiteClasses;
 import com.googlecode.junittoolbox.WildcardPatternSuite;
 import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Categories;
 import org.junit.runner.RunWith;

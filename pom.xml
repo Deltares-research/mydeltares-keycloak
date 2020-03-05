@@ -106,20 +106,4 @@
         </plugins>
     </build>
 
-<!--    <repositories>-->
-<!--        <repository>-->
-<!--            <id>jboss</id>-->
-<!--            <url>https://repository.jboss.org/nexus/content/groups/public/</url>-->
-<!--            <snapshots>-->
-<!--                <enabled>false</enabled>-->
-<!--            </snapshots>-->
-<!--        </repository>-->
-<!--        <repository>-->
-<!--            <id>keycloak-test</id>-->
-<!--            <url>file://${project.basedir}/deltares-externsion-module/libs/keycloak/</url>-->
-<!--            <snapshots>-->
-<!--                <enabled>false</enabled>-->
-<!--            </snapshots>-->
-<!--        </repository>-->
-<!--    </repositories>-->
 </project>

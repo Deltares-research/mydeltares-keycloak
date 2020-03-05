@@ -18,7 +18,6 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -31,7 +30,7 @@ public class KeycloakTestServer {
     private static KeycloakUtilsImpl viewerUtils;
     private static KeycloakUtilsImpl userUtils;
     private static KeycloakServer keycloakServer;
-
+    private static boolean running;
 
     static void startKeycloak() throws Throwable {
 
@@ -64,7 +63,8 @@ public class KeycloakTestServer {
             try {
                 keycloakServer.start();
             } catch (Throwable throwable) {
-                //
+                keycloakServer = null;
+                throw new RuntimeException(throwable);
             }
         });
         runServer.start();
@@ -72,7 +72,7 @@ public class KeycloakTestServer {
         //wait for server to start
         RequestConfig config = RequestConfig.custom().setSocketTimeout(1000).build();
         try (CloseableHttpClient client = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
-            HttpGet request = new HttpGet("http://127.0.0.1:8080");
+            HttpGet request = new HttpGet("http://localhost:8080/auth/");
             int count = 0;
             while (count < 30) {
                 count++;
@@ -82,7 +82,10 @@ public class KeycloakTestServer {
                 } catch (IOException e) {
                     continue;
                 }
-                if (response.getStatusLine().getStatusCode() == 200) break;
+                if (response.getStatusLine().getStatusCode() < 299) {
+                    running = true;
+                    break;
+                }
 
                 try {
                     Thread.sleep(1000);
@@ -105,8 +108,16 @@ public class KeycloakTestServer {
 
     static void stopKeycloak()  {
 
-        if (keycloakServer != null) keycloakServer.stop();
+        if (keycloakServer != null) {
+            running = false;
+            keycloakServer.stop();
+            keycloakServer = null;
+        }
 
+    }
+
+    public static boolean isRunning(){
+        return keycloakServer != null && running;
     }
 
     private static void unzipArchive(File zipFile, File destDir) throws IOException {

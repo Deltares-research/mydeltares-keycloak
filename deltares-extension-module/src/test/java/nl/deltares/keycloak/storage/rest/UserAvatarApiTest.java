@@ -4,6 +4,7 @@ import nl.deltares.keycloak.IntegrationTestCategory;
 import nl.deltares.keycloak.KeycloakTestServer;
 import nl.deltares.keycloak.utils.KeycloakUtilsImpl;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -13,6 +14,10 @@ import java.net.URL;
 @Category(IntegrationTestCategory.class)
 public class UserAvatarApiTest {
 
+    @Before
+    public void setUp() throws Exception {
+        Assert.assertTrue(KeycloakTestServer.isRunning());
+    }
 
     @Test
     public void adminApiGetAvatar() throws IOException {

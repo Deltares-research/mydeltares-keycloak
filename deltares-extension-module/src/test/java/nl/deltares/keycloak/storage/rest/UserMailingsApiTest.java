@@ -4,6 +4,7 @@ import nl.deltares.keycloak.IntegrationTestCategory;
 import nl.deltares.keycloak.KeycloakTestServer;
 import nl.deltares.keycloak.utils.KeycloakUtilsImpl;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -11,6 +12,12 @@ import java.io.*;
 
 @Category(IntegrationTestCategory.class)
 public class UserMailingsApiTest {
+
+
+    @Before
+    public void setUp(){
+        Assert.assertTrue(KeycloakTestServer.isRunning());
+    }
 
     @Test
     public void adminApiExportUserMailings() throws IOException {
