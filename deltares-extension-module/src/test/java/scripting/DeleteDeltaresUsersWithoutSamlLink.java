@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-public class ExportUsers {
+public class DeleteDeltaresUsersWithoutSamlLink {
 
     /**
      * Export users and related attributes. Expected input properties file:
@@ -36,18 +36,19 @@ public class ExportUsers {
             throw new RuntimeException(String.format("failed to create exportDir %s", exportDir.getAbsolutePath()));
         }
 
-        File exportFile = new File(exportDir, "exportedUsers.csv");
+        File exportFile = new File(exportDir, "exportedDeltaresUsers.csv");
         if (exportFile.exists()) exportFile.renameTo(new File(exportDir, System.currentTimeMillis() + exportFile.getName()));
         try(BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(exportFile)))) {
             writeResults(bw, "id", "username", "email", "verified", "federationid", "terms", "lastlogin"); // write header
 
-            int nextStartIndex = 9891;
+            int nextStartIndex = 0;
             while (nextStartIndex > -1) {
-                String userJson = keycloakUtils.getUsersAdminApi(nextStartIndex, 100, null);
+                String userJson = keycloakUtils.getUsersAdminApi(nextStartIndex, 100, "@deltares.nl");
 
                 ObjectMapper mapper = new ObjectMapper();
                 List<Map<String, Object>> map = mapper.readValue(userJson, mapper.getTypeFactory().constructCollectionType(List.class, Map.class));
                 for (Map<String, Object> userMap : map) {
+
                     Object federationLink = userMap.get("federationLink");
 
                     Map attributes = (Map) userMap.get("attributes");
@@ -58,11 +59,10 @@ public class ExportUsers {
                         List list = (List) attributes.get("login.recent-login-date");
                         lastLogin = list != null ? (String)list.get(0) : "";
                     }
-
                     writeResults(bw,
                             (String)userMap.get("id"),
                             (String)userMap.get("username"),
-                            (String)userMap.get("email"),
+                            (String) userMap.get("email"),
                             String.valueOf(userMap.get("emailVerified")),
                             federationLink == null ? "" : (String)federationLink,
                             String.valueOf(terms),

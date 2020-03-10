@@ -212,4 +212,13 @@ public class UserAvatarApiTest {
         }
 
     }
+
+
+    @Test
+    /**
+     * Test that when a User is deleted, linked user-avatar is also deleted
+     */
+    public void adminApiCascadeDeleteOfUser(){
+        //todo
+    }
 }

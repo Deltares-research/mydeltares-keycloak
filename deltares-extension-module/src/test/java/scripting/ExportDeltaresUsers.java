@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-public class ExportUsers {
+public class ExportDeltaresUsers {
 
     /**
      * Export users and related attributes. Expected input properties file:
@@ -36,18 +36,19 @@ public class ExportUsers {
             throw new RuntimeException(String.format("failed to create exportDir %s", exportDir.getAbsolutePath()));
         }
 
-        File exportFile = new File(exportDir, "exportedUsers.csv");
+        File exportFile = new File(exportDir, "exportedDeltaresUsers.csv");
         if (exportFile.exists()) exportFile.renameTo(new File(exportDir, System.currentTimeMillis() + exportFile.getName()));
         try(BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(exportFile)))) {
-            writeResults(bw, "id", "username", "email", "verified", "federationid", "terms", "lastlogin"); // write header
+            writeResults(bw, "id", "username", "email", "verified", "federationid", "terms", "lastlogin", "idplink"); // write header
 
-            int nextStartIndex = 9891;
+            int nextStartIndex = 0;
             while (nextStartIndex > -1) {
-                String userJson = keycloakUtils.getUsersAdminApi(nextStartIndex, 100, null);
+                String userJson = keycloakUtils.getUsersAdminApi(nextStartIndex, 100, "@deltares.nl");
 
                 ObjectMapper mapper = new ObjectMapper();
                 List<Map<String, Object>> map = mapper.readValue(userJson, mapper.getTypeFactory().constructCollectionType(List.class, Map.class));
                 for (Map<String, Object> userMap : map) {
+
                     Object federationLink = userMap.get("federationLink");
 
                     Map attributes = (Map) userMap.get("attributes");
@@ -59,14 +60,16 @@ public class ExportUsers {
                         lastLogin = list != null ? (String)list.get(0) : "";
                     }
 
+                    String id = (String) userMap.get("id");
                     writeResults(bw,
-                            (String)userMap.get("id"),
+                            id,
                             (String)userMap.get("username"),
-                            (String)userMap.get("email"),
+                            (String) userMap.get("email"),
                             String.valueOf(userMap.get("emailVerified")),
                             federationLink == null ? "" : (String)federationLink,
                             String.valueOf(terms),
-                            lastLogin);
+                            lastLogin,
+                            getIdpLink(id, keycloakUtils));
                 }
                 if (map.size() == 0){
                     break;
@@ -77,6 +80,18 @@ public class ExportUsers {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private static String getIdpLink(String id, KeycloakUtilsImpl keycloakUtils) throws IOException {
+
+        String userJson = keycloakUtils.getUserByIdAdminApi(id);
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Object> user = mapper.readValue(userJson, mapper.getTypeFactory().constructType(Map.class));
+        List federatedIdentities = (List) user.get("federatedIdentities");
+        if (federatedIdentities.size() > 0){
+            return (String) ((Map)federatedIdentities.get(0)).get("identityProvider");
+        }
+        return null;
     }
 
     private static Properties loadProperties(String arg) {

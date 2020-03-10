@@ -271,4 +271,20 @@ public class UserMailingsApiTest {
         }
     }
 
+    @Test
+    /**
+     * Test that when a Mailing is deleted, all linked user-mailings are also deleted
+     */
+    public void adminApiCascadeDeleteOfMailing(){
+        //todo
+    }
+
+    @Test
+    /**
+     * Test that when a User is deleted, all linked user-mailings are also deleted
+     */
+    public void adminApiCascadeDeleteOfUser(){
+        //todo
+    }
+
 }

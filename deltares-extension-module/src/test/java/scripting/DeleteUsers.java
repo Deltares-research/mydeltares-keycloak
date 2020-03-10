@@ -27,34 +27,22 @@ public class DeleteUsers {
         if (properties == null) return;
         KeycloakUtilsImpl keycloakUtils = new KeycloakUtilsImpl(properties);
 
-        File emailsFile = new File(properties.getProperty("emails"));
-        File failedEmails = new File(emailsFile.getParent(), "failedEmails.csv");
+        File usersFile = new File(properties.getProperty("users"));
+        File failed = new File(usersFile.getParent(), "failed.csv");
 
-        if (failedEmails.exists()) failedEmails.renameTo(new File(emailsFile.getParent(), System.currentTimeMillis() + '_' +emailsFile.getName()));
-        try(BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(failedEmails)))) {
-            writeResults(bw, "email", "result", "message"); // write header
-            try (BufferedReader reader = new BufferedReader(new FileReader(emailsFile))) {
+        if (failed.exists()) failed.renameTo(new File(usersFile.getParent(), System.currentTimeMillis() + '_' +usersFile.getName()));
+        try(BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(failed)))) {
+            writeResults(bw, "id", "result", "message"); // write header
+            try (BufferedReader reader = new BufferedReader(new FileReader(usersFile))) {
                 String line = reader.readLine();
                 while (line != null) {
-                    String email = line.trim();
-                    String userId = null;
+                    String userId = line.trim();
                     try {
-                        userId = keycloakUtils.getUserId(email);
-                        if (userId == null) {
-                            writeResults(bw, email, "missing");
-                        }
-                    } catch (Exception e) {
-                        writeResults(bw, email, "error");
-                    }
-
-                    try {
-                        if (userId != null) {
-                            keycloakUtils.deleteUser(userId);
-                            writeResults(bw, email, "success");
-                        }
+                        keycloakUtils.deleteUser(userId);
+                        writeResults(bw, userId, "success");
                     } catch (IOException e) {
                         System.out.println(e.getMessage());
-                        writeResults(bw, email, "error");
+                        writeResults(bw, userId, "error");
                     }
                     line = reader.readLine();
                 }

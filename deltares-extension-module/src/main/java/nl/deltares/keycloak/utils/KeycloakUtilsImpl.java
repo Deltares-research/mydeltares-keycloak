@@ -131,9 +131,19 @@ public class KeycloakUtilsImpl {
         return uploadUserAvatar(new URL(getAvatarPath()), portraitFile, getAccessToken(username, password));
     }
 
-    public String getUsers(int start, int maxResults) throws IOException {
+    public String getUserByIdAdminApi(String id) throws IOException {
+        HttpURLConnection urlConnection = getConnection(getUsersPath() + "/" + id, "GET", getAccessToken(), null);
+        checkResponse(urlConnection);
+        return readAll(urlConnection.getInputStream());
+    }
 
-        HttpURLConnection urlConnection = getConnection(getUsersPath() + "?first=" + start + "&max=" + maxResults, "GET", getAccessToken(), null);
+    public String getUsersAdminApi(int start, int maxResults, String search) throws IOException {
+
+        String path = getUsersPath() + "?first=" + start + "&max=" + maxResults;
+        if (search != null){
+            path += "&search=" + search;
+        }
+        HttpURLConnection urlConnection = getConnection(path, "GET", getAccessToken(), null);
         int responseCode = urlConnection.getResponseCode();
         if (responseCode > 299) {
             InputStream errorStream = urlConnection.getErrorStream();
