@@ -1,8 +1,5 @@
 package nl.deltares.keycloak.storage.rest;
 
-import nl.deltares.keycloak.storage.rest.model.ExportCsvContent;
-import nl.deltares.keycloak.storage.rest.model.Serializer;
-import nl.deltares.keycloak.storage.rest.model.TextSerializer;
 import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
@@ -26,6 +23,8 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.*;
 import java.net.URLDecoder;
+import java.nio.file.CopyOption;
+import java.nio.file.Files;
 import java.util.Properties;
 
 public class ResourceUtils {
@@ -108,6 +107,8 @@ public class ResourceUtils {
         return session.getProvider(JpaConnectionProvider.class).getEntityManager();
     }
 
+
+
     static String[] getReferrer(KeycloakSession session) {
         String ref = session.getContext().getRequestHeaders().getHeaderString("Referer");
         if (ref == null) {
@@ -158,21 +159,15 @@ public class ResourceUtils {
         return rawContentType;
     }
 
-    static StreamingOutput getStreamingOutput(ExportCsvContent content, Serializer<ExportCsvContent> serializer) {
-        if (serializer instanceof TextSerializer) {
-            final TextSerializer<ExportCsvContent> textSerializer = (TextSerializer<ExportCsvContent>) serializer;
-            return os -> {
-
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os));
-                try {
-                    textSerializer.serialize(content, writer);
-                } catch (Exception e) {
-                    logger.warn("Error serializing csv content: %s", e);
-                }
-                writer.flush();
-            };
-        }
-        return null;
+    static StreamingOutput getStreamingOutput(File data) {
+        return os -> {
+            try {
+                Files.copy(data.toPath(), os);
+                os.flush();
+            } catch (Exception e) {
+                logger.warn("Error serializing csv content: %s", e);
+            }
+        };
     }
 
     static AuthenticationManager.AuthResult getAuthResult(KeycloakSession session, HttpHeaders httpHeaders, ClientConnection clientConnection) {

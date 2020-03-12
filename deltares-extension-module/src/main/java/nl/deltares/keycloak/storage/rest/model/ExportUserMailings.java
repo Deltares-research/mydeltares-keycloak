@@ -118,4 +118,8 @@ public class ExportUserMailings implements ExportCsvContent {
         return String.join(separator, values);
     }
 
+    @Override
+    public int totalExportedCount() {
+        return totalCount;
+    }
 }

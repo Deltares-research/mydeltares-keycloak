@@ -308,13 +308,14 @@ public class KeycloakUtilsImpl {
         HttpURLConnection urlConnection = getConnection(getAdminUserMailingPath() + "/export/" + mailingId, "GET", getAccessToken(), map);
 
         int status = checkResponse(urlConnection);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
-        String line;
-        while ((line = reader.readLine()) != null){
-            writer.write(line);
-            writer.write('\n');
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                writer.write(line);
+                writer.write('\n');
+            }
+            writer.flush();
         }
-        writer.flush();
         return status;
 
     }

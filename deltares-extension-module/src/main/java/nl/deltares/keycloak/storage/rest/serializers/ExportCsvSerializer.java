@@ -15,6 +15,9 @@ public class ExportCsvSerializer implements TextSerializer<ExportCsvContent> {
             writer.newLine();
         }
         while (content.hasNextLine()){
+            if (Thread.currentThread().isInterrupted()) {
+                throw new InterruptedException("interrupted csv export");
+            }
             String line = content.nextLine();
             if (line != null) {
                 writer.append(line);

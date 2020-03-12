@@ -2,12 +2,14 @@ package nl.deltares.keycloak.storage.rest;
 
 import nl.deltares.keycloak.IntegrationTestCategory;
 import nl.deltares.keycloak.KeycloakTestServer;
+import nl.deltares.keycloak.storage.jpa.model.DataRequestManager;
 import nl.deltares.keycloak.utils.KeycloakUtilsImpl;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import javax.ws.rs.core.Response;
 import java.io.*;
 
 @Category(IntegrationTestCategory.class)
@@ -20,13 +22,15 @@ public class UserMailingsApiTest {
     }
 
     @Test
-    public void adminApiExportUserMailings() throws IOException {
+    public void adminApiExportUserMailings() throws IOException, InterruptedException {
 
         String expected = "firstName;lastName;email;salutation;organization;country\n" +
         "User 1;export;export-usermailing1@test.nl;Mr;Test;Test\n" +
         "User 2;export;export-usermailing2@test.nl;Ms;Deltares;The Netherlands\n";
 
         KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getAdminKeycloakUtils();
+
+        System.setProperty("jboss.server.temp.dir", System.getProperty("java.io.tmpdir"));
 
         try (StringWriter writer = new StringWriter()) {
             int status = keycloakUtils.exportUserMailingsAdminApi(writer, "db0be0a5-e96e-40b6-b687-fdb12304b69a");
@@ -54,6 +58,7 @@ public class UserMailingsApiTest {
     @Test
     public void adminApiImportUserMailings() throws IOException {
 
+        System.setProperty("jboss.server.temp.dir", System.getProperty("java.io.tmpdir"));
         KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getAdminKeycloakUtils();
         try (StringWriter writer = new StringWriter()) {
             keycloakUtils.exportUserMailingsAdminApi(writer, "3d4baf14-6088-400c-83c3-c20f14e63d51");
@@ -73,6 +78,7 @@ public class UserMailingsApiTest {
                 "User 1;import;import-usermailing1@test.nl;Mr;Test;Test\n" +
                 "User 2;import;import-usermailing2@test.nl;Ms;Deltares;The Netherlands\n";
 
+        DataRequestManager.getInstance().clear();
         try (StringWriter writer = new StringWriter()) {
             keycloakUtils.exportUserMailingsAdminApi(writer, "3d4baf14-6088-400c-83c3-c20f14e63d51");
             String exportedUserMailings = writer.toString();

@@ -2,8 +2,9 @@ package nl.deltares.keycloak.storage.rest;
 
 import nl.deltares.keycloak.storage.jpa.Mailing;
 import nl.deltares.keycloak.storage.jpa.UserMailing;
-import nl.deltares.keycloak.storage.rest.model.ExportUserMailings;
-import nl.deltares.keycloak.storage.rest.serializers.ExportCsvSerializer;
+import nl.deltares.keycloak.storage.jpa.model.DataRequest;
+import nl.deltares.keycloak.storage.jpa.model.DataRequestManager;
+import nl.deltares.keycloak.storage.jpa.model.ExportCsvDataRequest;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
@@ -11,14 +12,12 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
-import javax.persistence.TypedQuery;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -33,19 +32,18 @@ import java.util.Map;
 import java.util.Properties;
 
 import static nl.deltares.keycloak.storage.rest.MailingAdminResource.getMailingById;
-import static nl.deltares.keycloak.storage.rest.ResourceUtils.*;
+import static nl.deltares.keycloak.storage.rest.ResourceUtils.getAuth;
+import static nl.deltares.keycloak.storage.rest.ResourceUtils.getStreamingOutput;
 import static nl.deltares.keycloak.storage.rest.UserMailingResource.getUserMailing;
 import static nl.deltares.keycloak.storage.rest.UserMailingResource.insertUserMailing;
 
 public class UserMailingAdminResource {
 
-    private static String CSV_SEPARATOR = ";";
-    private static int MAX_RESULTS = 100;
-
     private static final String DATA_PARAMETER = "data";
 
     private static final Logger logger = Logger.getLogger(UserMailingAdminResource.class);
     private final KeycloakSession session;
+    private final Properties properties;
 
     private AdminPermissionEvaluator realmAuth;
 
@@ -60,12 +58,7 @@ public class UserMailingAdminResource {
 
      UserMailingAdminResource(KeycloakSession session, Properties properties) {
         this.session = session;
-
-         if (properties != null){
-             MAX_RESULTS = Integer.parseInt(properties.getOrDefault("max_query_results", 100).toString());
-             CSV_SEPARATOR = (String) properties.getOrDefault("csv_separator", ";");
-         }
-
+        this.properties = properties;
      }
 
     public void init() {
@@ -86,27 +79,38 @@ public class UserMailingAdminResource {
     public Response downloadUserMailings(final @PathParam("mailing_id") String mailingId) {
         realmAuth.users().requireQuery();
         String realmId = callerRealm.getId();
-        UserProvider userProvider = session.userStorageManager();
-        ExportCsvSerializer serializer = new ExportCsvSerializer();
-
         Mailing mailing = getMailingById(session, realmId, mailingId);
         if (mailing == null){
             return Response.status(Response.Status.NO_CONTENT).entity("no mailing for id: " + mailingId).build();
         }
-        TypedQuery<UserMailing> query = getEntityManager(session).createNamedQuery("allUserMailingsByMailingAndRealm", UserMailing.class);
-        query.setParameter("realmId", realmId);
-        query.setParameter("mailingId", mailingId);
+        return getExportDataResponse(mailing);
 
-        ExportUserMailings content = new ExportUserMailings(userProvider, callerRealm, query, mailing.getName());
-        content.setMaxResults(MAX_RESULTS);
-        content.setSeparator(CSV_SEPARATOR);
-        try {
+    }
+
+    private Response getExportDataResponse(Mailing mailing) {
+
+        DataRequestManager instance = DataRequestManager.getInstance();
+        DataRequest dataRequest = instance.getDataRequest(mailing.getId());
+        if (dataRequest == null){
+            try {
+                dataRequest = new ExportCsvDataRequest(mailing, session, callerRealm, properties);
+            } catch (IOException e) {
+                return Response.serverError().entity(e.getMessage()).build();
+            }
+            instance.addDataRequest(dataRequest);
+            dataRequest.start();
+
+        }
+        DataRequest.STATUS status = dataRequest.getStatus();
+        if (status == DataRequest.STATUS.available){
             return Response.
-                    ok(getStreamingOutput(content, serializer)).
+                    ok(getStreamingOutput(dataRequest.getDataFile())).
                     type("text/csv").
                     build();
-        } catch (Exception e){
-            return  Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
+        } else if (status == DataRequest.STATUS.terminated) {
+            return Response.serverError().entity(dataRequest.getErrorMessage()).build();
+        } else {
+            return Response.ok(dataRequest.getStatusMessage()).type("text/plain").build();
         }
 
     }

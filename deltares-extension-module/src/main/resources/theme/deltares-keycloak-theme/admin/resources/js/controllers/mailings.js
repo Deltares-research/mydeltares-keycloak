@@ -75,10 +75,17 @@ module.controller('MailingListCtrl', function($scope, realm, Mailing, MailingSea
 
     $scope.exportUserMailings = function(mailing) {
         var exportUrl = authUrl + '/realms/' + realm.realm + '/user-mailings/admin/export/' + mailing.id;
-        var fileName = mailing.name + '-export.csv';
+
         $http.get(exportUrl)
             .then(response => {
-                saveAs(new Blob([response.data], { type: 'application/octet-stream' }), fileName);
+                var fileName = mailing.name + '-export.csv';
+                let mimeType = response.headers("Content-Type");
+                if (mimeType.includes("text/plain") ){
+                    Notifications.info(response.data);
+                } else if (mimeType.includes("text/csv") ){
+                    saveAs(new Blob([response.data], { type: 'application/octet-stream' }), fileName);
+                }
+
             }).catch(function(err) {
             Notifications.error("Sorry, something went wrong: "  + err);
         });

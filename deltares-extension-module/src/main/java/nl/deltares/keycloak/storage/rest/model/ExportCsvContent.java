@@ -8,4 +8,6 @@ public interface ExportCsvContent {
     boolean hasNextLine();
 
     String nextLine();
+
+    int totalExportedCount();
 }
