@@ -23,7 +23,6 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.*;
 import java.net.URLDecoder;
-import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.util.Properties;
 

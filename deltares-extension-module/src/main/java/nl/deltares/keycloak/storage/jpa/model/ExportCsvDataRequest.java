@@ -177,8 +177,12 @@ public class ExportCsvDataRequest implements DataRequest {
 
     @Override
     public STATUS getStatus() {
-        if (status == available && isExpired()) {
-            status = expired;
+        if (status == available) {
+            if (!exportFile.exists()) {
+                status = expired;
+            } else if (isExpired()) {
+                status = expired;
+            }
         }
         return status;
     }
