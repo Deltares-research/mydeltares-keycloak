@@ -45,7 +45,9 @@ public class KeycloakTestServer {
         unzipArchive(standaloneZip, standaloneDir);
 
         KeycloakServer.KeycloakServerConfig serverConfig = new KeycloakServer.KeycloakServerConfig();
-        serverConfig.setPort(5757);
+        String property = System.getProperty("jboss.http.port", "5780");
+        int httpPort = Integer.parseInt(property);
+        serverConfig.setPort(httpPort);
         serverConfig.setHost("localhost");
         serverConfig.setResourcesHome(standaloneDir.getAbsolutePath());
 
@@ -83,7 +85,7 @@ public class KeycloakTestServer {
         //wait for server to start
         RequestConfig config = RequestConfig.custom().setSocketTimeout(1000).build();
         try (CloseableHttpClient client = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
-            HttpGet request = new HttpGet("http://localhost:8080/auth/");
+            HttpGet request = new HttpGet(String.format("http://localhost:%d/auth/", httpPort));
             int count = 0;
             while (count < 30) {
                 count++;

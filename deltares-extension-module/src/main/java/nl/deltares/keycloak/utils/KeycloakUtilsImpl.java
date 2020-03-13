@@ -3,7 +3,6 @@ package nl.deltares.keycloak.utils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import nl.deltares.keycloak.storage.rest.MailingRepresentation;
 import nl.deltares.keycloak.storage.rest.UserMailingRepresentation;
-import nl.deltares.keycloak.storage.rest.UserMailingResource;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -608,6 +607,16 @@ public class KeycloakUtilsImpl {
             // load a properties file
             prop.load(input);
 
+            String portProp = System.getProperty("jboss.http.port");
+            if (portProp != null){
+                int httpPort = Integer.parseInt(portProp);
+                if (httpPort != 8080){
+                    String baseUrl = prop.getProperty("keycloak.baseurl");
+                    prop.setProperty("keycloak.baseurl", baseUrl.replace("8080", portProp));
+                    String apiUrl = prop.getProperty("keycloak.baseapiurl");
+                    prop.setProperty("keycloak.baseapiurl", apiUrl.replace("8080", portProp));
+                }
+            }
             return prop;
 
         } catch (IOException ex) {
