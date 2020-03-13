@@ -20,4 +20,6 @@ public interface DataRequest {
     String getErrorMessage();
 
     String getStatusMessage();
+
+    void setDataRequestManager(DataRequestManager manager);
 }

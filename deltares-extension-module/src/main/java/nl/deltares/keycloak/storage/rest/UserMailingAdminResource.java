@@ -91,15 +91,15 @@ public class UserMailingAdminResource {
 
         DataRequestManager instance = DataRequestManager.getInstance();
         DataRequest dataRequest = instance.getDataRequest(mailing.getId());
-        if (dataRequest == null){
+        if (dataRequest == null || dataRequest.getStatus() == DataRequest.STATUS.expired){
             try {
                 dataRequest = new ExportCsvDataRequest(mailing, session, callerRealm, properties);
+                if (dataRequest.getStatus() == DataRequest.STATUS.pending) {
+                    instance.addToQueue(dataRequest);
+                }
             } catch (IOException e) {
                 return Response.serverError().entity(e.getMessage()).build();
             }
-            instance.addDataRequest(dataRequest);
-            dataRequest.start();
-
         }
         DataRequest.STATUS status = dataRequest.getStatus();
         if (status == DataRequest.STATUS.available){
@@ -108,6 +108,7 @@ public class UserMailingAdminResource {
                     type("text/csv").
                     build();
         } else if (status == DataRequest.STATUS.terminated) {
+            instance.removeDataRequest(dataRequest);
             return Response.serverError().entity(dataRequest.getErrorMessage()).build();
         } else {
             return Response.ok(dataRequest.getStatusMessage()).type("text/plain").build();

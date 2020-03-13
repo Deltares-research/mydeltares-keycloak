@@ -44,6 +44,7 @@ public class ExportCsvDataRequest implements DataRequest {
     private String errorMessage;
     private Thread thread;
     private ExportCsvContent content;
+    private DataRequestManager manager;
 
     public ExportCsvDataRequest(Mailing mailing, KeycloakSession session, RealmModel realm, Properties properties) throws IOException {
         this.mailing = mailing;
@@ -59,7 +60,7 @@ public class ExportCsvDataRequest implements DataRequest {
         if (exportFile.exists()) {
             BasicFileAttributes attributes = Files.readAttributes(exportFile.toPath(), BasicFileAttributes.class);
             this.creationTime = attributes.creationTime().toMillis();
-            status = isExpired() ? expired : available;
+            if (!isExpired()) status = available;
         }
 
     }
@@ -98,7 +99,7 @@ public class ExportCsvDataRequest implements DataRequest {
                 logger.errorf("Cannot delete file %s: %s", exportFile.getAbsolutePath(), e.getMessage());
             }
         }
-
+        if (manager != null) manager.fireStateChanged(this);
     }
 
     @Override
@@ -108,9 +109,10 @@ public class ExportCsvDataRequest implements DataRequest {
 
         if (thread != null) throw new IllegalStateException("Thread already started!");
 
+        status = running;
+        if (manager != null) manager.fireStateChanged(this);
         thread = new Thread(() -> {
-            //todo Test if interrupting this thread is enough to stop the export
-            status = running;
+
             try {
                 File tempFile = getExportFile("tmp");
                 if (tempFile.exists()) Files.deleteIfExists(tempFile.toPath());
@@ -135,17 +137,18 @@ public class ExportCsvDataRequest implements DataRequest {
                     Files.move(tempFile.toPath(), exportFile.toPath());
                     creationTime = System.currentTimeMillis();
                 }
-
             } catch (IOException e) {
                 errorMessage = e.getMessage();
                 status = terminated;
             }
+            if (manager != null) manager.fireStateChanged(this);
+
         }, mailing.getName());
 
         thread.start();
         //wait for export to get started. quick exports can return values
         try {
-            thread.join(10000);
+            thread.join(5000);
         } catch (InterruptedException e) {
             //
         }
@@ -165,24 +168,19 @@ public class ExportCsvDataRequest implements DataRequest {
     }
 
     private File getExportFile(String extension) throws IOException {
-        File exportDir = getExportDir();
-        return new File(exportDir, mailing.getName() +  '.' + extension);
+        return new File(getExportDir(), mailing.getName() +  '.' + extension);
     }
 
     @Override
     public File getDataFile() {
-        if (status != available) throw new IllegalStateException("Data not available!");
+        if (status != available) throw new IllegalStateException("Data not available! Check if state is 'available'!");
         return exportFile;
     }
 
     @Override
-    public STATUS getStatus() {
-        if (status == available) {
-            if (!exportFile.exists()) {
-                status = expired;
-            } else if (isExpired()) {
-                status = expired;
-            }
+    public synchronized STATUS getStatus() {
+        if (status == available && isExpired()) {
+            status = expired;
         }
         return status;
     }
@@ -191,6 +189,7 @@ public class ExportCsvDataRequest implements DataRequest {
         return System.currentTimeMillis() - creationTime > maxAge;
     }
 
+    @Override
     public String getErrorMessage(){
         if (errorMessage == null && status == terminated){
             return "terminated";
@@ -198,6 +197,7 @@ public class ExportCsvDataRequest implements DataRequest {
         return errorMessage;
     }
 
+    @Override
     public String getStatusMessage() {
         int count = 0;
         if (content != null) count = content.totalExportedCount();
@@ -206,4 +206,8 @@ public class ExportCsvDataRequest implements DataRequest {
                 "processed: %d" , mailing.getName(), status, count);
     }
 
+    @Override
+    public void setDataRequestManager(DataRequestManager manager) {
+        this.manager = manager;
+    }
 }

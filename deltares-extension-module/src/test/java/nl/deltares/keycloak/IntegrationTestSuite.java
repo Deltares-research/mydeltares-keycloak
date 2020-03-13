@@ -12,7 +12,7 @@ import org.junit.runner.RunWith;
 @RunWith(WildcardPatternSuite.class)
 @Categories.IncludeCategory(IntegrationTestCategory.class)
 @SuiteClasses("**/*Test.class")
-public class LocalIntegrationTestSuite {
+public class IntegrationTestSuite {
 
     @BeforeClass
     public static void startKeyCloak() throws Throwable {
