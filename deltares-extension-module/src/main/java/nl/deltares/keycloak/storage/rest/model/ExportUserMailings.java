@@ -1,44 +1,48 @@
 package nl.deltares.keycloak.storage.rest.model;
 
-import nl.deltares.keycloak.storage.jpa.UserMailing;
+import nl.deltares.keycloak.storage.jpa.Mailing;
 import org.jboss.logging.Logger;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserProvider;
+import org.keycloak.models.jpa.entities.UserAttributeEntity;
+import org.keycloak.models.jpa.entities.UserEntity;
 
+import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+
+import static nl.deltares.keycloak.storage.rest.ResourceUtils.getEntityManager;
 
 public class ExportUserMailings implements ExportCsvContent {
 
-    private static final Logger logger = Logger.getLogger(ExportUserMailings.class);
+    private static final Logger logger = Logger.getLogger(ExportUserMailings2.class);
     private final String[] headers = new String[]{"firstName", "lastName", "email", "salutation", "organization", "country"};
     private final String[] values;
-    private final UserProvider userProvider;
-    private final RealmModel realm;
-    private final TypedQuery<UserMailing> query;
-    private final String mailingName;
+    private final TypedQuery<UserEntity> query;
+    private final Mailing mailing;
 
     private String separator = ";";
     private int totalCount = 0;
     private int rsCount = 0;
-    private int consecutiveErrorsCount = 0;
-    private List<UserMailing> userMailings = null;
+    private List<UserEntity> resultSets = null;
 
-    public ExportUserMailings(UserProvider userProvider, RealmModel realmModel, TypedQuery<UserMailing> query, String name) {
-        this.userProvider = userProvider;
-        this.realm = realmModel;
-        this.query = query;
-        this.query.setMaxResults(100);
-        this.query.setFirstResult(0);
-        this.mailingName = name;
-        values = new String[headers.length];
+    public ExportUserMailings(RealmModel realmModel, KeycloakSession session, Mailing mailing) {
+        this.mailing = mailing;
+        this.values = new String[headers.length];
+        EntityManager entityManager = getEntityManager(session);
+        query = entityManager.createQuery("SELECT u " +
+                "FROM UserEntity AS u " +
+                "INNER JOIN UserMailing AS m ON u.id = m.userId " +
+                " WHERE u.realmId=:realmId AND m.mailingId=:mailingId", UserEntity.class);
+        this.query.setParameter("realmId", realmModel.getId());
+        this.query.setParameter("mailingId", mailing.getId());
     }
 
     public void setMaxResults(int maxResults) {
         if (maxResults < 1) throw new IllegalArgumentException("MaxResults must be larger and 0! " + maxResults);
         query.setMaxResults(maxResults);
-
     }
 
     public void setSeparator(String separator) {
@@ -59,63 +63,54 @@ public class ExportUserMailings implements ExportCsvContent {
     public boolean hasNextLine() {
 
         //Not initialized yet
-        if (userMailings == null){
-            logger.info("Start downloading user mailings for " + mailingName);
-            userMailings = query.getResultList();
+        if (resultSets == null){
+            logger.info("Start downloading user mailings for " + mailing.getName());
+            resultSets = query.getResultList();
         }
         //Check if all list items have been processed
-        if (rsCount < userMailings.size()) return true;
+        if (rsCount < resultSets.size()) return true;
 
         //Reached end of list get more elements
         logger.info(String.format("%d user mailings downloaded", totalCount));
         query.setFirstResult(totalCount);
         rsCount = 0;
-        userMailings = query.getResultList();
-        boolean hasNext = userMailings.size() > 0;
+        resultSets = query.getResultList();
+        boolean hasNext = resultSets.size() > 0;
         if (!hasNext){
-            logger.info(String.format("Finished downloading %d user mailings for %s", totalCount, mailingName));
+            logger.info(String.format("Finished downloading %d user mailings for %s", totalCount, mailing.getName()));
         }
         return hasNext;
     }
 
-    @Override
     public String nextLine() {
 
         int curr = rsCount;
         rsCount++;
         totalCount++;
-        UserMailing userMailing = userMailings.get(curr);
-
-        UserModel user;
-        try {
-            user = userProvider.getUserById(userMailing.getUserId(), realm);
-            if (user == null) {
-                return null;
-            }
-        } catch (Exception e){
-            consecutiveErrorsCount++;
-            if (consecutiveErrorsCount > 100){
-                throw e; //if there is a real problem then do not continue.
-            }
-            logger.warn(String.format("Error getUserById for id %s: %s", userMailing.getUserId(), e.getMessage()));
-            return null;
-        }
-        consecutiveErrorsCount=0;
-
+        UserEntity user = resultSets.get(curr);
+        Arrays.fill(values, "");
         values[0] = user.getFirstName();
         values[1] = user.getLastName();
         values[2] = user.getEmail();
 
-        List<String> salutation = user.getAttribute("academicTitle");
-        values[3] = salutation.size() > 0 ? salutation.get(0) : "";
-
-        List<String> organization = user.getAttribute("org_name");
-        values[4] = organization.size() > 0 ? organization.get(0) : "";
-
-        List<String> country = user.getAttribute("org_country");
-        values[5] = country.size() > 0 ? country.get(0) : "";
+        readAttributes(values, user.getAttributes());
 
         return String.join(separator, values);
+    }
+
+    private void readAttributes(String[] values, Collection<UserAttributeEntity> attributes) {
+
+        for (UserAttributeEntity attribute : attributes) {
+            String name = attribute.getName();
+            if ("academicTitle".equals(name)) {
+                values[3] = attribute.getValue(); //salutation
+            } else if ("org_name".equals(name)) {
+                values[4] = attribute.getValue(); //org name
+            } else if ("org_country".equals(name)) {
+                values[5] = attribute.getValue(); //org country
+            }
+
+        }
     }
 
     @Override

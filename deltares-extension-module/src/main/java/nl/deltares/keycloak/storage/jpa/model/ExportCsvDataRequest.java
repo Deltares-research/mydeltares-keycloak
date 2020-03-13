@@ -1,7 +1,6 @@
 package nl.deltares.keycloak.storage.jpa.model;
 
 import nl.deltares.keycloak.storage.jpa.Mailing;
-import nl.deltares.keycloak.storage.jpa.UserMailing;
 import nl.deltares.keycloak.storage.rest.model.ExportCsvContent;
 import nl.deltares.keycloak.storage.rest.model.ExportUserMailings;
 import nl.deltares.keycloak.storage.rest.model.TextSerializer;
@@ -9,10 +8,7 @@ import nl.deltares.keycloak.storage.rest.serializers.ExportCsvSerializer;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserProvider;
 
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -23,7 +19,6 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import static nl.deltares.keycloak.storage.jpa.model.DataRequest.STATUS.*;
-import static nl.deltares.keycloak.storage.rest.ResourceUtils.getEntityManager;
 
 public class ExportCsvDataRequest implements DataRequest {
 
@@ -155,17 +150,12 @@ public class ExportCsvDataRequest implements DataRequest {
     }
 
     private ExportCsvContent getExportContent(KeycloakSession session) {
-        EntityManager entityManager = getEntityManager(session);
-        TypedQuery<UserMailing> query = entityManager.createNamedQuery("allUserMailingsByMailingAndRealm", UserMailing.class);
-        query.setParameter("realmId", realm.getId());
-        query.setParameter("mailingId", mailing.getId());
-        UserProvider userProvider = session.userStorageManager();
-        ExportUserMailings content = new ExportUserMailings(userProvider, realm, query, mailing.getName());
+        ExportUserMailings content = new ExportUserMailings(realm, session, mailing);
         content.setMaxResults(maxResults);
         content.setSeparator(csvSeparator);
-
         return content;
     }
+
 
     private File getExportFile(String extension) throws IOException {
         return new File(getExportDir(), mailing.getName() +  '.' + extension);
