@@ -45,7 +45,7 @@ public class KeycloakTestServer {
         unzipArchive(standaloneZip, standaloneDir);
 
         KeycloakServer.KeycloakServerConfig serverConfig = new KeycloakServer.KeycloakServerConfig();
-        serverConfig.setPort(8080);
+        serverConfig.setPort(5757);
         serverConfig.setHost("localhost");
         serverConfig.setResourcesHome(standaloneDir.getAbsolutePath());
 
