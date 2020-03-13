@@ -9,7 +9,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import javax.ws.rs.core.Response;
 import java.io.*;
 
 @Category(IntegrationTestCategory.class)
@@ -22,7 +21,7 @@ public class UserMailingsApiTest {
     }
 
     @Test
-    public void adminApiExportUserMailings() throws IOException, InterruptedException {
+    public void adminApiExportUserMailings() throws IOException {
 
         String expected = "firstName;lastName;email;salutation;organization;country\n" +
         "User 1;export;export-usermailing1@test.nl;Mr;Test;Test\n" +

@@ -50,10 +50,10 @@ public class ExportCsvDataRequest implements DataRequest {
         this.mailing = mailing;
         this.session = session;
         this.realm = realm;
-        String max_age = properties.getProperty("max_age");
-        this.maxAge = max_age == null ? TimeUnit.HOURS.toMillis(1) : Long.parseLong(max_age);
-        String max_results = properties.getProperty("max_query_results");
-        this.maxResults = max_age == null ? 500 : Integer.parseInt(max_results);
+        String max_age = properties.getProperty("max_age_hours", "1");
+        this.maxAge = TimeUnit.HOURS.toMillis(Integer.parseInt(max_age));
+        String max_results = properties.getProperty("max_query_results" ,"500");
+        this.maxResults = Integer.parseInt(max_results);
         this.csvSeparator = properties.getProperty("csv_separator", ";");
 
         this.exportFile = getExportFile("csv");
