@@ -17,7 +17,7 @@ import static nl.deltares.keycloak.storage.rest.ResourceUtils.getEntityManager;
 
 public class ExportUserMailings implements ExportCsvContent {
 
-    private static final Logger logger = Logger.getLogger(ExportUserMailings2.class);
+    private static final Logger logger = Logger.getLogger(ExportUserMailings.class);
     private final String[] headers = new String[]{"firstName", "lastName", "email", "salutation", "organization", "country"};
     private final String[] values;
     private final TypedQuery<UserEntity> query;
