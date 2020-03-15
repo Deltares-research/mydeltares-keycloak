@@ -169,7 +169,6 @@ public class KeycloakTestServer {
         return destFile;
     }
 
-
     public static KeycloakUtilsImpl getAdminKeycloakUtils(){
 
         if (adminUtils != null) return adminUtils;
@@ -190,7 +189,6 @@ public class KeycloakTestServer {
         userUtils = loadPropertiesFile("user-keycloak.properties");
         return userUtils;
     }
-
 
     private static KeycloakUtilsImpl loadPropertiesFile(String fileName) {
         URL adminResource = KeycloakTestServer.class.getClassLoader().getResource("keycloak/standalone/configuration/" + fileName);

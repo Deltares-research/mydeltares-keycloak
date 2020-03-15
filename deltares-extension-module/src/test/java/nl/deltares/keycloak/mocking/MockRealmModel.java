@@ -12,7 +12,7 @@ import java.util.Set;
 public class MockRealmModel implements RealmModel {
 
 
-    private String id;
+    private String id = "test-realm";
 
     @Override
     public String getId() {

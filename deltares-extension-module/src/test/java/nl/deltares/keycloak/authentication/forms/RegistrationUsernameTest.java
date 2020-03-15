@@ -1,24 +1,19 @@
 package nl.deltares.keycloak.authentication.forms;
 
 import nl.deltares.keycloak.UnitTestCategory;
-import nl.deltares.keycloak.mocking.MockClientConnection;
-import nl.deltares.keycloak.mocking.MockKeycloakSession;
-import nl.deltares.keycloak.mocking.MockRealmModel;
 import nl.deltares.keycloak.mocking.MockValidationContext;
 import org.jboss.resteasy.mock.MockHttpRequest;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Details;
-import org.keycloak.events.EventBuilder;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.validation.Validation;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.net.URISyntaxException;
+
+import static nl.deltares.keycloak.mocking.TestUtils.getMockValidationContext;
 
 @Category(UnitTestCategory.class)
 public class RegistrationUsernameTest {
@@ -56,17 +51,4 @@ public class RegistrationUsernameTest {
 
     }
 
-    private MockValidationContext getMockValidationContext() throws URISyntaxException {
-        MockHttpRequest request = MockHttpRequest.get("http://localhost:8080/test");
-        MockValidationContext context = new MockValidationContext();
-        context.setRequest(request);
-        KeycloakSession session = new MockKeycloakSession(new DefaultKeycloakSessionFactory());
-        MockRealmModel realm = new MockRealmModel();
-        ClientConnection connection = new MockClientConnection();
-        EventBuilder eventBuilder = new EventBuilder(realm, session, connection);
-        context.setEventBuilder(eventBuilder);
-        context.setSession(session);
-
-        return context;
-    }
 }

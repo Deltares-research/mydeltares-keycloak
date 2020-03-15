@@ -6,36 +6,38 @@ import nl.deltares.keycloak.storage.jpa.model.DataRequestManager;
 import nl.deltares.keycloak.utils.KeycloakUtilsImpl;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TestName;
 
 import java.io.*;
 
 @Category(IntegrationTestCategory.class)
 public class UserMailingsApiTest {
 
+    @Rule
+    public TestName name = new TestName();
 
     @Before
     public void setUp(){
+
+        System.setProperty("csv_prefix", name.getMethodName());
         Assert.assertTrue(KeycloakTestServer.isRunning());
     }
 
     @Test
     public void adminApiExportUserMailings() throws IOException {
 
-        String expected = "firstName;lastName;email;salutation;organization;country\n" +
-        "User 1;export;export-usermailing1@test.nl;Mr;Test;Test\n" +
-        "User 2;export;export-usermailing2@test.nl;Ms;Deltares;The Netherlands\n";
 
         KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getAdminKeycloakUtils();
-
-        System.setProperty("jboss.server.temp.dir", System.getProperty("java.io.tmpdir"));
 
         try (StringWriter writer = new StringWriter()) {
             int status = keycloakUtils.exportUserMailingsAdminApi(writer, "db0be0a5-e96e-40b6-b687-fdb12304b69a");
             Assert.assertEquals(200, status);
             String exportedUserMailings = writer.toString();
-            Assert.assertEquals(expected, exportedUserMailings);
+            Assert.assertTrue(exportedUserMailings.contains( "User 1;export;export-usermailing1@test.nl;Mr;Test;Test"));
+            Assert.assertTrue(exportedUserMailings.contains( "User 2;export;export-usermailing2@test.nl;Ms;Deltares;The Netherlands"));
         }
 
     }
@@ -57,12 +59,12 @@ public class UserMailingsApiTest {
     @Test
     public void adminApiImportUserMailings() throws IOException {
 
-        System.setProperty("jboss.server.temp.dir", System.getProperty("java.io.tmpdir"));
         KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getAdminKeycloakUtils();
         try (StringWriter writer = new StringWriter()) {
             keycloakUtils.exportUserMailingsAdminApi(writer, "3d4baf14-6088-400c-83c3-c20f14e63d51");
             String exportedUserMailings = writer.toString();
-            Assert.assertEquals("firstName;lastName;email;salutation;organization;country", exportedUserMailings.trim());
+            Assert.assertFalse(exportedUserMailings.contains( "User 1;import;import-usermailing1@test.nl;Mr;Test;Test"));
+            Assert.assertFalse(exportedUserMailings.contains( "User 2;import;import-usermailing2@test.nl;Ms;Deltares;The Netherlands"));
         }
 
         String userIds = "d05d4b89-59a9-4343-ae55-363234d1ac14\n" +
@@ -73,15 +75,12 @@ public class UserMailingsApiTest {
             Assert.assertEquals(200, status);
         }
 
-        String expected = "firstName;lastName;email;salutation;organization;country\n" +
-                "User 1;import;import-usermailing1@test.nl;Mr;Test;Test\n" +
-                "User 2;import;import-usermailing2@test.nl;Ms;Deltares;The Netherlands\n";
-
         DataRequestManager.getInstance().clear();
         try (StringWriter writer = new StringWriter()) {
             keycloakUtils.exportUserMailingsAdminApi(writer, "3d4baf14-6088-400c-83c3-c20f14e63d51");
             String exportedUserMailings = writer.toString();
-            Assert.assertEquals(expected.trim(), exportedUserMailings.trim());
+            Assert.assertTrue(exportedUserMailings.contains( "User 1;import;import-usermailing1@test.nl;Mr;Test;Test"));
+            Assert.assertTrue(exportedUserMailings.contains( "User 2;import;import-usermailing2@test.nl;Ms;Deltares;The Netherlands"));
         }
 
     }

@@ -102,15 +102,22 @@ public class ExportUserMailings implements ExportCsvContent {
 
         for (UserAttributeEntity attribute : attributes) {
             String name = attribute.getName();
-            if ("academicTitle".equals(name)) {
+            if ("academictitle".equalsIgnoreCase(name)) {
                 values[3] = attribute.getValue(); //salutation
-            } else if ("org_name".equals(name)) {
-                values[4] = attribute.getValue(); //org name
-            } else if ("org_country".equals(name)) {
+            } else if ("org_name".equalsIgnoreCase(name)) {
+                values[4] = addQuotesIfRequired(attribute.getValue()); //org name
+            } else if ("org_country".equalsIgnoreCase(name)) {
                 values[5] = attribute.getValue(); //org country
             }
 
         }
+    }
+
+    private String addQuotesIfRequired(String value) {
+        if (value.indexOf(separator) > 0){
+            return '\"' + value + '\"';
+        }
+        return value;
     }
 
     @Override

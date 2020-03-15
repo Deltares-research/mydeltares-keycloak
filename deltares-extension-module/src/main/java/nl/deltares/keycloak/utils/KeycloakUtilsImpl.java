@@ -3,6 +3,7 @@ package nl.deltares.keycloak.utils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import nl.deltares.keycloak.storage.rest.MailingRepresentation;
 import nl.deltares.keycloak.storage.rest.UserMailingRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -95,10 +96,8 @@ public class KeycloakUtilsImpl {
     }
 
     public void deleteUser(String id) throws IOException {
-
         HttpURLConnection urlConnection = getConnection(getUsersPath() + "/" + id, "DELETE", getAccessToken(), null);
         checkResponse(urlConnection);
-
     }
 
     public byte[] getUserAvatarAdminApi(String email) throws IOException {
@@ -274,6 +273,16 @@ public class KeycloakUtilsImpl {
         }
         ObjectMapper mapper = new ObjectMapper();
         return mapper.readValue(urlConnection.getInputStream(), mapper.getTypeFactory().constructCollectionType(List.class, MailingRepresentation.class));
+    }
+
+    public int createUser(UserRepresentation user) throws IOException {
+
+        HashMap<String, String> map = new HashMap<>();
+        map.put("Content-Type", MediaType.APPLICATION_JSON);
+        HttpURLConnection urlConnection = getConnection(getUsersPath(), "POST", getAccessToken(), map);
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(urlConnection.getOutputStream(), user);
+        return checkResponse(urlConnection);
     }
 
     public int createMailingAdminApi(MailingRepresentation mailing) throws IOException {

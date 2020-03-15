@@ -34,6 +34,7 @@ public class ExportCsvDataRequest implements DataRequest {
     private final long maxAge;
     private final int maxResults;
     private final String csvSeparator;
+    private final String csvPrefix;
 
     private File exportFile;
     private String errorMessage;
@@ -50,8 +51,8 @@ public class ExportCsvDataRequest implements DataRequest {
         String max_results = properties.getProperty("max_query_results" ,"500");
         this.maxResults = Integer.parseInt(max_results);
         this.csvSeparator = properties.getProperty("csv_separator", ";");
-
-        this.exportFile = getExportFile("csv");
+        this.csvPrefix = System.getProperty("csv_prefix");
+        this.exportFile = getExportFile(csvPrefix, "csv");
         if (exportFile.exists()) {
             BasicFileAttributes attributes = Files.readAttributes(exportFile.toPath(), BasicFileAttributes.class);
             this.creationTime = attributes.creationTime().toMillis();
@@ -109,7 +110,7 @@ public class ExportCsvDataRequest implements DataRequest {
         thread = new Thread(() -> {
 
             try {
-                File tempFile = getExportFile("tmp");
+                File tempFile = getExportFile(csvPrefix, "tmp");
                 if (tempFile.exists()) Files.deleteIfExists(tempFile.toPath());
 
                 //Create local session because the servlet session will close after call to endpoint is completed
@@ -156,9 +157,12 @@ public class ExportCsvDataRequest implements DataRequest {
         return content;
     }
 
-
-    private File getExportFile(String extension) throws IOException {
-        return new File(getExportDir(), mailing.getName() +  '.' + extension);
+    private File getExportFile(String prefix, String extension) throws IOException {
+        if (prefix == null) {
+            return new File(getExportDir(), mailing.getName() + '.' + extension);
+        } else {
+            return new File(getExportDir(), prefix +  '_' +  mailing.getName() + '.' + extension);
+        }
     }
 
     @Override
