@@ -74,7 +74,25 @@ public class KeycloakUtilsImpl {
         return basePath + KEYCLOAK_USERS_PATH;
     }
 
-    public String getUserId(String email) throws IOException {
+    public UserRepresentation getUser(String id) throws IOException {
+        HttpURLConnection urlConnection = getConnection(getUsersPath() + "/" + id, "GET", getAccessToken(), null);
+        int response = checkResponse(urlConnection);
+        if (response == Response.Status.NO_CONTENT.getStatusCode()) {
+            return null;
+        }
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(urlConnection.getInputStream(), mapper.getTypeFactory().constructType(UserRepresentation.class));
+    }
+
+    public int updateUser(UserRepresentation user) throws IOException {
+        HashMap<String, String> map = new HashMap<>();
+        map.put("Content-Type", MediaType.APPLICATION_JSON);
+        HttpURLConnection urlConnection = getConnection(getUsersPath(), "PUT", getAccessToken(), map);
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(urlConnection.getOutputStream(), user);
+        return checkResponse(urlConnection);
+    }
+    public UserRepresentation getUserByEmail(String email) throws IOException {
 
         HttpURLConnection urlConnection = getConnection(getUsersPath() + "?email=" + email, "GET", getAccessToken(), null);
         int responseCode = urlConnection.getResponseCode();
@@ -88,9 +106,9 @@ public class KeycloakUtilsImpl {
         }
         String jsonResponse = readAll(urlConnection.getInputStream());
         ObjectMapper mapper = new ObjectMapper();
-        List<Map<String, Object>> map = mapper.readValue(jsonResponse, mapper.getTypeFactory().constructCollectionType(List.class, Map.class));
+        List<UserRepresentation> map = mapper.readValue(jsonResponse, mapper.getTypeFactory().constructCollectionType(List.class, UserRepresentation.class));
         if (map.size() > 0) {
-            return (String) map.get(0).get("id");
+            return map.get(0);
         }
         return null;
     }
@@ -129,7 +147,7 @@ public class KeycloakUtilsImpl {
         return uploadUserAvatar(new URL(getAvatarPath()), portraitFile, getAccessToken(username, password));
     }
 
-    public String getUserByIdAdminApi(String id) throws IOException {
+    public String getUserAsJson(String id) throws IOException {
         HttpURLConnection urlConnection = getConnection(getUsersPath() + "/" + id, "GET", getAccessToken(), null);
         checkResponse(urlConnection);
         return readAll(urlConnection.getInputStream());

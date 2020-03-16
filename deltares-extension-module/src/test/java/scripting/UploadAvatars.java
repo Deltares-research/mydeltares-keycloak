@@ -1,6 +1,7 @@
 package scripting;
 
 import nl.deltares.keycloak.utils.KeycloakUtilsImpl;
+import org.keycloak.representations.idm.UserRepresentation;
 
 import java.io.*;
 import java.util.Properties;
@@ -38,8 +39,8 @@ public class UploadAvatars {
         try(BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(failedEmails)))) {
             writeFailed(bw, "email", "portraitId"); // write header
             try (BufferedReader reader = new BufferedReader(new FileReader(userPortraitIdsFile))) {
-                String line = reader.readLine(); //skip header
-                line = reader.readLine();
+                reader.readLine(); //skip header
+                String line = reader.readLine();
                 while (line != null) {
                     String[] values = line.split(";");
                     String email = values[0];
@@ -47,7 +48,8 @@ public class UploadAvatars {
 
                     String userId = null;
                     try {
-                        userId = keycloakUtils.getUserId(email);
+                        UserRepresentation userByEmail = keycloakUtils.getUserByEmail(email);
+                        userId = userByEmail != null ? userByEmail.getId() : null;
                     } catch (Exception e) {
                         System.out.println(e.getMessage());
                     }

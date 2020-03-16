@@ -5,6 +5,7 @@ import nl.deltares.keycloak.mocking.MockClientConnection;
 import nl.deltares.keycloak.mocking.MockRealmModel;
 import nl.deltares.keycloak.mocking.MockValidationContext;
 import org.jboss.resteasy.mock.MockHttpRequest;
+import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

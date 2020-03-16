@@ -84,7 +84,7 @@ public class ExportDeltaresUsers {
 
     private static String getIdpLink(String id, KeycloakUtilsImpl keycloakUtils) throws IOException {
 
-        String userJson = keycloakUtils.getUserByIdAdminApi(id);
+        String userJson = keycloakUtils.getUserAsJson(id);
         ObjectMapper mapper = new ObjectMapper();
         Map<String, Object> user = mapper.readValue(userJson, mapper.getTypeFactory().constructType(Map.class));
         List federatedIdentities = (List) user.get("federatedIdentities");

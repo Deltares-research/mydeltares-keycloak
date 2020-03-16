@@ -1,20 +1,16 @@
 package nl.deltares.keycloak.authentication.requiredactions;
 
 import nl.deltares.keycloak.UnitTestCategory;
-import nl.deltares.keycloak.mocking.MockRealmModel;
-import nl.deltares.keycloak.mocking.MockRequiredActionContext;
-import nl.deltares.keycloak.mocking.MockUserModel;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.keycloak.authentication.RequiredActionContext;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.DefaultKeycloakSession;
-import org.keycloak.services.DefaultKeycloakSessionFactory;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+
+import static nl.deltares.keycloak.mocking.TestUtils.getRequiredActionContext;
 
 @Category(UnitTestCategory.class)
 public class LoginStatsRecordingRequiredActionProviderTest {
@@ -23,7 +19,7 @@ public class LoginStatsRecordingRequiredActionProviderTest {
     public void testEvaluateTriggers(){
 
         LoginStatsRecordingRequiredActionProvider provider = new LoginStatsRecordingRequiredActionProvider();
-        RequiredActionContext context = getMockingContext("evaluateTriggers");
+        RequiredActionContext context = getRequiredActionContext("evaluateTriggers");
 
         //no values set
         provider.evaluateTriggers(context);
@@ -45,16 +41,6 @@ public class LoginStatsRecordingRequiredActionProviderTest {
         Assert.assertNotNull(recentLoginDate);
         timeStamp = dateTime.toEpochSecond(ZoneOffset.UTC);
         Assert.assertEquals(startTime, timeStamp, 10);
-    }
-
-    private RequiredActionContext getMockingContext(String id) {
-
-        KeycloakSession session = new DefaultKeycloakSession(new DefaultKeycloakSessionFactory());
-        MockRealmModel realm = new MockRealmModel();
-        MockUserModel userModel = new MockUserModel(session, realm, id);
-        MockRequiredActionContext context = new MockRequiredActionContext();
-        context.setUserModel(userModel);
-        return context;
     }
 
 

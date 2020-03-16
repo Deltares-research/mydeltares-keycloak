@@ -21,6 +21,9 @@ public class MockValidationContext implements ValidationContext {
     private boolean success;
     private KeycloakSession session;
 
+    private UserModel userModel;
+    private RealmModel realmModel;
+
     public void setRequest(HttpRequest request) {
         this.request = request;
     }
@@ -88,17 +91,21 @@ public class MockValidationContext implements ValidationContext {
 
     @Override
     public UserModel getUser() {
-        return null;
+        return userModel;
     }
 
     @Override
     public void setUser(UserModel user) {
-
+        this.userModel = user;
     }
 
     @Override
     public RealmModel getRealm() {
-        return null;
+        return realmModel;
+    }
+
+    public void setRealm(RealmModel realmModel) {
+        this.realmModel = realmModel;
     }
 
     @Override
