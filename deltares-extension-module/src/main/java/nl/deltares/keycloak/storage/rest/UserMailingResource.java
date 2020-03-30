@@ -136,14 +136,15 @@ public class UserMailingResource {
         if (authResult == null) {
             return redirectLogin();
         }
-        String userId = authResult.getUser().getId();
-        if (!userId.equals(rep.getUserId())){
-            return Response.status(Response.Status.FORBIDDEN).build();
-        }
+
         String id = rep.getId();
         UserMailing mailing = getUserMailingById(session, id);
         if (mailing == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        String userId = authResult.getUser().getId();
+        if (!userId.equals(mailing.getUserId())){
+            return Response.status(Response.Status.FORBIDDEN).build();
         }
         try {
             validateUserMailing(rep);

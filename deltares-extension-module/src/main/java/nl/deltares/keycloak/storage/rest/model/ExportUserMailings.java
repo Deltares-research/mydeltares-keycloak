@@ -1,6 +1,7 @@
 package nl.deltares.keycloak.storage.rest.model;
 
 import nl.deltares.keycloak.storage.jpa.Mailing;
+import nl.deltares.keycloak.storage.jpa.UserMailing;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -18,24 +19,24 @@ import static nl.deltares.keycloak.storage.rest.ResourceUtils.getEntityManager;
 public class ExportUserMailings implements ExportCsvContent {
 
     private static final Logger logger = Logger.getLogger(ExportUserMailings.class);
-    private final String[] headers = new String[]{"firstName", "lastName", "email", "salutation", "organization", "country"};
+    private final String[] headers = new String[]{"firstName", "lastName", "email", "salutation", "organization", "country", "language", "delivery"};
     private final String[] values;
-    private final TypedQuery<UserEntity> query;
+    private final TypedQuery<Object[]> query;
     private final Mailing mailing;
 
     private String separator = ";";
     private int totalCount = 0;
     private int rsCount = 0;
-    private List<UserEntity> resultSets = null;
+    private List<Object[]> resultSets = null; // UserEntity, UserMailing
 
     public ExportUserMailings(RealmModel realmModel, KeycloakSession session, Mailing mailing) {
         this.mailing = mailing;
         this.values = new String[headers.length];
         EntityManager entityManager = getEntityManager(session);
-        query = entityManager.createQuery("SELECT u " +
+        query = entityManager.createQuery("SELECT u, m " +
                 "FROM UserEntity AS u " +
                 "INNER JOIN UserMailing AS m ON u.id = m.userId " +
-                " WHERE u.realmId=:realmId AND m.mailingId=:mailingId", UserEntity.class);
+                " WHERE u.realmId=:realmId AND m.mailingId=:mailingId", Object[].class);
         this.query.setParameter("realmId", realmModel.getId());
         this.query.setParameter("mailingId", mailing.getId());
     }
@@ -87,7 +88,12 @@ public class ExportUserMailings implements ExportCsvContent {
         int curr = rsCount;
         rsCount++;
         totalCount++;
-        UserEntity user = resultSets.get(curr);
+        Object[] results  = resultSets.get(curr);
+        if (results.length != 2) {
+            throw new IllegalStateException("Expected resultSet to have two arguments; UserEntity and UserMailing! Found " + results.length);
+        }
+        UserEntity user = (UserEntity) results[0];
+        UserMailing userMailing = (UserMailing) results[1];
         Arrays.fill(values, "");
         values[0] = user.getFirstName();
         values[1] = user.getLastName();
@@ -95,6 +101,8 @@ public class ExportUserMailings implements ExportCsvContent {
 
         readAttributes(values, user.getAttributes());
 
+        values[6] = userMailing.getLanguage();
+        values[7] = Mailing.deliveries.get(userMailing.getDelivery());
         return String.join(separator, values);
     }
 

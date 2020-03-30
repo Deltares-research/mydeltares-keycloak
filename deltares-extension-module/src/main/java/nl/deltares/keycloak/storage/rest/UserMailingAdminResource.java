@@ -102,7 +102,7 @@ public class UserMailingAdminResource {
             }
         }
         DataRequest.STATUS status = dataRequest.getStatus();
-        if (status == DataRequest.STATUS.available){
+        if (status == DataRequest.STATUS.available && dataRequest.getDataFile().exists()){
             return Response.
                     ok(getStreamingOutput(dataRequest.getDataFile())).
                     type("text/csv").

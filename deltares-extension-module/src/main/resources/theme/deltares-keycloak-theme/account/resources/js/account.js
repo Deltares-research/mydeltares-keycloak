@@ -39,7 +39,7 @@ function saveMailings(url, urlParams) {
         userMailing.deliveryTxt = delElement.options[delElement.selectedIndex].value;
         var hasId = userMailing.id !== '';
         if (hasId && !enabled){
-            sendHttpMessage(url + '/' + userMailing.id + '?' + urlParams,"DELETE", userMailing);
+            sendHttpMessage(url + '/' + userMailing.mailingId + '?' + urlParams,"DELETE", userMailing);
         } else if(!hasId && enabled){
             sendHttpMessage(url + '?' + urlParams,"POST", userMailing);
         } else if(hasId && enabled){
