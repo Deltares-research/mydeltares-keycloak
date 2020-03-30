@@ -37,8 +37,8 @@ public class UserMailingsApiTest {
             int status = keycloakUtils.exportUserMailingsAdminApi(writer, "db0be0a5-e96e-40b6-b687-fdb12304b69a");
             Assert.assertEquals(200, status);
             String exportedUserMailings = writer.toString();
-            Assert.assertTrue(exportedUserMailings.contains( "User 1;export;export-usermailing1@test.nl;Mr;Test;Test"));
-            Assert.assertTrue(exportedUserMailings.contains( "User 2;export;export-usermailing2@test.nl;Ms;Deltares;The Netherlands"));
+            Assert.assertTrue(exportedUserMailings.contains( "User 1;export;export-usermailing1@test.nl;Mr;Test;Test;en;e-mail"));
+            Assert.assertTrue(exportedUserMailings.contains( "User 2;export;export-usermailing2@test.nl;Ms;Deltares;The Netherlands;en;e-mail"));
         }
 
     }
@@ -64,8 +64,8 @@ public class UserMailingsApiTest {
         try (StringWriter writer = new StringWriter()) {
             keycloakUtils.exportUserMailingsAdminApi(writer, "3d4baf14-6088-400c-83c3-c20f14e63d51");
             String exportedUserMailings = writer.toString();
-            Assert.assertFalse(exportedUserMailings.contains( "User 1;import;import-usermailing1@test.nl;Mr;Test;Test"));
-            Assert.assertFalse(exportedUserMailings.contains( "User 2;import;import-usermailing2@test.nl;Ms;Deltares;The Netherlands"));
+            Assert.assertFalse(exportedUserMailings.contains( "User 1;import;import-usermailing1@test.nl;Mr;Test;Test;en;e-mail"));
+            Assert.assertFalse(exportedUserMailings.contains( "User 2;import;import-usermailing2@test.nl;Ms;Deltares;The Netherlands;en;e-mail"));
         }
 
         String userIds = "d05d4b89-59a9-4343-ae55-363234d1ac14\n" +
@@ -80,8 +80,8 @@ public class UserMailingsApiTest {
         try (StringWriter writer = new StringWriter()) {
             keycloakUtils.exportUserMailingsAdminApi(writer, "3d4baf14-6088-400c-83c3-c20f14e63d51");
             String exportedUserMailings = writer.toString();
-            Assert.assertTrue(exportedUserMailings.contains( "User 1;import;import-usermailing1@test.nl;Mr;Test;Test"));
-            Assert.assertTrue(exportedUserMailings.contains( "User 2;import;import-usermailing2@test.nl;Ms;Deltares;The Netherlands"));
+            Assert.assertTrue(exportedUserMailings.contains( "User 1;import;import-usermailing1@test.nl;Mr;Test;Test;en;e-mail"));
+            Assert.assertTrue(exportedUserMailings.contains( "User 2;import;import-usermailing2@test.nl;Ms;Deltares;The Netherlands;en;e-mail"));
         }
 
     }
