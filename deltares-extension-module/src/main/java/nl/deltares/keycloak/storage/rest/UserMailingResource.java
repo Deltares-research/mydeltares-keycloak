@@ -105,6 +105,7 @@ public class UserMailingResource {
             return redirectLogin();
         }
         if (rep.getMailingId() == null){
+            logger.error("No mailing id set for user mailing!");
             return ErrorResponse.error("No mailing id set for user mailing!", Response.Status.BAD_REQUEST);
         }
         try {
@@ -115,7 +116,9 @@ public class UserMailingResource {
         // Double-check duplicated name
         UserModel user = authResult.getUser();
         if (getUserMailing(session, realm.getId(), user.getId(), rep.getMailingId()) != null) {
-            return ErrorResponse.exists(String.format("User mailing already exists for user %s and mailing %s", user.getId(), rep.getMailingId()));
+            String message = String.format("User mailing already exists for user %s and mailing %s", user.getId(), rep.getMailingId());
+            logger.error(message);
+            return ErrorResponse.exists(message);
         }
         rep.setUserId(user.getId());
         rep.setRealmId(realm.getId());

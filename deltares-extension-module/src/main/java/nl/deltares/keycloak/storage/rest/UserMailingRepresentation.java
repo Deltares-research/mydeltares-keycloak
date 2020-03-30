@@ -65,8 +65,9 @@ public class UserMailingRepresentation {
         return Mailing.deliveries.get(delivery);
     }
 
-//    public void setDeliveryTxt(String deliveryTxt) {
-//        int delivery = Mailing.deliveries.indexOf(deliveryTxt);
-//        this.delivery = delivery == -1 ? 0 : delivery;
-//    }
+    //This method is used to bind JSON to bean representation. Do not remove
+    public void setDeliveryTxt(String deliveryTxt) {
+        int delivery = Mailing.deliveries.indexOf(deliveryTxt);
+        this.delivery = delivery == -1 ? 0 : delivery;
+    }
 }

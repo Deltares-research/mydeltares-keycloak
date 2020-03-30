@@ -2,6 +2,7 @@ package nl.deltares.keycloak.storage.rest;
 
 import nl.deltares.keycloak.IntegrationTestCategory;
 import nl.deltares.keycloak.KeycloakTestServer;
+import nl.deltares.keycloak.storage.jpa.Mailing;
 import nl.deltares.keycloak.storage.jpa.model.DataRequestManager;
 import nl.deltares.keycloak.utils.KeycloakUtilsImpl;
 import org.junit.Assert;
@@ -223,14 +224,14 @@ public class UserMailingsApiTest {
         UserMailingRepresentation rep = new UserMailingRepresentation();
         rep.setMailingId("8f7f7566-865b-44f5-8fff-c2d510884d55");
         rep.setLanguage("en");
-        rep.setDelivery(0);
+        rep.setDeliveryTxt(Mailing.deliveries.get(0)); //e-mail
         int status = keycloakUtils.createUserMailingUserApi(rep, "user-updateusermailing", "test");
         Assert.assertEquals(201, status);
         UserMailingRepresentation created = keycloakUtils.getUserMailingUserApi("8f7f7566-865b-44f5-8fff-c2d510884d55", "user-updateusermailing", "test");
         Assert.assertEquals("en", created.getLanguage());
         Assert.assertEquals(0, created.getDelivery());
 
-        created.setDelivery(1);
+        created.setDeliveryTxt(Mailing.deliveries.get(1)); //post
         created.setLanguage("nl");
         status = keycloakUtils.updateUserMailingUserApi(created, "user-updateusermailing", "test");
         Assert.assertEquals(200, status);
