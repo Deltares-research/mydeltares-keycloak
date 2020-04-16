@@ -1,5 +1,6 @@
 package nl.deltares.keycloak.storage.rest;
 
+import nl.deltares.keycloak.storage.rest.model.DownloadCallback;
 import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
@@ -21,7 +22,10 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.StreamingOutput;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.util.Properties;
@@ -158,13 +162,15 @@ public class ResourceUtils {
         return rawContentType;
     }
 
-    static StreamingOutput getStreamingOutput(File data) {
+    static StreamingOutput getStreamingOutput(File data, DownloadCallback callback) {
         return os -> {
             try {
                 Files.copy(data.toPath(), os);
                 os.flush();
             } catch (Exception e) {
                 logger.warn("Error serializing csv content: %s", e);
+            } finally {
+                callback.downloadComplete();
             }
         };
     }

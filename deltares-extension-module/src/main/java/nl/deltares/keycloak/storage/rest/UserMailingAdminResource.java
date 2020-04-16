@@ -5,6 +5,7 @@ import nl.deltares.keycloak.storage.jpa.UserMailing;
 import nl.deltares.keycloak.storage.jpa.model.DataRequest;
 import nl.deltares.keycloak.storage.jpa.model.DataRequestManager;
 import nl.deltares.keycloak.storage.jpa.model.ExportCsvDataRequest;
+import nl.deltares.keycloak.storage.rest.model.DownloadCallback;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
@@ -55,8 +56,9 @@ public class UserMailingAdminResource {
 
     //Realm from request path
     private RealmModel callerRealm;
+    private boolean cacheExport;
 
-     UserMailingAdminResource(KeycloakSession session, Properties properties) {
+    UserMailingAdminResource(KeycloakSession session, Properties properties) {
         this.session = session;
         this.properties = properties;
      }
@@ -68,6 +70,7 @@ public class UserMailingAdminResource {
         AdminAuth adminAuth = new AdminAuth(auth.getRealm(), auth.getToken(), auth.getUser(), auth.getClient());
         realmAuth = AdminPermissions.evaluator(session, realm, adminAuth);
         session.getContext().setRealm(realm);
+        cacheExport = Boolean.parseBoolean(System.getProperty("cache.export", "true"));
 
         callerRealm = ResourceUtils.getRealmFromPath(session);
     }
@@ -91,10 +94,12 @@ public class UserMailingAdminResource {
 
         DataRequestManager instance = DataRequestManager.getInstance();
         DataRequest dataRequest = instance.getDataRequest(mailing.getId());
-        if (dataRequest == null || dataRequest.getStatus() == DataRequest.STATUS.expired){
+        if (dataRequest == null ||
+                dataRequest.getStatus() == DataRequest.STATUS.expired ||
+                (dataRequest.getStatus() == DataRequest.STATUS.available && !dataRequest.getDataFile().exists())){
             try {
                 dataRequest = new ExportCsvDataRequest(mailing, session, callerRealm, properties);
-                if (dataRequest.getStatus() == DataRequest.STATUS.pending) {
+                if (dataRequest.getStatus() == DataRequest.STATUS.pending || !cacheExport) {
                     instance.addToQueue(dataRequest);
                 }
             } catch (IOException e) {
@@ -103,8 +108,13 @@ public class UserMailingAdminResource {
         }
         DataRequest.STATUS status = dataRequest.getStatus();
         if (status == DataRequest.STATUS.available && dataRequest.getDataFile().exists()){
+
+            DataRequest finalDataRequest = dataRequest;
+            DownloadCallback callback = () -> {
+                if (!cacheExport) instance.removeDataRequest(finalDataRequest);
+            };
             return Response.
-                    ok(getStreamingOutput(dataRequest.getDataFile())).
+                    ok(getStreamingOutput(dataRequest.getDataFile(), callback)).
                     type("text/csv").
                     build();
         } else if (status == DataRequest.STATUS.terminated) {

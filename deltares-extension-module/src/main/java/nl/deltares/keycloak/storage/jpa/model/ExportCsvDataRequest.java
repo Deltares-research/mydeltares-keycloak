@@ -37,6 +37,8 @@ public class ExportCsvDataRequest implements DataRequest {
     private final String csvPrefix;
 
     private File exportFile;
+    private File tempDir;
+
     private String errorMessage;
     private Thread thread;
     private ExportCsvContent content;
@@ -62,11 +64,12 @@ public class ExportCsvDataRequest implements DataRequest {
     }
 
     private File getExportDir() throws IOException {
+        if (tempDir != null) return tempDir;
         String property = System.getProperty("jboss.server.temp.dir");
         if (property == null){
             throw new IOException("Missing system property: jboss.server.temp.dir");
         }
-        File tempDir = new File(property, "deltares");
+        tempDir = new File(property, "deltares");
         if (!tempDir.exists()) Files.createDirectory(tempDir.toPath());
         return tempDir;
     }
