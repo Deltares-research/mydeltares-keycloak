@@ -6,26 +6,23 @@ import nl.deltares.keycloak.storage.rest.UserMailingRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-
-import static javax.ws.rs.core.Response.Status.NO_CONTENT;
 
 public class KeycloakUtilsImpl {
 
     private static final String KEYCLOAK_BASEURL_KEY = "keycloak.baseurl";
     private static final String KEYCLOAK_BASEAPIURL_KEY = "keycloak.baseapiurl";
     private static final String KEYCLOAK_USER_MAILING_PATH = "user-mailings";
-    private static final String KEYCLOAK_USER_DETAILS_PATH = "user-details";
     private static final String KEYCLOAK_MAILING_PATH = "mailing-provider";
     private static final String KEYCLOAK_AVATAR_PATH = "avatar-provider";
     private static final String KEYCLOAK_USERS_PATH = "users";
     private static final String KEYCLOAK_ADMIN_USER_MAILING_PATH = KEYCLOAK_USER_MAILING_PATH + "/admin";
     private static final String KEYCLOAK_ADMIN_MAILING_PATH = KEYCLOAK_MAILING_PATH + "/admin";
     private static final String KEYCLOAK_ADMIN_AVATAR_PATH = KEYCLOAK_AVATAR_PATH + "/admin";
-    private static final String KEYCLOAK_ADMIN_USER_DETAILS_PATH = KEYCLOAK_USER_DETAILS_PATH + "/admin";
     private static final String KEYCLOAK_OPENID_TOKEN_PATH = "protocol/openid-connect/token";
     private static final String KEYCLOAK_CLIENTID_KEY = "keycloak.clientid";
     private static final String KEYCLOAK_CLIENTSECRET_KEY = "keycloak.clientsecret";
@@ -77,32 +74,24 @@ public class KeycloakUtilsImpl {
         return basePath + KEYCLOAK_USERS_PATH;
     }
 
-    private String getUserDetailsPath() {
-        String basePath = getKeycloakBasePath();
-        return basePath + KEYCLOAK_USER_DETAILS_PATH;
-    }
-
-    private String getAdminUserDetailsPath() {
-        String basePath = getKeycloakBasePath();
-        return basePath + KEYCLOAK_ADMIN_USER_DETAILS_PATH;
-    }
-
-    public UserRepresentation getUserDetailsUserApi(String userName, String password) throws IOException {
-        HttpURLConnection urlConnection = getConnection(getUserDetailsPath(), "GET", getAccessToken(userName, password), null);
-        checkResponse(urlConnection);
-        String jsonResponse = readAll(urlConnection.getInputStream());
+    public UserRepresentation getUser(String id) throws IOException {
+        HttpURLConnection urlConnection = getConnection(getUsersPath() + "/" + id, "GET", getAccessToken(), null);
+        int response = checkResponse(urlConnection);
+        if (response == Response.Status.NO_CONTENT.getStatusCode()) {
+            return null;
+        }
         ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(jsonResponse, mapper.getTypeFactory().constructType(UserRepresentation.class));
+        return mapper.readValue(urlConnection.getInputStream(), mapper.getTypeFactory().constructType(UserRepresentation.class));
     }
 
-    public UserRepresentation getUserDetailsAdminApi(String email) throws IOException {
-        HttpURLConnection urlConnection = getConnection(getAdminUserDetailsPath() + '/' + email, "GET", getAccessToken(), null);
-        checkResponse(urlConnection);
-        String jsonResponse = readAll(urlConnection.getInputStream());
+    public int updateUser(UserRepresentation user) throws IOException {
+        HashMap<String, String> map = new HashMap<>();
+        map.put("Content-Type", MediaType.APPLICATION_JSON);
+        HttpURLConnection urlConnection = getConnection(getUsersPath(), "PUT", getAccessToken(), map);
         ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(jsonResponse, mapper.getTypeFactory().constructType(UserRepresentation.class));
+        mapper.writeValue(urlConnection.getOutputStream(), user);
+        return checkResponse(urlConnection);
     }
-
     public UserRepresentation getUserByEmail(String email) throws IOException {
 
         HttpURLConnection urlConnection = getConnection(getUsersPath() + "?email=" + email, "GET", getAccessToken(), null);
@@ -263,7 +252,7 @@ public class KeycloakUtilsImpl {
     public MailingRepresentation getMailingAdminApi(String id) throws IOException {
         HttpURLConnection urlConnection = getConnection(getAdminMailingPath() + '/' + id, "GET", getAccessToken(), null);
         int response = checkResponse(urlConnection);
-        if (response == NO_CONTENT.getStatusCode()) {
+        if (response == Response.Status.NO_CONTENT.getStatusCode()) {
             return null;
         }
         ObjectMapper mapper = new ObjectMapper();
@@ -273,7 +262,7 @@ public class KeycloakUtilsImpl {
     public MailingRepresentation getMailingUserApi(String id, String userName, String password) throws IOException {
         HttpURLConnection urlConnection = getConnection(getMailingPath() + '/' + id, "GET", getAccessToken(userName, password), null);
         int response = checkResponse(urlConnection);
-        if (response == NO_CONTENT.getStatusCode()) {
+        if (response == Response.Status.NO_CONTENT.getStatusCode()) {
             return null;
         }
         ObjectMapper mapper = new ObjectMapper();
@@ -297,11 +286,21 @@ public class KeycloakUtilsImpl {
 
         HttpURLConnection urlConnection = getConnection( path,  "GET", accessToken, null);
         int response = checkResponse(urlConnection);
-        if (response == NO_CONTENT.getStatusCode()) {
+        if (response == Response.Status.NO_CONTENT.getStatusCode()) {
             return Collections.emptyList();
         }
         ObjectMapper mapper = new ObjectMapper();
         return mapper.readValue(urlConnection.getInputStream(), mapper.getTypeFactory().constructCollectionType(List.class, MailingRepresentation.class));
+    }
+
+    public int createUser(UserRepresentation user) throws IOException {
+
+        HashMap<String, String> map = new HashMap<>();
+        map.put("Content-Type", MediaType.APPLICATION_JSON);
+        HttpURLConnection urlConnection = getConnection(getUsersPath(), "POST", getAccessToken(), map);
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(urlConnection.getOutputStream(), user);
+        return checkResponse(urlConnection);
     }
 
     public int createMailingAdminApi(MailingRepresentation mailing) throws IOException {
@@ -347,28 +346,10 @@ public class KeycloakUtilsImpl {
 
     }
 
-    public int updateUserDetailsUserApi(UserRepresentation userDetails, String userName, String password) throws IOException {
-        HashMap<String, String> map = new HashMap<>();
-        map.put("Content-Type", MediaType.APPLICATION_JSON);
-        HttpURLConnection urlConnection = getConnection(getUserDetailsPath(), "PUT", getAccessToken(userName, password), map);
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.writeValue(urlConnection.getOutputStream(), userDetails);
-        return checkResponse(urlConnection);
-    }
-
-    public int updateUserDetailsAdminApi(UserRepresentation userDetails) throws IOException {
-        HashMap<String, String> map = new HashMap<>();
-        map.put("Content-Type", MediaType.APPLICATION_JSON);
-        HttpURLConnection urlConnection = getConnection(getAdminUserDetailsPath(), "PUT", getAccessToken(), map);
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.writeValue(urlConnection.getOutputStream(), userDetails);
-        return checkResponse(urlConnection);
-    }
-
     public UserMailingRepresentation getUserMailingUserApi(String mailingId, String userName, String password) throws IOException {
         HttpURLConnection urlConnection = getConnection( getUserMailingPath() + '/' + mailingId,  "GET", getAccessToken(userName, password), null);
         int response = checkResponse(urlConnection);
-        if (response == NO_CONTENT.getStatusCode()) {
+        if (response == Response.Status.NO_CONTENT.getStatusCode()) {
             return null;
         }
         ObjectMapper mapper = new ObjectMapper();
@@ -455,11 +436,11 @@ public class KeycloakUtilsImpl {
         return basePath + KEYCLOAK_OPENID_TOKEN_PATH;
     }
 
-    private String getAccessToken() throws IOException {
+    private String getAccessToken() {
         return getAccessToken(null, null);
     }
 
-    private String getAccessToken(String resourceOwner, String resourceOwnerPw) throws IOException {
+    private String getAccessToken(String resourceOwner, String resourceOwnerPw){
 
         if (resourceOwner == null) {
             String cachedToken = getCachedToken();
@@ -476,9 +457,9 @@ public class KeycloakUtilsImpl {
             return parseTokenJson(jsonResponse);
 
         } catch (IOException e) {
-//            throw new IOException(String.format("Failed to get access token for user %s: %s", resourceOwner, e.getMessage()));
-            return null;
+            System.out.println("Failed to get access token: " + e.getMessage());
         }
+        return null;
     }
 
     private String getOpenIdClientId() {
