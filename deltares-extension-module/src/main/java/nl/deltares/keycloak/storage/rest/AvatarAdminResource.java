@@ -61,6 +61,7 @@ public class AvatarAdminResource extends AbstractAvatarResource {
             canViewUsers();
             Avatar avatar = getAvatarEntity(callerRealm.getId(), userId);
             if (avatar == null){
+//                logger.info("No avatar exists for user " + userId);
                 return Response.status(Response.Status.NO_CONTENT).build();
             }
             UserModel user = session.users().getUserById(userId, callerRealm);
