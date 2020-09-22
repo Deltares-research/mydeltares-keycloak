@@ -1,13 +1,22 @@
 package nl.deltares.keycloak.storage.rest.model;
 
 public interface ExportCsvContent {
-    String getHeader();
+
+    String getId();
+
+    String getName();
+
+    String[] getHeaders();
 
     boolean hasHeader();
 
-    boolean hasNextLine();
+    boolean hasNextRow();
 
-    String nextLine();
+    String[] nextRow();
 
     int totalExportedCount();
+
+    void setMaxResults(int max_query_results);
+
+    void close();
 }

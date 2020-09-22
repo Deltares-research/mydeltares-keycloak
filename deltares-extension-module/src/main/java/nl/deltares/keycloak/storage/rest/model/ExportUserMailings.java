@@ -21,38 +21,32 @@ public class ExportUserMailings implements ExportCsvContent {
     private static final Logger logger = Logger.getLogger(ExportUserMailings.class);
     private final String[] headers = new String[]{"firstName", "lastName", "email", "salutation", "organization", "country", "language", "delivery"};
     private final String[] values;
-    private final TypedQuery<Object[]> query;
+    private final RealmModel realm;
+    private final KeycloakSession session;
+    private TypedQuery<Object[]> query;
     private final Mailing mailing;
 
-    private String separator = ";";
     private int totalCount = 0;
     private int rsCount = 0;
     private List<Object[]> resultSets = null; // UserEntity, UserMailing
+    private int maxResults = 500;
+    private KeycloakSession localSession;
 
     public ExportUserMailings(RealmModel realmModel, KeycloakSession session, Mailing mailing) {
         this.mailing = mailing;
         this.values = new String[headers.length];
-        EntityManager entityManager = getEntityManager(session);
-        query = entityManager.createQuery("SELECT u, m " +
-                "FROM UserEntity AS u " +
-                "INNER JOIN UserMailing AS m ON u.id = m.userId " +
-                " WHERE u.realmId=:realmId AND m.mailingId=:mailingId", Object[].class);
-        this.query.setParameter("realmId", realmModel.getId());
-        this.query.setParameter("mailingId", mailing.getId());
+        this.realm = realmModel;
+        this.session = session;
     }
 
     public void setMaxResults(int maxResults) {
+        this.maxResults = maxResults;
         if (maxResults < 1) throw new IllegalArgumentException("MaxResults must be larger and 0! " + maxResults);
-        query.setMaxResults(maxResults);
-    }
-
-    public void setSeparator(String separator) {
-        this.separator = separator;
     }
 
     @Override
-    public String getHeader() {
-        return String.join(separator, headers);
+    public String[] getHeaders() {
+        return headers;
     }
 
     @Override
@@ -60,8 +54,47 @@ public class ExportUserMailings implements ExportCsvContent {
         return true;
     }
 
+    private void initialize() {
+
+        localSession = session.getKeycloakSessionFactory().create();
+        EntityManager entityManager = getEntityManager(localSession);
+        query = entityManager.createQuery("SELECT u, m " +
+                "FROM UserEntity AS u " +
+                "INNER JOIN UserMailing AS m ON u.id = m.userId " +
+                " WHERE u.realmId=:realmId AND m.mailingId=:mailingId", Object[].class);
+        query.setParameter("realmId", realm.getId());
+        query.setParameter("mailingId", mailing.getId());
+        query.setMaxResults(maxResults);
+    }
+
     @Override
-    public boolean hasNextLine() {
+    public String getId() {
+        return mailing.getId();
+    }
+
+    @Override
+    public String getName() {
+        return mailing.getName();
+    }
+
+    @Override
+    public void close() {
+        if (localSession != null) {
+            localSession.close();
+            localSession = null;
+        }
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        close();
+        super.finalize();
+    }
+
+    @Override
+    public boolean hasNextRow() {
+
+        if (query == null) initialize();
 
         //Not initialized yet
         if (resultSets == null){
@@ -79,12 +112,16 @@ public class ExportUserMailings implements ExportCsvContent {
         boolean hasNext = resultSets.size() > 0;
         if (!hasNext){
             logger.info(String.format("Finished downloading %d user mailings for %s", totalCount, mailing.getName()));
+            close();
         }
         return hasNext;
     }
 
-    public String nextLine() {
+    public String[] nextRow() {
 
+        if (query == null){
+            throw new IllegalStateException("First call 'hasNextRow'!");
+        }
         int curr = rsCount;
         rsCount++;
         totalCount++;
@@ -103,7 +140,7 @@ public class ExportUserMailings implements ExportCsvContent {
 
         values[6] = userMailing.getLanguage();
         values[7] = Mailing.deliveries.get(userMailing.getDelivery());
-        return String.join(separator, values);
+        return values;
     }
 
     private void readAttributes(String[] values, Collection<UserAttributeEntity> attributes) {
@@ -113,19 +150,12 @@ public class ExportUserMailings implements ExportCsvContent {
             if ("academictitle".equalsIgnoreCase(name)) {
                 values[3] = attribute.getValue(); //salutation
             } else if ("org_name".equalsIgnoreCase(name)) {
-                values[4] = addQuotesIfRequired(attribute.getValue()); //org name
+                values[4] = attribute.getValue(); //org name
             } else if ("org_country".equalsIgnoreCase(name)) {
                 values[5] = attribute.getValue(); //org country
             }
 
         }
-    }
-
-    private String addQuotesIfRequired(String value) {
-        if (value.indexOf(separator) > 0){
-            return '\"' + value + '\"';
-        }
-        return value;
     }
 
     @Override

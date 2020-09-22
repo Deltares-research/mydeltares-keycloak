@@ -1,13 +1,8 @@
 package nl.deltares.keycloak.storage.jpa.model;
 
-import nl.deltares.keycloak.storage.jpa.Mailing;
 import nl.deltares.keycloak.storage.rest.model.ExportCsvContent;
-import nl.deltares.keycloak.storage.rest.model.ExportUserMailings;
-import nl.deltares.keycloak.storage.rest.model.TextSerializer;
 import nl.deltares.keycloak.storage.rest.serializers.ExportCsvSerializer;
 import org.jboss.logging.Logger;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -23,36 +18,26 @@ import static nl.deltares.keycloak.storage.jpa.model.DataRequest.STATUS.*;
 public class ExportCsvDataRequest implements DataRequest {
 
     private static final Logger logger = Logger.getLogger(ExportCsvDataRequest.class);
+    private final String separator;
 
     private DataRequest.STATUS status = pending;
     private long creationTime;
 
-    private final Mailing mailing;
-    private final KeycloakSession session;
-    private final RealmModel realm;
-
     private final long maxAge;
-    private final int maxResults;
-    private final String csvSeparator;
     private final String csvPrefix;
 
-    private File exportFile;
+    private final File exportFile;
     private File tempDir;
 
     private String errorMessage;
     private Thread thread;
-    private ExportCsvContent content;
+    private final ExportCsvContent content;
     private DataRequestManager manager;
 
-    public ExportCsvDataRequest(Mailing mailing, KeycloakSession session, RealmModel realm, Properties properties) throws IOException {
-        this.mailing = mailing;
-        this.session = session;
-        this.realm = realm;
-        String max_age = properties.getProperty("max_age_hours", "1");
-        this.maxAge = TimeUnit.HOURS.toMillis(Integer.parseInt(max_age));
-        String max_results = properties.getProperty("max_query_results" ,"500");
-        this.maxResults = Integer.parseInt(max_results);
-        this.csvSeparator = properties.getProperty("csv_separator", ";");
+    public ExportCsvDataRequest(ExportCsvContent content, Properties properties) throws IOException {
+        this.content = content;
+
+        this.maxAge = TimeUnit.HOURS.toMillis(Integer.parseInt(properties.getProperty("max_age_hours", "1")));
         this.csvPrefix = System.getProperty("csv_prefix");
         this.exportFile = getExportFile(csvPrefix, "csv");
         if (exportFile.exists()) {
@@ -60,7 +45,8 @@ public class ExportCsvDataRequest implements DataRequest {
             this.creationTime = attributes.creationTime().toMillis();
             if (!isExpired()) status = available;
         }
-
+        this.content.setMaxResults(Integer.parseInt(properties.getProperty("max_query_results" ,"500")));
+        separator = properties.getProperty("csv_separator", ";");
     }
 
     private File getExportDir() throws IOException {
@@ -76,7 +62,7 @@ public class ExportCsvDataRequest implements DataRequest {
 
     @Override
     public String getId() {
-        return mailing.getId();
+        return content.getId();
     }
 
     @Override
@@ -117,9 +103,8 @@ public class ExportCsvDataRequest implements DataRequest {
                 if (tempFile.exists()) Files.deleteIfExists(tempFile.toPath());
 
                 //Create local session because the servlet session will close after call to endpoint is completed
-                KeycloakSession localSession = session.getKeycloakSessionFactory().create();
-                TextSerializer<ExportCsvContent> serializer = new ExportCsvSerializer();
-                content = getExportContent(localSession);
+                ExportCsvSerializer serializer = new ExportCsvSerializer();
+                serializer.setSeparator(separator);
                 try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))){
                     serializer.serialize(content, writer);
                     writer.flush();
@@ -129,7 +114,7 @@ public class ExportCsvDataRequest implements DataRequest {
                     logger.warn("Error serializing csv content: %s", e);
                     status = terminated;
                 } finally {
-                    localSession.close();
+                    content.close();
                 }
                 if (status == available) {
                     if (exportFile.exists()) Files.deleteIfExists(exportFile.toPath());
@@ -142,7 +127,7 @@ public class ExportCsvDataRequest implements DataRequest {
             }
             if (manager != null) manager.fireStateChanged(this);
 
-        }, mailing.getName());
+        }, content.getName());
 
         thread.start();
         //wait for export to get started. quick exports can return values
@@ -153,18 +138,11 @@ public class ExportCsvDataRequest implements DataRequest {
         }
     }
 
-    private ExportCsvContent getExportContent(KeycloakSession session) {
-        ExportUserMailings content = new ExportUserMailings(realm, session, mailing);
-        content.setMaxResults(maxResults);
-        content.setSeparator(csvSeparator);
-        return content;
-    }
-
     private File getExportFile(String prefix, String extension) throws IOException {
         if (prefix == null) {
-            return new File(getExportDir(), mailing.getName() + '.' + extension);
+            return new File(getExportDir(), content.getName() + '.' + extension);
         } else {
-            return new File(getExportDir(), prefix +  '_' +  mailing.getName() + '.' + extension);
+            return new File(getExportDir(), prefix +  '_' +  content.getName() + '.' + extension);
         }
     }
 
@@ -196,11 +174,13 @@ public class ExportCsvDataRequest implements DataRequest {
 
     @Override
     public String getStatusMessage() {
-        int count = 0;
-        if (content != null) count = content.totalExportedCount();
-        return String.format("Downloading %s " +
-                "status: %s, " +
-                "processed: %d" , mailing.getName(), status, count);
+        if (content != null) {
+            int count = content.totalExportedCount();
+            return String.format("Downloading %s " +
+                    "status: %s, " +
+                    "processed: %d" , content.getName(), status, count);
+        }
+        return "unknown";
     }
 
     @Override

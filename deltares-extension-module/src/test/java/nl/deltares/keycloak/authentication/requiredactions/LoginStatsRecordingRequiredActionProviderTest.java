@@ -8,6 +8,7 @@ import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.models.UserModel;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 
 import static nl.deltares.keycloak.mocking.TestUtils.getRequiredActionContext;
@@ -26,7 +27,7 @@ public class LoginStatsRecordingRequiredActionProviderTest {
 
         UserModel user = context.getUser();
 
-        long startTime = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC);
+        long startTime = LocalDateTime.now(ZoneId.of("GMT")).toEpochSecond(ZoneOffset.UTC);
         String firstLoginDate = user.getFirstAttribute(LoginStatsRecordingRequiredActionProvider.LOGIN_FIRST_LOGIN_DATE);
         Assert.assertNotNull(firstLoginDate);
         LocalDateTime dateTime = LocalDateTime.parse(firstLoginDate);

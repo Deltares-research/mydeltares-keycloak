@@ -6,6 +6,7 @@ import nl.deltares.keycloak.storage.jpa.model.DataRequest;
 import nl.deltares.keycloak.storage.jpa.model.DataRequestManager;
 import nl.deltares.keycloak.storage.jpa.model.ExportCsvDataRequest;
 import nl.deltares.keycloak.storage.rest.model.DownloadCallback;
+import nl.deltares.keycloak.storage.rest.model.ExportUserMailings;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
@@ -98,7 +99,8 @@ public class UserMailingAdminResource {
                 dataRequest.getStatus() == DataRequest.STATUS.expired ||
                 (dataRequest.getStatus() == DataRequest.STATUS.available && !dataRequest.getDataFile().exists())){
             try {
-                dataRequest = new ExportCsvDataRequest(mailing, session, callerRealm, properties);
+                ExportUserMailings content = new ExportUserMailings(callerRealm, session, mailing);
+                dataRequest = new ExportCsvDataRequest(content, properties);
                 if (dataRequest.getStatus() == DataRequest.STATUS.pending || !cacheExport) {
                     instance.addToQueue(dataRequest);
                 }

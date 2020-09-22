@@ -7,23 +7,39 @@ import java.io.BufferedWriter;
 
 public class ExportCsvSerializer implements TextSerializer<ExportCsvContent> {
 
+    private String separator = ";";
+
+    public void setSeparator(String separator) {
+        this.separator = separator;
+    }
+
     @Override
     public void serialize(ExportCsvContent content, BufferedWriter writer) throws Exception {
 
         if (content.hasHeader()) {
-            writer.append(content.getHeader());
+            writer.append(String.join(separator, content.getHeaders()));
             writer.newLine();
         }
-        while (content.hasNextLine()){
+        while (content.hasNextRow()){
             if (Thread.currentThread().isInterrupted()) {
                 throw new InterruptedException("interrupted csv export");
             }
-            String line = content.nextLine();
-            if (line != null) {
-                writer.append(line);
+            String[] values = content.nextRow();
+            if (values != null) {
+                for (int i = 0; i < values.length; i++) {
+                    values[i] = addQuotesIfRequired(values[i]);
+                }
+                writer.append(String.join(separator, values));
                 writer.newLine();
             }
         }
+    }
+
+    private String addQuotesIfRequired(String value) {
+        if (value.indexOf(separator) > 0){
+            return '\"' + value + '\"';
+        }
+        return value;
     }
 
 }

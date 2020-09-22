@@ -1,6 +1,7 @@
 package nl.deltares.keycloak.authentication.requiredactions;
 
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
@@ -9,6 +10,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserModel;
 
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 
@@ -32,24 +34,43 @@ public class LoginStatsRecordingRequiredActionProvider  implements RequiredActio
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
         UserModel user = context.getUser();
-
+        String referrer = getReferrer(context);
         try {
-            recordFirstLogin(user);
+            recordFirstLogin(referrer, user);
         } catch (Exception ex) {
             LOG.warnv(ex,"Couldn't record first login <{0}>", this);
         }
 
         try {
-            recordRecentLogin(user);
+            recordRecentLogin(referrer, user);
         } catch (Exception ex) {
             LOG.warnv(ex, "Couldn't record recent login <{0}>", this);
         }
 
         try {
-            recordLoginCount(user);
+            recordLoginCount(referrer, user);
         } catch (Exception ex) {
             LOG.warnv(ex, "Couldn't record login count <{0}>", this);
         }
+    }
+
+    private String getReferrer(RequiredActionContext context) {
+        HttpRequest httpRequest = context.getHttpRequest();
+        if (httpRequest == null) return null;
+        String headerString = httpRequest.getHttpHeaders().getHeaderString("Referer");
+        if (headerString == null) return null;
+        int startIndex = headerString.indexOf("client_id");
+        if (startIndex < 0) return null;
+        String substring = headerString.substring(startIndex);
+        String[] params = substring.split("&");
+        for (String param : params) {
+            if (param.startsWith("client_id")) {
+                String[] keyValue = param.split("=");
+                if (keyValue.length > 1)
+                    return keyValue[1];
+            }
+        }
+        return null;
     }
 
     @Override
@@ -62,9 +83,9 @@ public class LoginStatsRecordingRequiredActionProvider  implements RequiredActio
 
     }
 
-    private void recordLoginCount(UserModel user) {
-
-        List<String> list = user.getAttribute(LOGIN_LOGIN_COUNT);
+    private void recordLoginCount(String referrer, UserModel user) {
+        String key = referrer == null ? LOGIN_LOGIN_COUNT : LOGIN_LOGIN_COUNT + '.' + referrer;
+        List<String> list = user.getAttribute(key);
 
         if (list == null || list.isEmpty()) {
             list = Collections.singletonList(ONE);
@@ -72,19 +93,20 @@ public class LoginStatsRecordingRequiredActionProvider  implements RequiredActio
             list = Collections.singletonList(String.valueOf(Long.parseLong(list.get(0)) + 1));
         }
 
-        user.setAttribute(LOGIN_LOGIN_COUNT, list);
+        user.setAttribute(key, list);
     }
 
-    private void recordRecentLogin(UserModel user) {
-        user.setAttribute(LOGIN_RECENT_LOGIN_DATE, Collections.singletonList(now().toString()));
+    private void recordRecentLogin(String referrer, UserModel user) {
+        String key = referrer == null ? LOGIN_RECENT_LOGIN_DATE : LOGIN_RECENT_LOGIN_DATE + '.' + referrer;
+        user.setAttribute(key, Collections.singletonList(now(ZoneId.of("GMT")).toString()));
     }
 
-    private void recordFirstLogin(UserModel user) {
-
-        List<String> list = user.getAttribute(LOGIN_FIRST_LOGIN_DATE);
+    private void recordFirstLogin(String referrer, UserModel user) {
+        String key = referrer == null ? LOGIN_FIRST_LOGIN_DATE : LOGIN_FIRST_LOGIN_DATE + '.' + referrer;
+        List<String> list = user.getAttribute(key);
 
         if (list == null || list.isEmpty()) {
-            user.setAttribute(LOGIN_FIRST_LOGIN_DATE, Collections.singletonList(now().toString()));
+            user.setAttribute(key, Collections.singletonList(now(ZoneId.of("GMT")).toString()));
         }
     }
 
