@@ -2,10 +2,7 @@ package nl.deltares.keycloak.storage.rest;
 
 import nl.deltares.keycloak.storage.jpa.Mailing;
 import nl.deltares.keycloak.storage.jpa.UserMailing;
-import nl.deltares.keycloak.storage.jpa.model.DataRequest;
 import nl.deltares.keycloak.storage.jpa.model.DataRequestManager;
-import nl.deltares.keycloak.storage.jpa.model.ExportCsvDataRequest;
-import nl.deltares.keycloak.storage.rest.model.DownloadCallback;
 import nl.deltares.keycloak.storage.rest.model.ExportUserMailings;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
@@ -35,7 +32,6 @@ import java.util.Properties;
 
 import static nl.deltares.keycloak.storage.rest.MailingAdminResource.getMailingById;
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.getAuth;
-import static nl.deltares.keycloak.storage.rest.ResourceUtils.getStreamingOutput;
 import static nl.deltares.keycloak.storage.rest.UserMailingResource.getUserMailing;
 import static nl.deltares.keycloak.storage.rest.UserMailingResource.insertUserMailing;
 
@@ -87,44 +83,8 @@ public class UserMailingAdminResource {
         if (mailing == null){
             return Response.status(Response.Status.NO_CONTENT).entity("no mailing for id: " + mailingId).build();
         }
-        return getExportDataResponse(mailing);
-
-    }
-
-    private Response getExportDataResponse(Mailing mailing) {
-
-        DataRequestManager instance = DataRequestManager.getInstance();
-        DataRequest dataRequest = instance.getDataRequest(mailing.getId());
-        if (dataRequest == null ||
-                dataRequest.getStatus() == DataRequest.STATUS.expired ||
-                (dataRequest.getStatus() == DataRequest.STATUS.available && !dataRequest.getDataFile().exists())){
-            try {
-                ExportUserMailings content = new ExportUserMailings(callerRealm, session, mailing);
-                dataRequest = new ExportCsvDataRequest(content, properties);
-                if (dataRequest.getStatus() == DataRequest.STATUS.pending || !cacheExport) {
-                    instance.addToQueue(dataRequest);
-                }
-            } catch (IOException e) {
-                return Response.serverError().entity(e.getMessage()).build();
-            }
-        }
-        DataRequest.STATUS status = dataRequest.getStatus();
-        if (status == DataRequest.STATUS.available && dataRequest.getDataFile().exists()){
-
-            DataRequest finalDataRequest = dataRequest;
-            DownloadCallback callback = () -> {
-                if (!cacheExport) instance.removeDataRequest(finalDataRequest);
-            };
-            return Response.
-                    ok(getStreamingOutput(dataRequest.getDataFile(), callback)).
-                    type("text/csv").
-                    build();
-        } else if (status == DataRequest.STATUS.terminated) {
-            instance.removeDataRequest(dataRequest);
-            return Response.serverError().entity(dataRequest.getErrorMessage()).build();
-        } else {
-            return Response.ok(dataRequest.getStatusMessage()).type("text/plain").build();
-        }
+        ExportUserMailings content = new ExportUserMailings(callerRealm, session, mailing);
+        return DataRequestManager.getExportDataResponse(content, properties, cacheExport);
 
     }
 

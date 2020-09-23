@@ -18,8 +18,10 @@ public class KeycloakUtilsImpl {
     private static final String KEYCLOAK_BASEAPIURL_KEY = "keycloak.baseapiurl";
     private static final String KEYCLOAK_USER_MAILING_PATH = "user-mailings";
     private static final String KEYCLOAK_MAILING_PATH = "mailing-provider";
+    private static final String KEYCLOAK_ATTRIBUTE_PATH = "user-attributes";
     private static final String KEYCLOAK_AVATAR_PATH = "avatar-provider";
     private static final String KEYCLOAK_USERS_PATH = "users";
+    private static final String KEYCLOAK_ADMIN_ATTRIBUTE_PATH = KEYCLOAK_ATTRIBUTE_PATH + "/admin";
     private static final String KEYCLOAK_ADMIN_USER_MAILING_PATH = KEYCLOAK_USER_MAILING_PATH + "/admin";
     private static final String KEYCLOAK_ADMIN_MAILING_PATH = KEYCLOAK_MAILING_PATH + "/admin";
     private static final String KEYCLOAK_ADMIN_AVATAR_PATH = KEYCLOAK_AVATAR_PATH + "/admin";
@@ -39,6 +41,10 @@ public class KeycloakUtilsImpl {
         this.properties = properties;
     }
 
+    private String getAdminUserAttributePath() {
+        String basePath = getKeycloakBasePath();
+        return basePath + KEYCLOAK_ADMIN_ATTRIBUTE_PATH;
+    }
     private String getAdminUserMailingPath() {
         String basePath = getKeycloakBasePath();
         return basePath + KEYCLOAK_ADMIN_USER_MAILING_PATH;
@@ -326,6 +332,24 @@ public class KeycloakUtilsImpl {
         ObjectMapper mapper = new ObjectMapper();
         mapper.writeValue(urlConnection.getOutputStream(), mailing);
         return checkResponse(urlConnection);
+    }
+
+    public int exportUserAttributesAdminApi(Writer writer, String search) throws IOException {
+        HashMap<String, String> map = new HashMap<>();
+        map.put("Content-Type", MediaType.TEXT_HTML);
+        HttpURLConnection urlConnection = getConnection(getAdminUserAttributePath() + "/export?search=" + search, "GET", getAccessToken(), map);
+
+        int status = checkResponse(urlConnection);
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                writer.write(line);
+                writer.write('\n');
+            }
+            writer.flush();
+        }
+        return status;
+
     }
 
     public int exportUserMailingsAdminApi(Writer writer, String mailingId) throws IOException {

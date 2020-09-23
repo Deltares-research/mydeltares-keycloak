@@ -782,6 +782,15 @@ module.config([ '$routeProvider', function($routeProvider) {
             },
             controller : 'MailingListCtrl'
         })
+        .when('/realms/:realm/attributes', {
+            templateUrl : resourceUrl + '/partials/attribute-list.html',
+            resolve : {
+                realm : function(RealmLoader) {
+                    return RealmLoader();
+                }
+            },
+            controller : 'AttributeListCtrl'
+        })
 
         .when('/create/role/:realm', {
             templateUrl : resourceUrl + '/partials/role-detail.html',
@@ -2598,6 +2607,15 @@ module.directive('kcTabsUsers', function () {
         restrict: 'E',
         replace: true,
         templateUrl: resourceUrl + '/templates/kc-tabs-users.html'
+    }
+});
+
+module.directive('kcTabsAttributes', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-attributes.html'
     }
 });
 
