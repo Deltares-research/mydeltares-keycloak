@@ -119,7 +119,9 @@ public class FreeMarkerAccountProvider extends org.keycloak.forms.account.freema
         }
 
         attributes.put("features", new FeaturesBean(identityProviderEnabled, eventsEnabled, passwordUpdateSupported, authorizationSupported));
-        attributes.put("account", new AccountBean(user, profileFormData));
+        if (user != null) {
+            attributes.put("account", new AccountBean(user, profileFormData));
+        }
 
         switch (pageName) {
             case "TOTP":

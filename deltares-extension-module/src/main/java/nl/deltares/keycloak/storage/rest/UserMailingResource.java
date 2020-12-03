@@ -189,6 +189,44 @@ public class UserMailingResource {
         return Response.ok().build();
     }
 
+    @GET
+    @NoCache
+    @Path("/unsubscribe/{mailing_id}/{code}")
+    @Produces(MediaType.TEXT_HTML)
+    public Response unsubscribe(final @PathParam("mailing_id") String mailingId, final @PathParam("code") String code){
+
+        String userId = ResourceUtils.decrypt(code, mailingId);
+        UserMailing mailing = getUserMailing(session, realm.getId(), userId, mailingId);
+        boolean status;
+        if (mailing == null) {
+            status = false;
+        } else {
+            logger.info("Delete mailing : " + mailingId);
+            getEntityManager(session).remove(mailing);
+            status = true;
+        }
+        final String[] name = {"unknown mailing"};
+
+        getMailings().forEach(
+                m -> {
+                    if (m.getId().equals(mailingId)) {
+                        name[0] = m.getName();
+                    }
+                });
+
+        if (account instanceof FreeMarkerAccountProvider) {
+
+            FreeMarkerAccountProvider account = (FreeMarkerAccountProvider) this.account;
+            account.setAttribute("status", String.valueOf(status));
+            account.setAttribute("mailingName", name[0]);
+            return account.createResponse("UNSUBSCRIBE", "unsubscribe.ftl");
+        } else {
+            logger.error("Failed to process template because account is not of type " + FreeMarkerAccountProvider.class.getName());
+            return Response.serverError().build();
+        }
+
+    }
+
     private static List<UserMailing> getUserMailings(KeycloakSession session, String realmId, String userId) {
         try {
             return getEntityManager(session).createNamedQuery("findUserMailingByUserAndRealm", UserMailing.class)
@@ -276,7 +314,7 @@ public class UserMailingResource {
     private boolean isInitAccount() {
         List<PathSegment> pathSegments = request.getUri().getPathSegments();
         for (PathSegment pathSegment : pathSegments) {
-            if (pathSegment.getPath().equals("mailings-page")) return true;
+            if (pathSegment.getPath().equals("mailings-page") || pathSegment.getPath().equals("unsubscribe")) return true;
         }
         return  false;
     }

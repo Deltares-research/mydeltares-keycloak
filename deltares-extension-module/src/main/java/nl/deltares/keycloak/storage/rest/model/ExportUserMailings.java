@@ -2,6 +2,7 @@ package nl.deltares.keycloak.storage.rest.model;
 
 import nl.deltares.keycloak.storage.jpa.Mailing;
 import nl.deltares.keycloak.storage.jpa.UserMailing;
+import nl.deltares.keycloak.storage.rest.ResourceUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -19,10 +20,11 @@ import static nl.deltares.keycloak.storage.rest.ResourceUtils.getEntityManager;
 public class ExportUserMailings implements ExportCsvContent {
 
     private static final Logger logger = Logger.getLogger(ExportUserMailings.class);
-    private final String[] headers = new String[]{"firstName", "lastName", "email", "salutation", "organization", "country", "language", "delivery"};
+    private final String[] headers = new String[]{"firstName", "lastName", "email", "salutation", "organization", "country", "language", "delivery", "unsubscribe"};
     private final String[] values;
     private final RealmModel realm;
     private final KeycloakSession session;
+    private final String unsubscribeApiPath;
     private TypedQuery<Object[]> query;
     private final Mailing mailing;
 
@@ -37,6 +39,8 @@ public class ExportUserMailings implements ExportCsvContent {
         this.values = new String[headers.length];
         this.realm = realmModel;
         this.session = session;
+        this.unsubscribeApiPath = session.getContext().getUri().getBaseUriBuilder().segment(
+                "realms",realmModel.getName(), "user-mailings", "unsubscribe", mailing.getId()).build().toASCIIString();
     }
 
     public void setMaxResults(int maxResults) {
@@ -140,7 +144,12 @@ public class ExportUserMailings implements ExportCsvContent {
 
         values[6] = userMailing.getLanguage();
         values[7] = Mailing.deliveries.get(userMailing.getDelivery());
+        values[8] = getUnsubscribeUrl(user);
         return values;
+    }
+
+    private String getUnsubscribeUrl(UserEntity user) {
+        return unsubscribeApiPath + '/' + ResourceUtils.encrypt(user.getId(), mailing.getId());
     }
 
     private void readAttributes(String[] values, Collection<UserAttributeEntity> attributes) {

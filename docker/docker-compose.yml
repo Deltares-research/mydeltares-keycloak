@@ -19,6 +19,7 @@ services:
       - MYSQL_DATABASE=keycloak
       - MYSQL_USER=keycloak
       - MYSQL_PASSWORD=password
+      - HOSTNAME=keycloak-mariadb
     volumes:
       - mysql_data:/var/lib/mysql
     restart: always
@@ -53,6 +54,7 @@ services:
       - DB_PASSWORD=password
       - DEBUG=true
       - DEBUG_PORT=8787
+      - HOSTNAME=keycloak
     depends_on:
       - mariadb
 #    These commands are required to allow remote debugging with docker

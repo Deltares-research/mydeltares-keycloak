@@ -15,6 +15,9 @@ import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import javax.persistence.EntityManager;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
@@ -24,6 +27,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Properties;
 
 public class ResourceUtils {
@@ -44,8 +52,6 @@ public class ResourceUtils {
         if (tokenString == null && queryParameters.containsKey("access_token")) {
             tokenString = queryParameters.getFirst("access_token");
         }
-        if (tokenString == null) throw new NotAuthorizedException("No Bearer token");
-
         return tokenString;
     }
 
@@ -53,6 +59,7 @@ public class ResourceUtils {
                         ClientConnection clientConnection){
         AppAuthManager authManager = new AppAuthManager();
         String tokenString = getTokenString(authManager, httpHeaders, session);
+        if (tokenString == null) return null;
         AccessToken token = getAccessToken(tokenString);
 
         String realmName = token.getIssuer().substring(token.getIssuer().lastIndexOf('/') + 1);
@@ -106,8 +113,44 @@ public class ResourceUtils {
         return session.getProvider(JpaConnectionProvider.class).getEntityManager();
     }
 
+    private static SecretKey setKey(String myKey) throws NoSuchAlgorithmException {
+        byte[] key = myKey.getBytes(StandardCharsets.UTF_8);
+        MessageDigest sha = MessageDigest.getInstance("SHA-1");
+        key = sha.digest(key);
+        key = Arrays.copyOf(key, 16);
+        return new SecretKeySpec(key, "AES");
+    }
 
+    public static String encrypt(String strToEncrypt, String secret){
+        try
+        {
+            SecretKey secretKey = setKey(secret);
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+            return Base64.getUrlEncoder().encodeToString(cipher.doFinal(strToEncrypt.getBytes(StandardCharsets.UTF_8)));
+        }
+        catch (Exception e)
+        {
+            System.out.println("Error while encrypting: " + e.toString());
+        }
+        return null;
+    }
 
+    public static String decrypt(String strToDecrypt, String secret)
+    {
+        try
+        {
+            SecretKey secretKey = setKey(secret);
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5PADDING");
+            cipher.init(Cipher.DECRYPT_MODE, secretKey);
+            return new String(cipher.doFinal(Base64.getUrlDecoder().decode(strToDecrypt)));
+        }
+        catch (Exception e)
+        {
+            System.out.println("Error while decrypting: " + e.toString());
+        }
+        return null;
+    }
     static String[] getReferrer(KeycloakSession session) {
         String ref = session.getContext().getRequestHeaders().getHeaderString("Referer");
         if (ref == null) {
@@ -163,6 +206,7 @@ public class ResourceUtils {
         if (authResult == null) {
             //this is when user accesses API via openid request and not GUI
             Auth auth = getAuth(httpHeaders, session, clientConnection);
+            if (auth == null) return null; //unauthenticated
             return new AuthenticationManager.AuthResult(auth.getUser(), auth.getSession(), auth.getToken());
         }
         return authResult;
