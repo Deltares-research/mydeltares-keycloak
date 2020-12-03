@@ -29,6 +29,7 @@ public class UserAttributesApiTest {
             int status = keycloakUtils.exportUserAttributesAdminApi(writer, "login.");
             Assert.assertEquals(200, status);
             String exportedAttributes = writer.toString();
+            System.out.println(exportedAttributes);
             Assert.assertTrue(exportedAttributes.contains( "login.login-count;1;user-getavatar@test.nl"));
         }
 
