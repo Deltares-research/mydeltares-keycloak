@@ -36,7 +36,7 @@ public class UserAttributesApiTest {
     }
 
     @Test
-    public void adminApiExportUserAttrbutesUnauthorized() {
+    public void adminApiExportUserAttributesUnauthorized() {
 
         KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getUserKeycloakUtils();
 
