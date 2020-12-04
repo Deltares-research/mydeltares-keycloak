@@ -22,7 +22,7 @@ public class UserAttributesApiTest {
     }
 
     @Test
-    public void adminApiExportUserMailings() throws IOException {
+    public void adminApiExportUserAttributes() throws IOException {
 
         KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getAdminKeycloakUtils();
         try (StringWriter writer = new StringWriter()) {
@@ -30,13 +30,13 @@ public class UserAttributesApiTest {
             Assert.assertEquals(200, status);
             String exportedAttributes = writer.toString();
             System.out.println(exportedAttributes);
-            Assert.assertTrue(exportedAttributes.contains( "login.login-count;1;user-getavatar@test.nl"));
+            Assert.assertTrue(exportedAttributes.matches( ".*login.login-count;\\d;user-getavatar@test.nl.*"));
         }
 
     }
 
     @Test
-    public void adminApiExportUserMailingsUnauthorized() {
+    public void adminApiExportUserAttrbutesUnauthorized() {
 
         KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getUserKeycloakUtils();
 
