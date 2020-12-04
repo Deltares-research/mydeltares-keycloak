@@ -30,7 +30,7 @@ public class UserAttributesApiTest {
             Assert.assertEquals(200, status);
             String exportedAttributes = writer.toString();
             System.out.println(exportedAttributes);
-            Assert.assertTrue(exportedAttributes.matches( ".*login.login-count;\\d;user-getavatar@test.nl.*"));
+            Assert.assertTrue(exportedAttributes.replace('\n', '@').matches(".*login\\.login-count;\\d;user-getavatar@test\\.nl.*") );
         }
 
     }
