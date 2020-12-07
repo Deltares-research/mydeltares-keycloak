@@ -43,12 +43,21 @@ public class KeycloakTestServer {
          Assert.assertTrue("Usage: <path to docker root dir>",args != null && args.length ==1);
 
          File testResources = new File(args[0]);
-         File dataDir = new File(testResources, "standalone/data");
-         deleteDirectoryContent(dataDir);
-         if (!dataDir.exists()) Files.createDirectories(dataDir.toPath());
+         File keycloakTmpDir = Files.createTempDirectory("keycloak").toFile();
 
-         setupKeycloakDatabase(testResources);
-         KeycloakTestServer.startKeycloak(testResources.getPath());
+         File dataDir = new File(keycloakTmpDir, "standalone/data");
+         if (!dataDir.exists()) Files.createDirectories(dataDir.toPath());
+         File deploymentDir = new File(keycloakTmpDir, "standalone/deployments");
+         if (!deploymentDir.exists()) Files.createDirectories(deploymentDir.toPath());
+
+         Files.copy(new File(testResources, "testdata/keycloak.mv.db").toPath(), new File(dataDir, "keycloak.mv.db").toPath());
+         Files.copy(new File(testResources, "testdata/admin-keycloak.properties").toPath(), new File(dataDir, "admin-keycloak.properties").toPath());
+         Files.copy(new File(testResources, "testdata/user-keycloak.properties").toPath(), new File(dataDir, "user-keycloak.properties").toPath());
+         Files.copy(new File(testResources, "testdata/viewer-keycloak.properties").toPath(), new File(dataDir, "viewer-keycloak.properties").toPath());
+         Files.copy(new File(testResources, "standalone/deployments/deltares-extension-bundle-1.0.ear").toPath(),
+                 new File(deploymentDir, "deltares-extension-bundle-1.0.ear").toPath());
+
+         KeycloakTestServer.startKeycloak(keycloakTmpDir.getPath());
 
          try {
              boolean keepGoing = true;
@@ -62,31 +71,11 @@ public class KeycloakTestServer {
 
 
      }
-     static void setupKeycloakDatabase(File testResources) throws IOException {
-        File dataDir = new File(testResources, "standalone/data");
-        File dataFile = new File(dataDir, "keycloak.mv.db");
-        File testDataFile = new File(testResources, "testdata/keycloak.mv.db");
-        Files.copy(testDataFile.toPath(), dataFile.toPath());
-    }
-
-     static void deleteDirectoryContent(File directory)  {
-        if (directory.exists()){
-            File[] files = directory.listFiles();
-            if (files != null) {
-                for (File file : files) {
-                    deleteDirectoryContent(file);
-                }
-            }
-            //noinspection ResultOfMethodCallIgnored
-            directory.delete();
-        }
-    }
 
     static void startKeycloak(String resourceDir) throws DockerCertificateException, DockerException, InterruptedException {
 
         String deploymentsPath = new File(resourceDir, "standalone/deployments").getAbsolutePath();
         String dataPath = new File(resourceDir, "standalone/data").getAbsolutePath();
-        String testdataPath = new File(resourceDir, "testdata").getAbsolutePath();
 
         dockerClient = DefaultDockerClient.fromEnv().build();
 
@@ -98,8 +87,7 @@ public class KeycloakTestServer {
                 .portBindings(portBindings)
                 .appendBinds(
                         HostConfig.Bind.from(deploymentsPath).to("/opt/jboss/keycloak/standalone/deployments").readOnly(false).build(),
-                        HostConfig.Bind.from(dataPath).to("/opt/jboss/keycloak/standalone/data").readOnly(false).build(),
-                        HostConfig.Bind.from(testdataPath).to("/opt/jboss/keycloak/testdata").readOnly(false).build()
+                        HostConfig.Bind.from(dataPath).to("/opt/jboss/keycloak/standalone/data").readOnly(false).build()
                 )
                 .build();
 
