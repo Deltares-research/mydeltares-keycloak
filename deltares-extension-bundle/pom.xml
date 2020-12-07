@@ -63,6 +63,24 @@
                             </resources>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>copy-ear-test-docker</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>../deltares-integration-tests/src/test/resources/docker/standalone/deployments</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>target/</directory>
+                                    <includes>
+                                        <include>deltares-extension-bundle-1.0.ear</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>

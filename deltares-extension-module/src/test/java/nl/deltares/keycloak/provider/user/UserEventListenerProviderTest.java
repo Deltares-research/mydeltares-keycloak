@@ -1,25 +1,12 @@
 package nl.deltares.keycloak.provider.user;
 
-import nl.deltares.keycloak.IntegrationTestCategory;
-import nl.deltares.keycloak.KeycloakTestServer;
 import nl.deltares.keycloak.UnitTestSuite;
 import nl.deltares.keycloak.mocking.MockValidationContext;
 import nl.deltares.keycloak.storage.rest.*;
-import nl.deltares.keycloak.utils.KeycloakUtilsImpl;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.keycloak.authentication.RequiredActionContext;
-import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.resource.RealmResourceProvider;
 
-import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 import static nl.deltares.keycloak.mocking.TestUtils.getMockValidationContext;
 

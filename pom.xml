@@ -22,6 +22,7 @@
     <modules>
         <module>deltares-extension-module</module>
         <module>deltares-extension-bundle</module>
+        <module>deltares-integration-tests</module>
     </modules>
 
     <dependencyManagement>
