@@ -2,6 +2,7 @@ package nl.deltares.keycloak;
 
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.LogStream;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.ContainerConfig;
@@ -19,10 +20,13 @@ import org.junit.Assert;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class KeycloakTestServer {
 
@@ -33,6 +37,50 @@ public class KeycloakTestServer {
     private static String containerId;
     private static DockerClient dockerClient;
     private static boolean running;
+
+     public static void main(String[] args) throws Throwable {
+
+         Assert.assertTrue("Usage: <path to docker root dir>",args != null && args.length ==1);
+
+         File testResources = new File(args[0]);
+         File dataDir = new File(testResources, "standalone/data");
+         deleteDirectoryContent(dataDir);
+         if (!dataDir.exists()) Files.createDirectories(dataDir.toPath());
+
+         setupKeycloakDatabase(testResources);
+         KeycloakTestServer.startKeycloak(testResources.getPath());
+
+         try {
+             boolean keepGoing = true;
+             //noinspection ConstantConditions
+             while (keepGoing) {
+                 Thread.sleep(5000);
+             }
+         } finally {
+             stopKeycloak();
+         }
+
+
+     }
+     static void setupKeycloakDatabase(File testResources) throws IOException {
+        File dataDir = new File(testResources, "standalone/data");
+        File dataFile = new File(dataDir, "keycloak.mv.db");
+        File testDataFile = new File(testResources, "testdata/keycloak.mv.db");
+        Files.copy(testDataFile.toPath(), dataFile.toPath());
+    }
+
+     static void deleteDirectoryContent(File directory)  {
+        if (directory.exists()){
+            File[] files = directory.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    deleteDirectoryContent(file);
+                }
+            }
+            //noinspection ResultOfMethodCallIgnored
+            directory.delete();
+        }
+    }
 
     static void startKeycloak(String resourceDir) throws DockerCertificateException, DockerException, InterruptedException {
 
@@ -101,11 +149,17 @@ public class KeycloakTestServer {
             System.out.println(e.getMessage());
         }
 
+        if (!running){
+            throw new RuntimeException("Keycloak has not started!");
+        }
+
     }
 
     static void stopKeycloak() {
 
         if (dockerClient != null) {
+
+            readLogs();
 
             // Kill container
             try {
@@ -126,6 +180,25 @@ public class KeycloakTestServer {
             dockerClient = null;
         }
 
+    }
+
+    private static void readLogs() {
+        try {
+            String executeId = dockerClient.execCreate(containerId, new String[]{"cat", "/opt/jboss/keycloak/standalone/log/server.log"},
+                    DockerClient.ExecCreateParam.attachStdout(),
+                    DockerClient.ExecCreateParam.attachStderr()).id();
+
+            System.out.println("***** Reading keycloak server.log ******");
+            try(LogStream logStream = dockerClient.execStart(executeId)){
+                if (logStream.hasNext()){
+                    System.out.println(UTF_8.decode(logStream.next().content()).toString());
+                }
+            }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+
+        System.out.println("***** Finished reading keycloak server.log *****");
     }
 
     public static boolean isRunning(){
