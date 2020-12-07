@@ -54,7 +54,7 @@ public class KeycloakTestServer {
          Files.copy(new File(testResources, "testdata/admin-keycloak.properties").toPath(), new File(dataDir, "admin-keycloak.properties").toPath());
          Files.copy(new File(testResources, "testdata/user-keycloak.properties").toPath(), new File(dataDir, "user-keycloak.properties").toPath());
          Files.copy(new File(testResources, "testdata/viewer-keycloak.properties").toPath(), new File(dataDir, "viewer-keycloak.properties").toPath());
-         Files.copy(new File(testResources, "standalone/deployments/deltares-extension-bundle-1.0.ear").toPath(),
+         Files.copy(new File(testResources, "testdata/deltares-extension-bundle-1.0.ear").toPath(),
                  new File(deploymentDir, "deltares-extension-bundle-1.0.ear").toPath());
 
          KeycloakTestServer.startKeycloak(keycloakTmpDir.getPath());
@@ -93,6 +93,7 @@ public class KeycloakTestServer {
 
         // Create container with exposed ports
         final ContainerConfig containerConfig = ContainerConfig.builder()
+                .user("root")
                 .hostConfig(hostConfig)
                 .image("quay.io/keycloak/keycloak:6.0.1")
                 .exposedPorts("8080","8787")
