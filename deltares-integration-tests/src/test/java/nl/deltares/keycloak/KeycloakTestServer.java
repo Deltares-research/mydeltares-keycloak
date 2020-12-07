@@ -184,7 +184,19 @@ public class KeycloakTestServer {
     }
 
     private static void readLogs() {
+
         try {
+            System.out.println("***** Reading docker logs *****");
+            LogStream logs = dockerClient.logs(containerId, DockerClient.LogsParam.stdout(), DockerClient.LogsParam.stderr());
+            System.out.print(logs.readFully());
+            System.out.println("***** Finished reading docker logs *****");
+        } catch (Exception e) {
+            System.out.println("Error reading docker log: " + e.getMessage());
+        }
+
+
+        try {
+
             String executeId = dockerClient.execCreate(containerId, new String[]{"cat", "/opt/jboss/keycloak/standalone/log/server.log"},
                     DockerClient.ExecCreateParam.attachStdout(),
                     DockerClient.ExecCreateParam.attachStderr()).id();
@@ -195,11 +207,12 @@ public class KeycloakTestServer {
                     System.out.println(UTF_8.decode(logStream.next().content()).toString());
                 }
             }
+            System.out.println("***** Finished reading keycloak server.log *****");
+
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            System.out.println("Error reading keycloak log: " + e.getMessage());
         }
 
-        System.out.println("***** Finished reading keycloak server.log *****");
     }
 
     public static boolean isRunning(){
