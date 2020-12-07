@@ -150,6 +150,7 @@ public class KeycloakTestServer {
         }
 
         if (!running){
+            stopKeycloak();
             throw new RuntimeException("Keycloak has not started!");
         }
 
