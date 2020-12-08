@@ -22,9 +22,26 @@
     <modules>
         <module>deltares-extension-module</module>
         <module>deltares-extension-bundle</module>
-<!--        <module>deltares-integration-tests</module>-->
+        <module>deltares-integration-tests</module>
     </modules>
 
+    <profiles>
+        <profile>
+            <id>deltares-build</id>
+            <modules>
+                <module>deltares-extension-module</module>
+                <module>deltares-extension-bundle</module>
+                <module>deltares-integration-tests</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>openshift</id>
+            <modules>
+                <module>deltares-extension-module</module>
+                <module>deltares-extension-bundle</module>
+            </modules>
+        </profile>
+    </profiles>
     <dependencyManagement>
         <dependencies>
 
@@ -102,7 +119,7 @@
                     <includes>
 <!--                        <include>${runSuite}</include>-->
                         <include>**/UnitTestSuite.java</include>
-<!--                        <include>**/IntegrationTestSuite.java</include>-->
+                        <include>**/IntegrationTestSuite.java</include>
                     </includes>
                 </configuration>
             </plugin>
