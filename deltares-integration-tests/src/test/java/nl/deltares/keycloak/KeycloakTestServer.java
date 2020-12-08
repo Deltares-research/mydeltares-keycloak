@@ -38,6 +38,12 @@ public class KeycloakTestServer {
     private static DockerClient dockerClient;
     private static boolean running;
 
+    /**
+     * Use main method to start keycloak server manually. Server can be stopped by manually updating the 'keepGoing'
+     * variable.
+     * @param args
+     * @throws Throwable
+     */
      public static void main(String[] args) throws Throwable {
 
          Assert.assertTrue("Usage: <path to docker root dir>",args != null && args.length ==1);

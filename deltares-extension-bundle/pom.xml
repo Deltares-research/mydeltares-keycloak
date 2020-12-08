@@ -47,7 +47,7 @@
                 <executions>
                     <execution>
                         <id>copy-ear-docker</id>
-                        <phase>verify</phase>
+                        <phase>package</phase>
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>
@@ -65,7 +65,7 @@
                     </execution>
                     <execution>
                         <id>copy-ear-test-docker</id>
-                        <phase>verify</phase>
+                        <phase>package</phase>
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>
