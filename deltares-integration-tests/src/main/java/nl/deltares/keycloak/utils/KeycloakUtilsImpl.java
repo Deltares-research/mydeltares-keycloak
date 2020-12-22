@@ -80,6 +80,19 @@ public class KeycloakUtilsImpl {
         return basePath + KEYCLOAK_USERS_PATH;
     }
 
+
+    public List<UserRepresentation> searchUser(String searchString) throws IOException{
+
+        HttpURLConnection urlConnection = getConnection(getUsersPath() + "?search=" + searchString, "GET", getAccessToken(), null);
+        int response = checkResponse(urlConnection);
+        if (response == Response.Status.NO_CONTENT.getStatusCode()) {
+            return null;
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(urlConnection.getInputStream(), mapper.getTypeFactory().constructCollectionType(List.class, UserRepresentation.class));
+    }
+
     public UserRepresentation getUser(String id) throws IOException {
         HttpURLConnection urlConnection = getConnection(getUsersPath() + "/" + id, "GET", getAccessToken(), null);
         int response = checkResponse(urlConnection);
@@ -93,7 +106,7 @@ public class KeycloakUtilsImpl {
     public int updateUser(UserRepresentation user) throws IOException {
         HashMap<String, String> map = new HashMap<>();
         map.put("Content-Type", MediaType.APPLICATION_JSON);
-        HttpURLConnection urlConnection = getConnection(getUsersPath(), "PUT", getAccessToken(), map);
+        HttpURLConnection urlConnection = getConnection(getUsersPath() + '/' + user.getId(), "PUT", getAccessToken(), map);
         ObjectMapper mapper = new ObjectMapper();
         mapper.writeValue(urlConnection.getOutputStream(), user);
         return checkResponse(urlConnection);
