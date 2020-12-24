@@ -10,10 +10,10 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Properties;
 
-public class DisableBannedUsers {
+public class DeleteBannedUsers {
 
     /**
-     * Disables users based on their screenname or email address. Expected input is array of search strings.
+     * Deletes users based on their screenname or email address. Expected input is array of search strings.
      *
      * @param args
      */
@@ -35,9 +35,9 @@ public class DisableBannedUsers {
                     System.out.println("Multiple results found for " + screenName);
                 } else {
                     UserRepresentation user = userRepresentation.get(0);
-                    user.setEnabled(false);
-                    keycloakUtils.updateUser(user);
-                    System.out.println("disabled: " + screenName);
+//                    user.setEnabled(false);
+                    keycloakUtils.deleteUser(user.getId());
+                    System.out.println("deleted: " + screenName);
                 }
 
             } catch (Exception e) {
