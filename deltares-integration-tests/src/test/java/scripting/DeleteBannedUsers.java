@@ -33,6 +33,11 @@ public class DeleteBannedUsers {
                     System.out.println("Could not find user for " + screenName);
                 } else if (userRepresentation.size() > 1){
                     System.out.println("Multiple results found for " + screenName);
+                    for (UserRepresentation user : userRepresentation) {
+                        if (!user.getUsername().equals(screenName)) continue;
+                        keycloakUtils.deleteUser(user.getId());
+                        System.out.println("deleted: " + screenName);
+                    }
                 } else {
                     UserRepresentation user = userRepresentation.get(0);
 //                    user.setEnabled(false);
