@@ -36,6 +36,7 @@ public class ExportCsvSerializer implements TextSerializer<ExportCsvContent> {
     }
 
     private String addQuotesIfRequired(String value) {
+        if (value == null) return "";
         if (value.indexOf(separator) > 0){
             return '\"' + value + '\"';
         }
