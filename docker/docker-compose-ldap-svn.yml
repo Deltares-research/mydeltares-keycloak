@@ -64,7 +64,7 @@ services:
               "-Dcom.sun.management.jmxremote.local.only=false", "-Dcom.sun.management.jmxremote.authenticate=false",
               "-Dcom.sun.management.jmxremote.ssl=false", "-Dcom.sun.management.jmxremote.rmi.port=12345",
               "-Djava.rmi.server.hostname=$HOSTNAME",
-              "-Dkeycloak.import=/opt/jboss/keycloak/resources/realm-lportal.json",
+              "-Dkeycloak.import=/opt/jboss/keycloak/resources/realm-lportal-openldap.json",
               "-Dkeycloak.profile.feature.upload_scripts=enabled"]
 
 #  subversion:
@@ -106,9 +106,43 @@ services:
 #        - LDAP_BIND_DN=cn=manager,dc=oss,dc=deltares,dc=nl
 #        - LDAP_BIND_PASSWORD=password
         - LDAP_USER_DC=people
-#        - LDAP_GROUP=readers
+        - LDAP_GROUP=groups
       volumes:
         - openldap_data:/bitnami/openldap
       networks:
         - keycloak
 
+#  httpd:
+#      image: httpd:2.4
+#      container_name: httpd
+#      ports:
+#        - '8081:80'
+#    #  environment:
+#      volumes:
+#    #        - ./http/conf/httpd.conf:/usr/local/apache2/conf/httpd.conf
+#          - ./public-html/:/usr/local/apache2/htdocs/
+#      networks:
+#        - keycloak
+
+#   https://github.com/iaean/docker-subversion
+  svn:
+      image: iaean/subversion
+      container_name: subversion
+      ports:
+        - '8081:80'
+        - '3690:3690'
+      environment:
+        - SUBVERSION_REPOS=deltares/test;
+        - SVN_LOCAL_ADMIN_USER=admin
+        - SVN_LOCAL_ADMIN_PASS=admin
+#        - LDAP_BindDN=cn=admin,dc=oss,dc=deltares,dc=nl
+#        - LDAP_BindPW=admin
+#        - SASL_LDAP_SERVER=ldap://openldap
+#        - SASL_LDAP_SEARCHBASE=ou=people,dc=oss,dc=deltares,dc=nl
+#        - SASL_LDAP_FILTER=(uid=%U)
+#        - APACHE_LDAP_URL=ldap://openldap:1389/ou=people,dc=oss,dc=deltares,dc=nl?mail
+      volumes:
+        - ./svn/config/:/etc/apache2/conf.d/
+        - ./svn/data/:/data/svn/
+      networks:
+        - keycloak
