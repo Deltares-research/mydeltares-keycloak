@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<EntitiesDescriptor Name="urn:keycloak" xmlns="urn:oasis:names:tc:SAML:2.0:metadata"
+					xmlns:dsig="http://www.w3.org/2000/09/xmldsig#">
+	<EntityDescriptor entityID="http://localhost:8080/auth/realms/liferay-portal">
+		<IDPSSODescriptor WantAuthnRequestsSigned="true"
+			protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+                        <KeyDescriptor use="signing">
+                          <dsig:KeyInfo>
+                            <dsig:KeyName>d5l-yfbPWa-Pe08Bf9OUKDRNsyLpDrnt7RoBbcFzlWw</dsig:KeyName>
+                            <dsig:X509Data>
+                              <dsig:X509Certificate>MIICqzCCAZMCBgF3uhUM+jANBgkqhkiG9w0BAQsFADAZMRcwFQYDVQQDDA5saWZlcmF5LXBvcnRhbDAeFw0yMTAyMTkxMTM2MTdaFw0zMTAyMTkxMTM3NTdaMBkxFzAVBgNVBAMMDmxpZmVyYXktcG9ydGFsMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAo1UdX1wzw4CpsqpzApnhR/FG1h3wLKTwKMFO9xcDn+L200MHPP5IcNPcsWy05KHSkXoE43+qNK373Uq+an6SoHG5HnPdVMevzEgkfrUEcjpI/NFNiknYbHrIsx98ksObp12ci82jGImwbMLOiwZ8pl73WY7MfQ+SSiR4oSlswsCOul9hCCfKa3YJsnefqxLjqGGZbX0G+HgWAcGIzmgQSxIkwM71LGxP6FLe5eu/EB1tBRkDP1k+z+zfyCFn0QxxOLgx1TtG6l+xdI+YN1p3rAaE5LR8VxCJhRcokYHvVOysRgC1RrKdpvvqayYpx5uIXKC/HHrW/0Y9gNX9CcMaiQIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQBF4fXbO9mhslXpq0Kbw77/yNH6pJXAkAYzk76KqTDubnwPxQzVaevzot1TAt3blZ9zBn32RqOdEnnDRovnhp/JLknkiBhyNxsqWn2qAguEo3WjZkqN3Ftf9PYc72HQ1m0NRUQcSKpJBwUxiGU43UKmRvG7yx/3WwIxCN5o5yvv/Da4tx3TV6MEJjkwVctRUSONTosGO0HDqfXL9RGLtnDMSPZJYvIGEDj9aV4rifkJKW6yYFBTqFKgwAmKU6bM3otRtlbmGo5FvxGZQHhS8daeYeNM85ORV/jXFp4Se88xWBSqaiURTcrBSFRq4Z35tKbfCngxhBlMozqv28y6xU5M</dsig:X509Certificate>
+                            </dsig:X509Data>
+                          </dsig:KeyInfo>
+                        </KeyDescriptor>
+
+			<SingleLogoutService
+					Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+					Location="http://localhost:8080/auth/realms/liferay-portal/protocol/saml" />
+			<SingleLogoutService
+					Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+					Location="http://localhost:8080/auth/realms/liferay-portal/protocol/saml" />
+			<NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:persistent</NameIDFormat>
+			<NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</NameIDFormat>
+			<NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified</NameIDFormat>
+			<NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</NameIDFormat>
+			<SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+				Location="http://localhost:8080/auth/realms/liferay-portal/protocol/saml" />
+			<SingleSignOnService
+				Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+				Location="http://localhost:8080/auth/realms/liferay-portal/protocol/saml" />
+			<SingleSignOnService
+				Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP"
+				Location="http://localhost:8080/auth/realms/liferay-portal/protocol/saml" />
+		</IDPSSODescriptor>
+	</EntityDescriptor>
+</EntitiesDescriptor>
