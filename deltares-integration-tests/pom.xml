@@ -145,9 +145,9 @@
         </dependency>
 
         <dependency>
-            <groupId>com.spotify</groupId>
-            <artifactId>docker-client</artifactId>
-            <version>8.16.0</version>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>1.15.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -35,7 +35,7 @@ public class IntegrationTestSuite {
         Files.copy(new File(testResources, "deltares-extension-bundle-1.0.ear").toPath(),
                 new File(deploymentDir, "deltares-extension-bundle-1.0.ear").toPath());
 
-        KeycloakTestServer.startKeycloak(keycloakTmpDir.getPath());
+        KeycloakTestServer.startKeycloak(deploymentDir.getPath(), dataDir.getPath());
     }
 
     @AfterClass

@@ -1,14 +1,5 @@
 package nl.deltares.keycloak;
 
-import com.spotify.docker.client.DefaultDockerClient;
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.LogStream;
-import com.spotify.docker.client.exceptions.DockerCertificateException;
-import com.spotify.docker.client.exceptions.DockerException;
-import com.spotify.docker.client.messages.ContainerConfig;
-import com.spotify.docker.client.messages.ContainerCreation;
-import com.spotify.docker.client.messages.HostConfig;
-import com.spotify.docker.client.messages.PortBinding;
 import nl.deltares.keycloak.utils.KeycloakUtilsImpl;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -16,26 +7,25 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.Assert;
+import org.testcontainers.containers.BindMode;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
+import java.nio.file.Path;
 
 public class KeycloakTestServer {
-
 
     private static KeycloakUtilsImpl adminUtils;
     private static KeycloakUtilsImpl viewerUtils;
     private static KeycloakUtilsImpl userUtils;
     private static String containerId;
-    private static DockerClient dockerClient;
+    private static GenericContainer dockerClient;
     private static boolean running;
 
     /**
@@ -51,9 +41,9 @@ public class KeycloakTestServer {
          File testResources = new File(args[0]);
          File keycloakTmpDir = Files.createTempDirectory("keycloak").toFile();
 
-         File dataDir = new File(keycloakTmpDir, "standalone/data");
+         File dataDir = new File(keycloakTmpDir, "standalone/data/");
          if (!dataDir.exists()) Files.createDirectories(dataDir.toPath());
-         File deploymentDir = new File(keycloakTmpDir, "standalone/deployments");
+         File deploymentDir = new File(keycloakTmpDir, "standalone/deployments/");
          if (!deploymentDir.exists()) Files.createDirectories(deploymentDir.toPath());
 
          Files.copy(new File(testResources, "testdata/keycloak.mv.db").toPath(), new File(dataDir, "keycloak.mv.db").toPath());
@@ -63,7 +53,8 @@ public class KeycloakTestServer {
          Files.copy(new File(testResources, "testdata/deltares-extension-bundle-1.0.ear").toPath(),
                  new File(deploymentDir, "deltares-extension-bundle-1.0.ear").toPath());
 
-         KeycloakTestServer.startKeycloak(keycloakTmpDir.getPath());
+
+         KeycloakTestServer.startKeycloak(deploymentDir.getPath(), dataDir.getPath());
 
          try {
              boolean keepGoing = true;
@@ -78,48 +69,29 @@ public class KeycloakTestServer {
 
      }
 
-    static void startKeycloak(String resourceDir) throws DockerCertificateException, DockerException, InterruptedException {
+    static void startKeycloak(String deploymentDir, String resourcesDir)  {
 
-        String deploymentsPath = new File(resourceDir, "standalone/deployments").getAbsolutePath();
-        String dataPath = new File(resourceDir, "standalone/data").getAbsolutePath();
-
-        dockerClient = DefaultDockerClient.fromEnv().build();
-
-        final Map<String, List<PortBinding>> portBindings = new HashMap<>();
-        portBindings.put("8080", Collections.singletonList(PortBinding.of("0.0.0.0", "8080")));
-        portBindings.put("8787", Collections.singletonList(PortBinding.of("0.0.0.0", "8787")));
-
-        final HostConfig hostConfig = HostConfig.builder()
-                .portBindings(portBindings)
-                .appendBinds(
-                        HostConfig.Bind.from(deploymentsPath).to("/opt/jboss/keycloak/standalone/deployments").readOnly(false).build(),
-                        HostConfig.Bind.from(dataPath).to("/opt/jboss/keycloak/standalone/data").readOnly(false).build()
-                )
-                .build();
-
-        // Create container with exposed ports
-        final ContainerConfig containerConfig = ContainerConfig.builder()
-                .user("root")
-                .hostConfig(hostConfig)
-                .image("quay.io/keycloak/keycloak:6.0.1")
-                .exposedPorts("8080","8787")
-                .env("DB_VENDOR=h2", "DEBUG=true", "DEBUG_PORT=8787", "HOSTNAME=keycloak")
-                .hostname("keycloak")
-                .cmd("-Dcom.sun.management.jmxremote", "-Dcom.sun.management.jmxremote.port=12345",
+        dockerClient =  new GenericContainer(DockerImageName.parse("quay.io/keycloak/keycloak:6.0.1"))
+                .withExposedPorts(8080, 8787)
+                .withEnv("DB_VENDOR", "h2")
+                .withEnv("DEBUG", "true")
+                .withEnv("DEBUG_PORT", "8787")
+                .withEnv("HOSTNAME", "keycloak")
+                .withFileSystemBind(deploymentDir, "/opt/jboss/keycloak/standalone/deployments", BindMode.READ_WRITE)
+                .withFileSystemBind(resourcesDir, "/opt/jboss/keycloak/standalone/data", BindMode.READ_WRITE)
+                .withCommand("-Dcom.sun.management.jmxremote", "-Dcom.sun.management.jmxremote.port=12345",
                         "-Dcom.sun.management.jmxremote.local.only=false", "-Dcom.sun.management.jmxremote.authenticate=false",
                         "-Dcom.sun.management.jmxremote.ssl=false", "-Dcom.sun.management.jmxremote.rmi.port=12345",
-                        "-Djava.rmi.server.hostname=$HOSTNAME", "-Dcache.export=false")
-                .build();
+                        "-Djava.rmi.server.hostname=$HOSTNAME","-Dcache.export=false");
 
-        final ContainerCreation creation = dockerClient.createContainer(containerConfig, "test-keycloak");
-
-        containerId = creation.id();
-        dockerClient.startContainer(containerId);
+        dockerClient.start();
+        String address = dockerClient.getHost();
+        Integer port = dockerClient.getFirstMappedPort();
 
         //wait for server to start
         RequestConfig config = RequestConfig.custom().setSocketTimeout(1000).build();
         try (CloseableHttpClient client = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
-            HttpGet request = new HttpGet(String.format("http://localhost:%d/auth/", 8080));
+            HttpGet request = new HttpGet(String.format("http://%s:%d/auth/", address, port));
             int count = 0;
             while (count < 10000) {
                 count++;
@@ -147,6 +119,8 @@ public class KeycloakTestServer {
         if (!running){
             stopKeycloak();
             throw new RuntimeException("Keycloak has not started!");
+        } else {
+
         }
 
     }
@@ -159,20 +133,17 @@ public class KeycloakTestServer {
 
             // Kill container
             try {
-                dockerClient.killContainer(containerId);
+                dockerClient.stop();
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
             // Remove container
             try {
-                dockerClient.removeContainer(containerId);
+                dockerClient.close();
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
-            // Close the docker client
-            dockerClient.close();
             dockerClient = null;
         }
 
@@ -182,30 +153,11 @@ public class KeycloakTestServer {
 
         try {
             System.out.println("***** Reading docker logs *****");
-            LogStream logs = dockerClient.logs(containerId, DockerClient.LogsParam.stdout(), DockerClient.LogsParam.stderr());
-            System.out.print(logs.readFully());
+            String logs = dockerClient.getLogs();
+            System.out.print(logs);
             System.out.println("***** Finished reading docker logs *****");
         } catch (Exception e) {
             System.out.println("Error reading docker log: " + e.getMessage());
-        }
-
-
-        try {
-
-            String executeId = dockerClient.execCreate(containerId, new String[]{"cat", "/opt/jboss/keycloak/standalone/log/server.log"},
-                    DockerClient.ExecCreateParam.attachStdout(),
-                    DockerClient.ExecCreateParam.attachStderr()).id();
-
-            System.out.println("***** Reading keycloak server.log ******");
-            try(LogStream logStream = dockerClient.execStart(executeId)){
-                if (logStream.hasNext()){
-                    System.out.println(UTF_8.decode(logStream.next().content()).toString());
-                }
-            }
-            System.out.println("***** Finished reading keycloak server.log *****");
-
-        } catch (Exception e) {
-            System.out.println("Error reading keycloak log: " + e.getMessage());
         }
 
     }
@@ -241,6 +193,26 @@ public class KeycloakTestServer {
 
         File adminProperties = new File(adminResource.getFile());
         Assert.assertTrue(adminProperties.exists());
+
+        updateAddress(adminProperties);
+
         return new KeycloakUtilsImpl(adminProperties);
+    }
+
+    private static void updateAddress(File adminProperties) {
+        String address = dockerClient.getHost();
+        Integer port = dockerClient.getFirstMappedPort();
+
+        Path path = adminProperties.toPath();
+        Charset charset = StandardCharsets.UTF_8;
+
+        try {
+            String content = new String(Files.readAllBytes(path), charset);
+            content = content.replaceAll("localhost", address);
+            content = content.replaceAll("8080", String.valueOf(port));
+            Files.write(path, content.getBytes(charset));
+        } catch (IOException e) {
+            //
+        }
     }
 }
