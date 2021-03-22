@@ -209,7 +209,7 @@ public class KeycloakTestServer {
         try {
             String content = new String(Files.readAllBytes(path), charset);
             content = content.replaceAll("localhost", address);
-            content = content.replaceAll("8080", String.valueOf(port));
+            content = content.replaceAll(":\\d+/auth", ":" + port + "/auth");
             Files.write(path, content.getBytes(charset));
         } catch (IOException e) {
             //
