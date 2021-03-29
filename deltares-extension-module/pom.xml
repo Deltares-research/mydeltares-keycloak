@@ -156,7 +156,7 @@
             <plugin>
                 <groupId>org.liquibase</groupId>
                 <artifactId>liquibase-maven-plugin</artifactId>
-                <version>4.3.2</version>
+                <version>3.6.0</version>
                 <configuration>
                     <changeLogFile>src/main/resources/META-INF/avatar-changelog.xml</changeLogFile>
                     <changeLogFile>src/main/resources/META-INF/mailing-changelog.xml</changeLogFile>
