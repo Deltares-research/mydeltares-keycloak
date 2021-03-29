@@ -162,11 +162,16 @@
                 </configuration>
                 <dependencies>
                     <dependency>
-                        <groupId>com.h2database</groupId>
-                        <artifactId>h2</artifactId>
-                        <version>1.4.193</version>
-                        <scope>compile</scope>
+                        <groupId>org.liquibase.ext</groupId>
+                        <artifactId>liquibase-hibernate5</artifactId>
+                        <version>3.7</version>
                     </dependency>
+                    <dependency>
+                        <groupId>javax.validation</groupId>
+                        <artifactId>validation-api</artifactId>
+                        <version>2.0.1.Final</version>
+                    </dependency>
+
                 </dependencies>
                 <executions>
                     <execution>
