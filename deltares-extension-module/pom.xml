@@ -148,39 +148,54 @@
     <build>
 
         <plugins>
-            <plugin>
-                <groupId>org.liquibase</groupId>
-                <artifactId>liquibase-maven-plugin</artifactId>
-                <version>3.6.0</version>
-                <configuration>
-                    <changeLogFile>src/main/resources/META-INF/avatar-changelog.xml</changeLogFile>
-                    <changeLogFile>src/main/resources/META-INF/mailing-changelog.xml</changeLogFile>
-                    <driver>com.mysql.jdbc.Driver</driver>
-                    <url>jdbc:mysql://localhost:3306/keycloak</url>
-                    <username>keycloak</username>
-                    <password>keycloak</password>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.liquibase.ext</groupId>
-                        <artifactId>liquibase-hibernate5</artifactId>
-                        <version>3.7</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>javax.validation</groupId>
-                        <artifactId>validation-api</artifactId>
-                        <version>2.0.1.Final</version>
-                    </dependency>
+<!--            <plugin>-->
+<!--                <groupId>org.liquibase</groupId>-->
+<!--                <artifactId>liquibase-maven-plugin</artifactId>-->
+<!--                <version>3.6.0</version>-->
+<!--                <configuration>-->
+<!--                    <changeLogFile>src/main/resources/META-INF/avatar-changelog.xml</changeLogFile>-->
+<!--                    <changeLogFile>src/main/resources/META-INF/mailing-changelog.xml</changeLogFile>-->
+<!--                    <driver>com.mysql.jdbc.Driver</driver>-->
+<!--                    <url>jdbc:mysql://localhost:3306/keycloak</url>-->
+<!--                    <username>keycloak</username>-->
+<!--                    <password>keycloak</password>-->
+<!--                </configuration>-->
+<!--                <dependencies>-->
+<!--                    <dependency>-->
+<!--                        <groupId>org.springframework</groupId>-->
+<!--                        <artifactId>spring-beans</artifactId>-->
+<!--                        <version>5.2.5.RELEASE</version>-->
+<!--                    </dependency>-->
+<!--                    <dependency>-->
+<!--                        <groupId>org.springframework</groupId>-->
+<!--                        <artifactId>spring-core</artifactId>-->
+<!--                        <version>5.2.5.RELEASE</version>-->
+<!--                    </dependency>-->
+<!--                    <dependency>-->
+<!--                        <groupId>org.liquibase</groupId>-->
+<!--                        <artifactId>liquibase-core</artifactId>-->
+<!--                        <version>3.6.0</version>-->
+<!--                    </dependency>-->
+<!--                    <dependency>-->
+<!--                        <groupId>org.liquibase.ext</groupId>-->
+<!--                        <artifactId>liquibase-hibernate5</artifactId>-->
+<!--                        <version>3.7</version>-->
+<!--                    </dependency>-->
+<!--                    <dependency>-->
+<!--                        <groupId>javax.validation</groupId>-->
+<!--                        <artifactId>validation-api</artifactId>-->
+<!--                        <version>2.0.1.Final</version>-->
+<!--                    </dependency>-->
 
-                </dependencies>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>clearCheckSums</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+<!--                </dependencies>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <goals>-->
+<!--                            <goal>clearCheckSums</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
         </plugins>
     </build>
 </project>
