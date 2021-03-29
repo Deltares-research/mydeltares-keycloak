@@ -24,7 +24,8 @@ public class IntegrationTestSuite {
         File keycloakTmpDir = Files.createTempDirectory("keycloak").toFile();
 
         File dataDir = new File(keycloakTmpDir, "standalone/data");
-        if (!dataDir.exists()) Files.createDirectories(dataDir.toPath());
+        File contentDir = new File(keycloakTmpDir, "standalone/data/content");
+        if (!contentDir.exists()) Files.createDirectories(dataDir.toPath());
         File deploymentDir = new File(keycloakTmpDir, "standalone/deployments");
         if (!deploymentDir.exists()) Files.createDirectories(deploymentDir.toPath());
 
