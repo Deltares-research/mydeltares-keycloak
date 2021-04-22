@@ -19,7 +19,10 @@ import java.util.List;
 
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.getEntityManager;
 
-
+/**
+ * @deprecated This is no longer necessary. We have added check for adding UserMailings in class
+ * {@link nl.deltares.keycloak.authentication.requiredactions.TermsAndPrivacy}
+ */
 public class UserEventListenerProvider implements EventListenerProvider {
     private static final Logger logger = Logger.getLogger(UserEventListenerProvider.class);
     private final KeycloakSession session;

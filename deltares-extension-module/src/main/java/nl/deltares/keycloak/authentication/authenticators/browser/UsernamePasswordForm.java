@@ -39,7 +39,6 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  *
- * @deprecated This is no longer necessary. We have added email check in GUI
  */
 public class UsernamePasswordForm implements Authenticator {
 

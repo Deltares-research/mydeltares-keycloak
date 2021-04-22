@@ -16,3 +16,4 @@
 #
 
 nl.deltares.keycloak.authentication.requiredactions.LoginStatsRecordingRequiredActionProvider
+nl.deltares.keycloak.authentication.requiredactions.TermsAndPrivacy

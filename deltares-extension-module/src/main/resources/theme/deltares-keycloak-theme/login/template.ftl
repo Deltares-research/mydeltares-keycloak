@@ -31,7 +31,7 @@
     </#if>
 </head>
 
-<body class="${properties.kcBodyClass!}">
+<body class="${properties.kcBodyClass!}" onload="loadTarget()">
   <div class="${properties.kcLoginClass!}">
     <div id="kc-header" class="${properties.kcHeaderClass!} navbar header">
         <div id="kc-header-wrapper" class="container"> <span class="navbar-header">

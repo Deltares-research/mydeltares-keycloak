@@ -101,9 +101,9 @@
 <div class="footer">
     <div class="inner-footer">
         <div class="misc-column">
-            <div>Colofon: <a target="_blank" href="https://www.deltares.nl/nl/colofon/">NL</a> <a target="_blank" href="https://www.deltares.nl/en/colofon-2/">EN</a></div>
-            <div>Disclaimer: <a target="_blank" href="https://www.deltares.nl/nl/disclaimer-2/">NL</a>  <a target="_blank" href="https://www.deltares.nl/en/disclaimer/">EN</a></div>
-            <div>Privacy statement: <a target="_blank" href="https://www.deltares.nl/nl/privacy-verklaring-stichting-deltares/">NL</a> <a target="_blank" href="https://www.deltares.nl/en/privacy-statement-stichting-deltares/">EN</a></div>
+            <div>Colofon: <a target="_blank" href="https://oss.deltares.nl/nl/colofon">NL</a> <a target="_blank" href="https://oss.deltares.nl/en/colofon">EN</a></div>
+            <div>Disclaimer: <a target="_blank" href="https://oss.deltares.nl/nl/disclaimer">NL</a>  <a target="_blank" href="https://oss.deltares.nl/en/disclaimer">EN</a></div>
+            <div>Privacy statement: <a target="_blank" href="https://oss.deltares.nl/nl/privacy-declaration">NL</a> <a target="_blank" href="https://oss.deltares.nl/nl/privacy-declaration">EN</a></div>
         </div>
     </div>
 </div>

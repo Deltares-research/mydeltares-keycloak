@@ -6,6 +6,10 @@ import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+/**
+ * @deprecated This is no longer necessary. We have added check for adding UserMailings in class
+ * {@link nl.deltares.keycloak.authentication.requiredactions.TermsAndPrivacy}
+ */
 public class UserEventListenerProviderFactory implements EventListenerProviderFactory {
 
     @Override
