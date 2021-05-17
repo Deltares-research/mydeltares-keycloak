@@ -1,5 +1,6 @@
 package nl.deltares.keycloak.utils;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import nl.deltares.keycloak.storage.rest.MailingRepresentation;
 import nl.deltares.keycloak.storage.rest.UserMailingRepresentation;
@@ -351,6 +352,39 @@ public class KeycloakUtilsImpl {
         HashMap<String, String> map = new HashMap<>();
         map.put("Content-Type", MediaType.TEXT_HTML);
         HttpURLConnection urlConnection = getConnection(getAdminUserAttributePath() + "/export?search=" + search, "GET", getAccessToken(), map);
+
+        int status = checkResponse(urlConnection);
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                writer.write(line);
+                writer.write('\n');
+            }
+            writer.flush();
+        }
+        return status;
+
+    }
+
+    public List<UserMailingRepresentation> getUserMailingsSubscriptionsAdminApi(String email) throws IOException {
+        HashMap<String, String> map = new HashMap<>();
+        map.put("Content-Type", MediaType.TEXT_HTML);
+        HttpURLConnection urlConnection = getConnection(getAdminUserMailingPath() + "/subscriptions?email=" + email, "GET", getAccessToken(), map);
+
+        int response = checkResponse(urlConnection);
+        if (response == Response.Status.NO_CONTENT.getStatusCode()) {
+            return null;
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(urlConnection.getInputStream(), new TypeReference<List<UserMailingRepresentation>>(){});
+
+    }
+
+    public int subscribeUserMailingsAdminApi(Writer writer, String mailingId, String email) throws IOException {
+        HashMap<String, String> map = new HashMap<>();
+        map.put("Content-Type", MediaType.TEXT_HTML);
+        HttpURLConnection urlConnection = getConnection(getAdminUserMailingPath() + "/subscribe/" + mailingId + "?email=" + email, "PUT", getAccessToken(), map);
 
         int status = checkResponse(urlConnection);
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()))) {

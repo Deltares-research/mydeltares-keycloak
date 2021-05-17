@@ -13,6 +13,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TestName;
 
 import java.io.*;
+import java.util.List;
+
+import static nl.deltares.keycloak.storage.rest.TestUtils.newUserRepresentation;
 
 @Category(IntegrationTestCategory.class)
 public class UserMailingsApiTest {
@@ -25,6 +28,82 @@ public class UserMailingsApiTest {
 
         System.setProperty("csv_prefix", name.getMethodName());
         Assert.assertTrue(KeycloakTestServer.isRunning());
+    }
+
+    @Test
+    public void adminApiGetSubscribedUserMailingsUnauthorized() {
+
+        KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getUserKeycloakUtils();
+        try  {
+            keycloakUtils.getUserMailingsSubscriptionsAdminApi("subscribe-user2@test.nl");
+            Assert.fail();
+        } catch (IOException e) {
+            Assert.assertTrue(e.getMessage().startsWith("Error 403"));
+        }
+
+    }
+
+    @Test
+    public void adminApiGetSubscribedUserMailings() throws IOException {
+
+        KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getAdminKeycloakUtils();
+
+        keycloakUtils.createUser(newUserRepresentation("subscribe-user2@test.nl"));
+
+        List<UserMailingRepresentation> subscriptions = keycloakUtils.getUserMailingsSubscriptionsAdminApi("subscribe-user2@test.nl");
+        Assert.assertTrue(subscriptions.isEmpty());
+
+        try (StringWriter writer = new StringWriter()) {
+            int status = keycloakUtils.subscribeUserMailingsAdminApi(writer, "db0be0a5-e96e-40b6-b687-fdb12304b69a", "subscribe-user2@test.nl");
+            Assert.assertEquals(200, status);
+            String subscribeUserMailings = writer.toString();
+            System.out.println("adminApiSubscribeUserMailings: " + subscribeUserMailings);
+            Assert.assertTrue(subscribeUserMailings.contains( "user subscribed for mailing"));
+        }
+
+        subscriptions = keycloakUtils.getUserMailingsSubscriptionsAdminApi("subscribe-user2@test.nl");
+        Assert.assertTrue(subscriptions.size() == 1);
+        Assert.assertEquals("db0be0a5-e96e-40b6-b687-fdb12304b69a", subscriptions.get(0).mailingId);
+
+    }
+
+    @Test
+    public void adminApiSubscribeUserMailingsUnauthorized() {
+
+        KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getUserKeycloakUtils();
+        try (StringWriter writer = new StringWriter()) {
+            keycloakUtils.subscribeUserMailingsAdminApi(writer, "db0be0a5-e96e-40b6-b687-fdb12304b69a", "subscribe-user1@test.nl");
+            Assert.fail();
+        } catch (IOException e) {
+            Assert.assertTrue(e.getMessage().startsWith("Error 403"));
+        }
+
+    }
+
+    @Test
+    public void adminApiSubscribeUserMailings() throws IOException {
+
+        KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getAdminKeycloakUtils();
+
+        keycloakUtils.createUser(newUserRepresentation("subscribe-user1@test.nl"));
+
+        try (StringWriter writer = new StringWriter()) {
+
+            int status = keycloakUtils.subscribeUserMailingsAdminApi(writer, "db0be0a5-e96e-40b6-b687-fdb12304b69a", "subscribe-user1@test.nl");
+            Assert.assertEquals(200, status);
+            String subscribeUserMailings = writer.toString();
+            System.out.println("adminApiSubscribeUserMailings: " + subscribeUserMailings);
+            Assert.assertTrue(subscribeUserMailings.contains( "user subscribed for mailing"));
+        }
+
+        try (StringWriter writer = new StringWriter()) {
+            int status = keycloakUtils.subscribeUserMailingsAdminApi(writer, "db0be0a5-e96e-40b6-b687-fdb12304b69a", "subscribe-user1@test.nl");
+            Assert.assertEquals(200, status);
+            String subscribeUserMailings = writer.toString();
+            System.out.println("adminApiSubscribeUserMailings: " + subscribeUserMailings);
+            Assert.assertTrue(subscribeUserMailings.contains( "user already subscribed for mailing"));
+        }
+
     }
 
     @Test

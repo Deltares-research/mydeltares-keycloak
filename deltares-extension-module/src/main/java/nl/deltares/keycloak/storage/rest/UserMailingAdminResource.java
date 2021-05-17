@@ -11,6 +11,7 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.resources.admin.AdminAuth;
@@ -26,14 +27,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
 import static nl.deltares.keycloak.storage.rest.MailingAdminResource.getMailingById;
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.getAuth;
-import static nl.deltares.keycloak.storage.rest.UserMailingResource.getUserMailing;
-import static nl.deltares.keycloak.storage.rest.UserMailingResource.insertUserMailing;
+import static nl.deltares.keycloak.storage.rest.UserMailingResource.*;
 
 public class UserMailingAdminResource {
 
@@ -70,6 +71,49 @@ public class UserMailingAdminResource {
         cacheExport = Boolean.parseBoolean(System.getProperty("cache.export", "true"));
 
         callerRealm = ResourceUtils.getRealmFromPath(session);
+    }
+
+
+    /**
+     * Get representation of the user
+     */
+    @GET
+    @NoCache
+    @Path("/subscriptions")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getUserMailings(final @QueryParam("email") String email) {
+
+        realmAuth.users().requireQuery();
+        UserModel userByEmail = session.users().getUserByEmail(email, callerRealm);
+        if (userByEmail == null){
+            return Response.status(Response.Status.BAD_REQUEST).entity("user does not exist for email: " + email).build();
+        }
+        List<UserMailing> userMailings = UserMailingResource.getUserMailings(session, callerRealm.getId(), userByEmail.getId());
+        if (userMailings == null){
+            return Response.status(Response.Status.NO_CONTENT).build();
+        }
+        List<UserMailingRepresentation> reps = new ArrayList<>();
+        userMailings.forEach(mailing -> reps.add(UserMailingResource.toRepresentation(mailing)));
+
+        return Response.ok(reps, MediaType.APPLICATION_JSON).build();
+    }
+
+    @PUT
+    @Path("subscribe/{mailing_id}")
+    public Response subscribeUserForUserMailing(final @PathParam("mailing_id") String mailingId,
+                                                final @QueryParam("email") String email ){
+
+        realmAuth.users().requireManage();
+        UserModel userByEmail = session.users().getUserByEmail(email, callerRealm);
+        if (userByEmail == null){
+            return Response.status(Response.Status.BAD_REQUEST).entity("user does not exist for email: " + email).build();
+        }
+        UserMailing userMailing = getUserMailing(session, callerRealm.getId(), userByEmail.getId(), mailingId);
+        if (userMailing != null){
+            return Response.ok().entity("user already subscribed for mailing").build();
+        }
+        insertNewUserMailing(callerRealm.getId(), mailingId, userByEmail.getId());
+        return Response.ok().entity("user subscribed for mailing").build();
     }
 
     @GET
@@ -122,18 +166,22 @@ public class UserMailingAdminResource {
             while ((userId = reader.readLine()) != null) {
                 UserMailing userMailing = getUserMailing(session, realmId, userId.trim(), mailingId);
                 if (userMailing == null) {
-                    UserMailingRepresentation rep = new UserMailingRepresentation();
-                    rep.setUserId(userId);
-                    rep.setRealmId(realmId);
-                    rep.setMailingId(mailingId);
-                    rep.setDelivery(Mailing.getPreferredMailingDelivery());
-                    rep.setId(KeycloakModelUtils.generateId());
-                    insertUserMailing(session, rep);
+                    insertNewUserMailing(realmId, mailingId, userId);
                     writeCount++;
                 } //skip existing
             }
         }
         return writeCount;
+    }
+
+    private void insertNewUserMailing(String realmId, String mailingId, String userId) {
+        UserMailingRepresentation rep = new UserMailingRepresentation();
+        rep.setUserId(userId);
+        rep.setRealmId(realmId);
+        rep.setMailingId(mailingId);
+        rep.setDelivery(Mailing.getPreferredMailingDelivery());
+        rep.setId(KeycloakModelUtils.generateId());
+        insertUserMailing(session, rep);
     }
 
 }

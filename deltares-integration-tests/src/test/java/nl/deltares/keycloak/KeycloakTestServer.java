@@ -37,20 +37,22 @@ public class KeycloakTestServer {
      public static void main(String[] args) throws Throwable {
 
          Assert.assertTrue("Usage: <path to docker root dir>",args != null && args.length ==1);
+         System.setProperty("log4j.configurationFile", "log4j.xml");
 
          File testResources = new File(args[0]);
          File keycloakTmpDir = Files.createTempDirectory("keycloak").toFile();
 
-         File dataDir = new File(keycloakTmpDir, "standalone/data/");
-         if (!dataDir.exists()) Files.createDirectories(dataDir.toPath());
-         File deploymentDir = new File(keycloakTmpDir, "standalone/deployments/");
+         File dataDir = new File(keycloakTmpDir, "standalone/data");
+         File contentDir = new File(keycloakTmpDir, "standalone/data/content");
+         if (!contentDir.exists()) Files.createDirectories(dataDir.toPath());
+         File deploymentDir = new File(keycloakTmpDir, "standalone/deployments");
          if (!deploymentDir.exists()) Files.createDirectories(deploymentDir.toPath());
 
-         Files.copy(new File(testResources, "testdata/keycloak.mv.db").toPath(), new File(dataDir, "keycloak.mv.db").toPath());
-         Files.copy(new File(testResources, "testdata/admin-keycloak.properties").toPath(), new File(dataDir, "admin-keycloak.properties").toPath());
-         Files.copy(new File(testResources, "testdata/user-keycloak.properties").toPath(), new File(dataDir, "user-keycloak.properties").toPath());
-         Files.copy(new File(testResources, "testdata/viewer-keycloak.properties").toPath(), new File(dataDir, "viewer-keycloak.properties").toPath());
-         Files.copy(new File(testResources, "testdata/deltares-extension-bundle-1.0.ear").toPath(),
+         Files.copy(new File(testResources, "keycloak.mv.db").toPath(), new File(dataDir, "keycloak.mv.db").toPath());
+         Files.copy(new File(testResources, "admin-keycloak.properties").toPath(), new File(dataDir, "admin-keycloak.properties").toPath());
+         Files.copy(new File(testResources, "user-keycloak.properties").toPath(), new File(dataDir, "user-keycloak.properties").toPath());
+         Files.copy(new File(testResources, "viewer-keycloak.properties").toPath(), new File(dataDir, "viewer-keycloak.properties").toPath());
+         Files.copy(new File(testResources, "deltares-extension-bundle-1.0.ear").toPath(),
                  new File(deploymentDir, "deltares-extension-bundle-1.0.ear").toPath());
 
 

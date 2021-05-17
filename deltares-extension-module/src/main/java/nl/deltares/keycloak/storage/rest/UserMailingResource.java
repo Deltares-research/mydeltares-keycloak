@@ -227,7 +227,7 @@ public class UserMailingResource {
 
     }
 
-    private static List<UserMailing> getUserMailings(KeycloakSession session, String realmId, String userId) {
+    public static List<UserMailing> getUserMailings(KeycloakSession session, String realmId, String userId) {
         try {
             return getEntityManager(session).createNamedQuery("findUserMailingByUserAndRealm", UserMailing.class)
                     .setParameter("realmId", realmId)
@@ -272,7 +272,7 @@ public class UserMailingResource {
         return cachedUserMailings;
     }
 
-    private static UserMailingRepresentation toRepresentation(UserMailing mailing) {
+    public static UserMailingRepresentation toRepresentation(UserMailing mailing) {
         UserMailingRepresentation rep = new UserMailingRepresentation();
         rep.setId(mailing.getId());
         rep.setUserId(mailing.getUserId());
