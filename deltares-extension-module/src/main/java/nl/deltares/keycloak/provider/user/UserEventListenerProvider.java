@@ -20,6 +20,9 @@ import java.util.List;
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.getEntityManager;
 
 /**
+ * Event listener listens to Keycloak events. Configure the event listener in the keycloak admin console of the
+ * liferay-portal realm under menu: Events -> Configs -> Event Listeners
+ *
  * @deprecated This is no longer necessary. We have added check for adding UserMailings in class
  * {@link nl.deltares.keycloak.authentication.requiredactions.TermsAndPrivacy}
  */
