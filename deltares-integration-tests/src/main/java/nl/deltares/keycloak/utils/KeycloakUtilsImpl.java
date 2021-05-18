@@ -384,7 +384,25 @@ public class KeycloakUtilsImpl {
     public int subscribeUserMailingsAdminApi(Writer writer, String mailingId, String email) throws IOException {
         HashMap<String, String> map = new HashMap<>();
         map.put("Content-Type", MediaType.TEXT_HTML);
-        HttpURLConnection urlConnection = getConnection(getAdminUserMailingPath() + "/subscribe/" + mailingId + "?email=" + email, "PUT", getAccessToken(), map);
+        HttpURLConnection urlConnection = getConnection(getAdminUserMailingPath() + "/subscriptions/" + mailingId + "?email=" + email, "PUT", getAccessToken(), map);
+
+        int status = checkResponse(urlConnection);
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                writer.write(line);
+                writer.write('\n');
+            }
+            writer.flush();
+        }
+        return status;
+
+    }
+
+    public int unsubscribeUserMailingsAdminApi(Writer writer, String mailingId, String email) throws IOException {
+        HashMap<String, String> map = new HashMap<>();
+        map.put("Content-Type", MediaType.TEXT_HTML);
+        HttpURLConnection urlConnection = getConnection(getAdminUserMailingPath() + "/subscriptions/" + mailingId + "?email=" + email, "DELETE", getAccessToken(), map);
 
         int status = checkResponse(urlConnection);
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()))) {

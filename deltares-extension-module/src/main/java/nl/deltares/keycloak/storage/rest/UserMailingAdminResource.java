@@ -34,6 +34,7 @@ import java.util.Properties;
 
 import static nl.deltares.keycloak.storage.rest.MailingAdminResource.getMailingById;
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.getAuth;
+import static nl.deltares.keycloak.storage.rest.ResourceUtils.getEntityManager;
 import static nl.deltares.keycloak.storage.rest.UserMailingResource.*;
 
 public class UserMailingAdminResource {
@@ -98,8 +99,28 @@ public class UserMailingAdminResource {
         return Response.ok(reps, MediaType.APPLICATION_JSON).build();
     }
 
+    @DELETE
+    @Path("subscriptions/{mailing_id}")
+    public Response unsubscribeUserForUserMailing(final @PathParam("mailing_id") String mailingId,
+                                                final @QueryParam("email") String email ){
+
+        realmAuth.users().requireManage();
+        UserModel userByEmail = session.users().getUserByEmail(email, callerRealm);
+        if (userByEmail == null){
+            return Response.status(Response.Status.BAD_REQUEST).entity("user does not exist for email: " + email).build();
+        }
+
+        UserMailing userMailing = getUserMailing(session, callerRealm.getId(), userByEmail.getId(), mailingId);
+        if (userMailing == null){
+            return Response.ok().entity("user not subscribed for mailing").build();
+        }
+        logger.info("Delete mailing : " + mailingId);
+        getEntityManager(session).remove(userMailing);
+        return Response.ok().entity("user unsubscribed for mailing").build();
+    }
+
     @PUT
-    @Path("subscribe/{mailing_id}")
+    @Path("subscriptions/{mailing_id}")
     public Response subscribeUserForUserMailing(final @PathParam("mailing_id") String mailingId,
                                                 final @QueryParam("email") String email ){
 

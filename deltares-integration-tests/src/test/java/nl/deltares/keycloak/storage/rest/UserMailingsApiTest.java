@@ -107,6 +107,45 @@ public class UserMailingsApiTest {
     }
 
     @Test
+    public void adminApiUnsubscribeUserMailingsUnauthorized() {
+
+        KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getUserKeycloakUtils();
+        try (StringWriter writer = new StringWriter()) {
+            keycloakUtils.unsubscribeUserMailingsAdminApi(writer, "db0be0a5-e96e-40b6-b687-fdb12304b69a", "unsubscribe-user1@test.nl");
+            Assert.fail();
+        } catch (IOException e) {
+            Assert.assertTrue(e.getMessage().startsWith("Error 403"));
+        }
+
+    }
+
+    @Test
+    public void adminApiUnsubscribeUserMailings() throws IOException {
+
+        KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getAdminKeycloakUtils();
+
+        keycloakUtils.createUser(newUserRepresentation("unsubscribe-user1@test.nl"));
+
+        try (StringWriter writer = new StringWriter()) {
+
+            int status = keycloakUtils.subscribeUserMailingsAdminApi(writer, "db0be0a5-e96e-40b6-b687-fdb12304b69a", "unsubscribe-user1@test.nl");
+            Assert.assertEquals(200, status);
+            String subscribeUserMailings = writer.toString();
+            System.out.println("adminApiUnsubscribeUserMailings: " + subscribeUserMailings);
+            Assert.assertTrue(subscribeUserMailings.contains( "user subscribed for mailing"));
+        }
+
+        try (StringWriter writer = new StringWriter()) {
+            int status = keycloakUtils.unsubscribeUserMailingsAdminApi(writer, "db0be0a5-e96e-40b6-b687-fdb12304b69a", "unsubscribe-user1@test.nl");
+            Assert.assertEquals(200, status);
+            String subscribeUserMailings = writer.toString();
+            System.out.println("adminApiUnsubscribeUserMailings: " + subscribeUserMailings);
+            Assert.assertTrue(subscribeUserMailings.contains( "user unsubscribed for mailing"));
+        }
+
+    }
+
+    @Test
     public void adminApiExportUserMailings() throws IOException {
 
 
