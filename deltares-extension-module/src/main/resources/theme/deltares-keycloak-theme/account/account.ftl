@@ -111,14 +111,14 @@
             </div>
         </div>
 
-        <div class="form-group ${messagesPerField.printIfExists('org_postalcode','has-error')}">
+        <div class="form-group ${messagesPerField.printIfExists('org_postal','has-error')}">
             <div class="col-sm-2 col-md-2">
-                <label for="org_postalcode" class="control-label">${msg("org_postalcode")}</label>
+                <label for="org_postal" class="control-label">${msg("org_postal")}</label>
             </div>
 
             <div class="col-sm-10 col-md-10">
-                <input type="text" class="form-control" id="org_postalcode" name="user.attributes.org_postalcode"
-                       value="${(account.attributes["org_postalcode"] !'')}"/>
+                <input type="text" class="form-control" id="org_postal" name="user.attributes.org_postal"
+                       value="${(account.attributes["org_postal"] !'')}"/>
             </div>
         </div>
 
@@ -139,7 +139,7 @@
             </div>
 
             <div class="col-sm-10 col-md-10">
-                <input type="text" class="form-control" id="org_country" name="user.attributes.org_country"
+                <input type="text" style="text-transform: lowercase;" class="form-control" id="org_country" name="user.attributes.org_country"
                        value="${(account.attributes["org_country"] !'')}"/>
             </div>
         </div>

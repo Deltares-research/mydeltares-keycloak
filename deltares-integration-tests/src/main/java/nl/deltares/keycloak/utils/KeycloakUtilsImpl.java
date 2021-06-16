@@ -91,7 +91,11 @@ public class KeycloakUtilsImpl {
         }
 
         ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(urlConnection.getInputStream(), mapper.getTypeFactory().constructCollectionType(List.class, UserRepresentation.class));
+        try(InputStream inputStream = urlConnection.getInputStream()) {
+            return mapper.readValue(inputStream, mapper.getTypeFactory().constructCollectionType(List.class, UserRepresentation.class));
+        } finally {
+            urlConnection.disconnect();
+        }
     }
 
     public UserRepresentation getUser(String id) throws IOException {
@@ -101,7 +105,11 @@ public class KeycloakUtilsImpl {
             return null;
         }
         ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(urlConnection.getInputStream(), mapper.getTypeFactory().constructType(UserRepresentation.class));
+        try(InputStream inputStream = urlConnection.getInputStream()) {
+            return mapper.readValue(inputStream, mapper.getTypeFactory().constructType(UserRepresentation.class));
+        } finally {
+            urlConnection.disconnect();
+        }
     }
 
     public int updateUser(UserRepresentation user) throws IOException {
@@ -117,14 +125,9 @@ public class KeycloakUtilsImpl {
         HttpURLConnection urlConnection = getConnection(getUsersPath() + "?email=" + email, "GET", getAccessToken(), null);
         int responseCode = urlConnection.getResponseCode();
         if (responseCode > 299) {
-            InputStream errorStream = urlConnection.getErrorStream();
-            if (errorStream != null) {
-                throw new IOException(String.format("Error getUserId for %s: %s %s", email, responseCode, readAll(errorStream)));
-            } else {
-                throw new IOException(String.format("Error getUserId for %s: %s", email, responseCode));
-            }
+            throw new IOException(String.format("Error getUserId for %s: %s %s", email, responseCode, readError(urlConnection)));
         }
-        String jsonResponse = readAll(urlConnection.getInputStream());
+        String jsonResponse = readAll(urlConnection);
         ObjectMapper mapper = new ObjectMapper();
         List<UserRepresentation> map = mapper.readValue(jsonResponse, mapper.getTypeFactory().constructCollectionType(List.class, UserRepresentation.class));
         if (map.size() > 0) {
@@ -170,7 +173,7 @@ public class KeycloakUtilsImpl {
     public String getUserAsJson(String id) throws IOException {
         HttpURLConnection urlConnection = getConnection(getUsersPath() + "/" + id, "GET", getAccessToken(), null);
         checkResponse(urlConnection);
-        return readAll(urlConnection.getInputStream());
+        return readAll(urlConnection);
     }
 
     public String getUsersAdminApi(int start, int maxResults, String search) throws IOException {
@@ -182,14 +185,9 @@ public class KeycloakUtilsImpl {
         HttpURLConnection urlConnection = getConnection(path, "GET", getAccessToken(), null);
         int responseCode = urlConnection.getResponseCode();
         if (responseCode > 299) {
-            InputStream errorStream = urlConnection.getErrorStream();
-            if (errorStream != null) {
-                throw new IOException(String.format("Error getUsers : %s %s", responseCode, readAll(errorStream)));
-            } else {
-                throw new IOException(String.format("Error getUsers : %s", responseCode));
-            }
+            throw new IOException(String.format("Error getUsers : %s %s", responseCode, readError(urlConnection)));
         }
-        return readAll(urlConnection.getInputStream());
+        return readAll(urlConnection);
     }
 
     /**
@@ -467,18 +465,18 @@ public class KeycloakUtilsImpl {
         HttpURLConnection urlConnection = getConnection(getUserMailingPath(), "PUT", getAccessToken(userName, password), map);
         ObjectMapper mapper = new ObjectMapper();
         mapper.writeValue(urlConnection.getOutputStream(), userMailing);
-        return checkResponse(urlConnection);
+        try {
+            return checkResponse(urlConnection);
+        } finally {
+            urlConnection.disconnect();
+        }
     }
 
     private int checkResponse(HttpURLConnection urlConnection) throws IOException {
         int responseCode = urlConnection.getResponseCode();
         if (responseCode > 299) {
-            InputStream errorStream = urlConnection.getErrorStream();
-            if (errorStream != null) {
-                throw new IOException("Error " + responseCode + ": " + readAll(errorStream));
-            } else {
-                throw new IOException("Error " + responseCode + ": no message");
-            }
+            throw new IOException("Error " + responseCode + ": " + readError(urlConnection));
+
         }
         return responseCode;
     }
@@ -607,21 +605,41 @@ public class KeycloakUtilsImpl {
         urlConnection.getOutputStream().write(postDataBytes);
         int responseCode = urlConnection.getResponseCode();
         if (responseCode != 200) {
-            throw new IOException("Error " + responseCode + ": " + readAll(urlConnection.getErrorStream()));
+            throw new IOException("Error " + responseCode + ": " + readError(urlConnection));
         }
-        return readAll(urlConnection.getInputStream());
+        return readAll(urlConnection);
 
     }
 
-    private static String readAll(InputStream inputStream) throws IOException {
-        ByteArrayOutputStream result = new ByteArrayOutputStream();
-        byte[] buffer = new byte[1024];
-        int length;
-        while ((length = inputStream.read(buffer)) != -1) {
-            result.write(buffer, 0, length);
+    private static String readError(HttpURLConnection connection) throws IOException {
+
+        try(InputStream inputStream = connection.getErrorStream()){
+            if (inputStream == null) return connection.getResponseMessage();
+            ByteArrayOutputStream result = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = inputStream.read(buffer)) != -1) {
+                result.write(buffer, 0, length);
+            }
+            // StandardCharsets.UTF_8.name() > JDK 7
+            return result.toString("UTF-8");
         }
-        // StandardCharsets.UTF_8.name() > JDK 7
-        return result.toString("UTF-8");
+
+    }
+
+    private static String readAll(HttpURLConnection connection) throws IOException {
+
+        try(InputStream inputStream = connection.getInputStream()){
+            ByteArrayOutputStream result = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = inputStream.read(buffer)) != -1) {
+                result.write(buffer, 0, length);
+            }
+            // StandardCharsets.UTF_8.name() > JDK 7
+            return result.toString("UTF-8");
+        }
+
     }
 
     private static byte[] readAllBytes(InputStream inputStream) throws IOException {
@@ -701,17 +719,13 @@ public class KeycloakUtilsImpl {
     }
 
     private int readResponse(HttpURLConnection urlConnection) throws IOException {
-        try {
-            urlConnection.getInputStream();
+        try (InputStream inputStream = urlConnection.getInputStream()) {
             return urlConnection.getResponseCode();
         } catch (Exception e) {
             int responseCode = urlConnection.getResponseCode();
-            InputStream errorStream = urlConnection.getErrorStream();
-            if (errorStream != null) {
-                throw new IOException("Error " + responseCode + ": " + readAll(errorStream));
-            } else {
-                throw new IOException("Error " + responseCode + ": no message");
-            }
+            throw new IOException("Error " + responseCode + ": " + readError(urlConnection));
+        } finally {
+            urlConnection.disconnect();
         }
     }
 
@@ -741,4 +755,18 @@ public class KeycloakUtilsImpl {
         return null;
     }
 
+    public String countUsers() throws IOException {
+
+        HttpURLConnection urlConnection = getConnection(getUsersPath() + "/count", "GET", getAccessToken(), null);
+        int responseCode = urlConnection.getResponseCode();
+        if (responseCode > 299) {
+            throw new IOException(String.format("Error getUserCount: %s %s", responseCode, readError(urlConnection)));
+        }
+        try {
+            return readAll(urlConnection);
+        } finally {
+            urlConnection.disconnect();
+        }
+
+    }
 }

@@ -30,6 +30,13 @@ public class ExportUsers {
         if (properties == null) return;
         KeycloakUtilsImpl keycloakUtils = new KeycloakUtilsImpl(properties);
 
+        try {
+            System.out.println("User count= " +keycloakUtils.countUsers());
+        } catch (IOException e) {
+
+
+        }
+
         File exportDir = new File(properties.getProperty("exportDir"));
 
         if (!exportDir.exists() && !exportDir.mkdirs()){
@@ -41,13 +48,14 @@ public class ExportUsers {
         try(BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(exportFile)))) {
             writeResults(bw, "id", "username", "email", "verified", "federationid", "terms", "lastlogin"); // write header
 
-            int nextStartIndex = 9891;
+            int nextStartIndex = 10050;
             while (nextStartIndex > -1) {
-                String userJson = keycloakUtils.getUsersAdminApi(nextStartIndex, 100, null);
+                String userJson = keycloakUtils.getUsersAdminApi(nextStartIndex, 50, null);
 
                 ObjectMapper mapper = new ObjectMapper();
                 List<Map<String, Object>> map = mapper.readValue(userJson, mapper.getTypeFactory().constructCollectionType(List.class, Map.class));
                 for (Map<String, Object> userMap : map) {
+                    nextStartIndex++;
                     Object federationLink = userMap.get("federationLink");
 
                     Map attributes = (Map) userMap.get("attributes");
@@ -70,8 +78,6 @@ public class ExportUsers {
                 }
                 if (map.size() == 0){
                     break;
-                } else {
-                    nextStartIndex = nextStartIndex + 100;
                 }
             }
         } catch (IOException e) {
