@@ -85,7 +85,7 @@
         </#if>
       </div>
     <#elseif section = "info" >
-       
+
     </#if>
 
 </@layout.registrationLayout>

@@ -81,7 +81,7 @@ public class UsernamePasswordForm implements Authenticator {
         context.getEvent().detail(Details.USERNAME, username);
         context.getAuthenticationSession().setAuthNote("ATTEMPTED_USERNAME", username);
 
-        UserModel user = null;
+        UserModel user;
         try {
             user = KeycloakModelUtils.findUserByNameOrEmail(context.getSession(), context.getRealm(), username);
         } catch (ModelDuplicateException mde) {
@@ -136,7 +136,7 @@ public class UsernamePasswordForm implements Authenticator {
 
         if (formData.size() > 0) forms.setFormData(formData);
 
-        return forms.createLogin();
+        return forms.createLoginUsernamePassword();
     }
 
 
@@ -164,7 +164,7 @@ public class UsernamePasswordForm implements Authenticator {
     }
 
     protected Response createLoginForm(LoginFormsProvider form) {
-        return form.createLogin();
+        return form.createLoginUsernamePassword();
     }
 
     protected String tempDisabledError() {
@@ -174,7 +174,7 @@ public class UsernamePasswordForm implements Authenticator {
     protected Response setDuplicateUserChallenge(AuthenticationFlowContext context, String eventError, String loginFormError, AuthenticationFlowError authenticatorError) {
         context.getEvent().error(eventError);
         Response challengeResponse = context.form()
-                .setError(loginFormError).createLogin();
+                .setError(loginFormError).createLoginUsernamePassword();
         context.failureChallenge(authenticatorError, challengeResponse);
         return challengeResponse;
     }
@@ -188,13 +188,10 @@ public class UsernamePasswordForm implements Authenticator {
         PasswordPolicy policy = context.getRealm().getPasswordPolicy();
         if (policy == null) {
             runDefaultDummyHash(context);
-            return;
         } else {
             PasswordHashProvider hash = context.getSession().getProvider(PasswordHashProvider.class, policy.getHashAlgorithm());
             if (hash == null) {
                 runDefaultDummyHash(context);
-                return;
-
             } else {
                 hash.encode("dummypassword", policy.getHashIterations());
             }

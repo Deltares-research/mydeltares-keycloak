@@ -42,7 +42,7 @@
             </h1>
           </span>
         </div>
-      
+
       <div class="navbar-collapse navbar-collapse-1">
                       <div class="container">
                           <ul class="nav navbar-nav navbar-utility">
@@ -65,7 +65,7 @@
             </div>
     </div>
     <div class="${properties.kcFormCardClass!} <#if displayWide>${properties.kcFormCardAccountClass!}</#if> login-container-content">
-      <header class="${properties.kcFormHeaderClass!}">        
+      <header class="${properties.kcFormHeaderClass!}">
         <h1 id="kc-page-title"><#nested "header"></h1>
       </header>
       <div id="kc-content">
@@ -83,6 +83,16 @@
           </#if>
 
           <#nested "form">
+
+            <#if auth?has_content && auth.showTryAnotherWayLink() && showAnotherWayIfPresent>
+                <form id="kc-select-try-another-way-form" action="${url.loginAction}" method="post">
+                    <div class="${properties.kcFormGroupClass!}">
+                        <input type="hidden" name="tryAnotherWay" value="on"/>
+                        <a href="#" id="try-another-way"
+                           onclick="document.forms['kc-select-try-another-way-form'].submit();return false;">${msg("doTryAnotherWay")}</a>
+                    </div>
+                </form>
+            </#if>
 
           <#if displayInfo>
               <div id="kc-info" class="${properties.kcSignUpClass!}">

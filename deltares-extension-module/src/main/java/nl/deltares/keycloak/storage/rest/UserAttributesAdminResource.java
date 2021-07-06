@@ -3,7 +3,6 @@ package nl.deltares.keycloak.storage.rest;
 import nl.deltares.keycloak.storage.jpa.model.DataRequestManager;
 import nl.deltares.keycloak.storage.rest.model.ExportUserAttributes;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.managers.Auth;
@@ -29,9 +28,6 @@ private final KeycloakSession session;
     @Context
     private HttpHeaders httpHeaders;
 
-    @Context
-    private ClientConnection clientConnection;
-
     //Realm from request path
     private RealmModel callerRealm;
     private boolean cacheExport;
@@ -44,7 +40,7 @@ private final KeycloakSession session;
     public void init() {
         RealmModel realm = session.getContext().getRealm();
         if (realm == null) throw new NotFoundException("Realm not found.");
-        Auth auth = getAuth(httpHeaders, session, clientConnection);
+        Auth auth = getAuth(httpHeaders, session);
         AdminAuth adminAuth = new AdminAuth(auth.getRealm(), auth.getToken(), auth.getUser(), auth.getClient());
         realmAuth = AdminPermissions.evaluator(session, realm, adminAuth);
         session.getContext().setRealm(realm);

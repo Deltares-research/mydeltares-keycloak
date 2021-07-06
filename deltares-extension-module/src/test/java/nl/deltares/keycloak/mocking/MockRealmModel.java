@@ -4,16 +4,13 @@ import org.keycloak.common.enums.SslRequired;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Stream;
 
 public class MockRealmModel implements RealmModel {
+    private final String id = "test-realm";
 
-
-    private String id = "test-realm";
-
+    private final List<String> eventListeners = Collections.emptyList();
     @Override
     public String getId() {
         return id;
@@ -39,23 +36,28 @@ public class MockRealmModel implements RealmModel {
         return false;
     }
 
-    @Override
-    public Set<RoleModel> getRoles() {
+     @Override
+    public Stream<RoleModel> getRolesStream() {
         return null;
     }
 
     @Override
-    public List<String> getDefaultRoles() {
+    public Stream<RoleModel> getRolesStream(Integer integer, Integer integer1) {
+        return null;
+    }
+
+    @Override
+    public Stream<RoleModel> searchForRolesStream(String s, Integer integer, Integer integer1) {
+        return null;
+    }
+
+    @Override
+    public Stream<String> getDefaultRolesStream() {
         return null;
     }
 
     @Override
     public void addDefaultRole(String name) {
-
-    }
-
-    @Override
-    public void updateDefaultRoles(String... defaultRoles) {
 
     }
 
@@ -440,6 +442,46 @@ public class MockRealmModel implements RealmModel {
     }
 
     @Override
+    public int getClientSessionIdleTimeout() {
+        return 0;
+    }
+
+    @Override
+    public void setClientSessionIdleTimeout(int i) {
+
+    }
+
+    @Override
+    public int getClientSessionMaxLifespan() {
+        return 0;
+    }
+
+    @Override
+    public void setClientSessionMaxLifespan(int i) {
+
+    }
+
+    @Override
+    public int getClientOfflineSessionIdleTimeout() {
+        return 0;
+    }
+
+    @Override
+    public void setClientOfflineSessionIdleTimeout(int i) {
+
+    }
+
+    @Override
+    public int getClientOfflineSessionMaxLifespan() {
+        return 0;
+    }
+
+    @Override
+    public void setClientOfflineSessionMaxLifespan(int i) {
+
+    }
+
+    @Override
     public void setAccessTokenLifespan(int seconds) {
 
     }
@@ -472,6 +514,16 @@ public class MockRealmModel implements RealmModel {
     @Override
     public void setAccessCodeLifespanUserAction(int seconds) {
 
+    }
+
+    @Override
+    public OAuth2DeviceConfig getOAuth2DeviceConfig() {
+        return null;
+    }
+
+    @Override
+    public CibaConfig getCibaPolicy() {
+        return null;
     }
 
     @Override
@@ -520,7 +572,7 @@ public class MockRealmModel implements RealmModel {
     }
 
     @Override
-    public List<RequiredCredentialModel> getRequiredCredentials() {
+    public Stream<RequiredCredentialModel> getRequiredCredentialsStream() {
         return null;
     }
 
@@ -550,12 +602,32 @@ public class MockRealmModel implements RealmModel {
     }
 
     @Override
+    public WebAuthnPolicy getWebAuthnPolicy() {
+        return null;
+    }
+
+    @Override
+    public void setWebAuthnPolicy(WebAuthnPolicy webAuthnPolicy) {
+
+    }
+
+    @Override
+    public WebAuthnPolicy getWebAuthnPolicyPasswordless() {
+        return null;
+    }
+
+    @Override
+    public void setWebAuthnPolicyPasswordless(WebAuthnPolicy webAuthnPolicy) {
+
+    }
+
+    @Override
     public RoleModel getRoleById(String id) {
         return null;
     }
 
     @Override
-    public List<GroupModel> getDefaultGroups() {
+    public Stream<GroupModel> getDefaultGroupsStream() {
         return null;
     }
 
@@ -570,7 +642,22 @@ public class MockRealmModel implements RealmModel {
     }
 
     @Override
-    public List<ClientModel> getClients() {
+    public Stream<ClientModel> getClientsStream() {
+        return null;
+    }
+
+    @Override
+    public Stream<ClientModel> getClientsStream(Integer integer, Integer integer1) {
+        return null;
+    }
+
+    @Override
+    public Long getClientsCount() {
+        return null;
+    }
+
+    @Override
+    public Stream<ClientModel> getAlwaysDisplayInConsoleClientsStream() {
         return null;
     }
 
@@ -596,6 +683,11 @@ public class MockRealmModel implements RealmModel {
 
     @Override
     public ClientModel getClientByClientId(String clientId) {
+        return null;
+    }
+
+    @Override
+    public Stream<ClientModel> searchClientByClientIdStream(String s, Integer integer, Integer integer1) {
         return null;
     }
 
@@ -685,7 +777,7 @@ public class MockRealmModel implements RealmModel {
     }
 
     @Override
-    public List<AuthenticationFlowModel> getAuthenticationFlows() {
+    public Stream<AuthenticationFlowModel> getAuthenticationFlowsStream() {
         return null;
     }
 
@@ -715,12 +807,17 @@ public class MockRealmModel implements RealmModel {
     }
 
     @Override
-    public List<AuthenticationExecutionModel> getAuthenticationExecutions(String flowId) {
+    public Stream<AuthenticationExecutionModel> getAuthenticationExecutionsStream(String s) {
         return null;
     }
 
     @Override
     public AuthenticationExecutionModel getAuthenticationExecutionById(String id) {
+        return null;
+    }
+
+    @Override
+    public AuthenticationExecutionModel getAuthenticationExecutionByFlowId(String s) {
         return null;
     }
 
@@ -740,7 +837,7 @@ public class MockRealmModel implements RealmModel {
     }
 
     @Override
-    public List<AuthenticatorConfigModel> getAuthenticatorConfigs() {
+    public Stream<AuthenticatorConfigModel> getAuthenticatorConfigsStream() {
         return null;
     }
 
@@ -770,7 +867,7 @@ public class MockRealmModel implements RealmModel {
     }
 
     @Override
-    public List<RequiredActionProviderModel> getRequiredActionProviders() {
+    public Stream<RequiredActionProviderModel> getRequiredActionProvidersStream() {
         return null;
     }
 
@@ -800,7 +897,7 @@ public class MockRealmModel implements RealmModel {
     }
 
     @Override
-    public List<IdentityProviderModel> getIdentityProviders() {
+    public Stream<IdentityProviderModel> getIdentityProvidersStream() {
         return null;
     }
 
@@ -825,12 +922,12 @@ public class MockRealmModel implements RealmModel {
     }
 
     @Override
-    public Set<IdentityProviderMapperModel> getIdentityProviderMappers() {
+    public Stream<IdentityProviderMapperModel> getIdentityProviderMappersStream() {
         return null;
     }
 
     @Override
-    public Set<IdentityProviderMapperModel> getIdentityProviderMappersByAlias(String brokerAlias) {
+    public Stream<IdentityProviderMapperModel> getIdentityProviderMappersByAliasStream(String s) {
         return null;
     }
 
@@ -885,17 +982,17 @@ public class MockRealmModel implements RealmModel {
     }
 
     @Override
-    public List<ComponentModel> getComponents(String parentId, String providerType) {
+    public Stream<ComponentModel> getComponentsStream(String s, String s1) {
         return null;
     }
 
     @Override
-    public List<ComponentModel> getComponents(String parentId) {
+    public Stream<ComponentModel> getComponentsStream(String s) {
         return null;
     }
 
     @Override
-    public List<ComponentModel> getComponents() {
+    public Stream<ComponentModel> getComponentsStream() {
         return null;
     }
 
@@ -975,8 +1072,8 @@ public class MockRealmModel implements RealmModel {
     }
 
     @Override
-    public Set<String> getEventsListeners() {
-        return null;
+    public Stream<String> getEventsListenersStream() {
+        return eventListeners.stream();
     }
 
     @Override
@@ -985,7 +1082,7 @@ public class MockRealmModel implements RealmModel {
     }
 
     @Override
-    public Set<String> getEnabledEventTypes() {
+    public Stream<String> getEnabledEventTypesStream() {
         return null;
     }
 
@@ -1025,6 +1122,16 @@ public class MockRealmModel implements RealmModel {
     }
 
     @Override
+    public RoleModel getDefaultRole() {
+        return null;
+    }
+
+    @Override
+    public void setDefaultRole(RoleModel roleModel) {
+
+    }
+
+    @Override
     public boolean isIdentityFederationEnabled() {
         return false;
     }
@@ -1040,7 +1147,7 @@ public class MockRealmModel implements RealmModel {
     }
 
     @Override
-    public Set<String> getSupportedLocales() {
+    public Stream<String> getSupportedLocalesStream() {
         return null;
     }
 
@@ -1070,12 +1177,17 @@ public class MockRealmModel implements RealmModel {
     }
 
     @Override
+    public GroupModel createGroup(String s, String s1, GroupModel groupModel) {
+        return null;
+    }
+
+    @Override
     public GroupModel getGroupById(String id) {
         return null;
     }
 
     @Override
-    public List<GroupModel> getGroups() {
+    public Stream<GroupModel> getGroupsStream() {
         return null;
     }
 
@@ -1090,17 +1202,17 @@ public class MockRealmModel implements RealmModel {
     }
 
     @Override
-    public List<GroupModel> getTopLevelGroups() {
+    public Stream<GroupModel> getTopLevelGroupsStream() {
         return null;
     }
 
     @Override
-    public List<GroupModel> getTopLevelGroups(Integer first, Integer max) {
+    public Stream<GroupModel> getTopLevelGroupsStream(Integer integer, Integer integer1) {
         return null;
     }
 
     @Override
-    public List<GroupModel> searchForGroupByName(String search, Integer first, Integer max) {
+    public Stream<GroupModel> searchForGroupByNameStream(String s, Integer integer, Integer integer1) {
         return null;
     }
 
@@ -1115,7 +1227,7 @@ public class MockRealmModel implements RealmModel {
     }
 
     @Override
-    public List<ClientScopeModel> getClientScopes() {
+    public Stream<ClientScopeModel> getClientScopesStream() {
         return null;
     }
 
@@ -1150,7 +1262,52 @@ public class MockRealmModel implements RealmModel {
     }
 
     @Override
-    public List<ClientScopeModel> getDefaultClientScopes(boolean defaultScope) {
+    public void patchRealmLocalizationTexts(String s, Map<String, String> map) {
+
+    }
+
+    @Override
+    public boolean removeRealmLocalizationTexts(String s) {
+        return false;
+    }
+
+    @Override
+    public Map<String, Map<String, String>> getRealmLocalizationTexts() {
         return null;
+    }
+
+    @Override
+    public Map<String, String> getRealmLocalizationTextsByLocale(String s) {
+        return null;
+    }
+
+    @Override
+    public Stream<ClientScopeModel> getDefaultClientScopesStream(boolean b) {
+        return null;
+    }
+
+    @Override
+    public ClientInitialAccessModel createClientInitialAccessModel(int i, int i1) {
+        return null;
+    }
+
+    @Override
+    public ClientInitialAccessModel getClientInitialAccessModel(String s) {
+        return null;
+    }
+
+    @Override
+    public void removeClientInitialAccessModel(String s) {
+
+    }
+
+    @Override
+    public Stream<ClientInitialAccessModel> getClientInitialAccesses() {
+        return null;
+    }
+
+    @Override
+    public void decreaseRemainingCount(ClientInitialAccessModel clientInitialAccessModel) {
+
     }
 }

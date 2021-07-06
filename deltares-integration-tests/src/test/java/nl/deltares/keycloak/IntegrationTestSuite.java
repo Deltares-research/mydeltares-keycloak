@@ -33,8 +33,8 @@ public class IntegrationTestSuite {
         Files.copy(new File(testResources, "admin-keycloak.properties").toPath(), new File(dataDir, "admin-keycloak.properties").toPath());
         Files.copy(new File(testResources, "user-keycloak.properties").toPath(), new File(dataDir, "user-keycloak.properties").toPath());
         Files.copy(new File(testResources, "viewer-keycloak.properties").toPath(), new File(dataDir, "viewer-keycloak.properties").toPath());
-        Files.copy(new File(testResources, "deltares-extension-bundle-1.0.ear").toPath(),
-                new File(deploymentDir, "deltares-extension-bundle-1.0.ear").toPath());
+        Files.copy(new File(testResources, "deltares-extension-bundle-2.0.ear").toPath(),
+                new File(deploymentDir, "deltares-extension-bundle-2.0.ear").toPath());
 
         KeycloakTestServer.startKeycloak(deploymentDir.getPath(), dataDir.getPath());
     }

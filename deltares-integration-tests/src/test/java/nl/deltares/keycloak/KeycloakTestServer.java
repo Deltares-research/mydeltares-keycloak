@@ -73,18 +73,18 @@ public class KeycloakTestServer {
 
     static void startKeycloak(String deploymentDir, String resourcesDir)  {
 
-        dockerClient =  new GenericContainer(DockerImageName.parse("quay.io/keycloak/keycloak:6.0.1"))
+        dockerClient =  new GenericContainer(DockerImageName.parse("quay.io/keycloak/keycloak:13.0.1"))
                 .withExposedPorts(8080, 8787)
                 .withEnv("DB_VENDOR", "h2")
                 .withEnv("DEBUG", "true")
-                .withEnv("DEBUG_PORT", "8787")
+                .withEnv("DEBUG_PORT", "*:8787")
                 .withEnv("HOSTNAME", "keycloak")
                 .withFileSystemBind(deploymentDir, "/opt/jboss/keycloak/standalone/deployments", BindMode.READ_WRITE)
                 .withFileSystemBind(resourcesDir, "/opt/jboss/keycloak/standalone/data", BindMode.READ_WRITE)
                 .withCommand("-Dcom.sun.management.jmxremote", "-Dcom.sun.management.jmxremote.port=12345",
                         "-Dcom.sun.management.jmxremote.local.only=false", "-Dcom.sun.management.jmxremote.authenticate=false",
                         "-Dcom.sun.management.jmxremote.ssl=false", "-Dcom.sun.management.jmxremote.rmi.port=12345",
-                        "-Djava.rmi.server.hostname=$HOSTNAME","-Dcache.export=false");
+                        "-Djava.rmi.server.hostname=$HOSTNAME","-Dkeycloak.profile.feature.upload_scripts=enabled");
 
         dockerClient.start();
         String address = dockerClient.getHost();

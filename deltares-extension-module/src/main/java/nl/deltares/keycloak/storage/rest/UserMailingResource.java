@@ -321,7 +321,7 @@ public class UserMailingResource {
 
     private void initApi(){
         ResteasyProviderFactory.getInstance().injectProperties(this);
-        authResult = getAuthResult(session, httpHeaders, connection);
+        authResult = getAuthResult(session, httpHeaders);
         realm = session.getContext().getRealm();
     }
 

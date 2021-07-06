@@ -4,7 +4,6 @@ import nl.deltares.keycloak.storage.jpa.Avatar;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -31,9 +30,6 @@ public class AvatarAdminResource extends AbstractAvatarResource {
     @Context
     private HttpHeaders httpHeaders;
 
-    @Context
-    private ClientConnection clientConnection;
-
     private AdminAuth adminAuth;
     //Realm from request path
     private RealmModel callerRealm;
@@ -45,7 +41,7 @@ public class AvatarAdminResource extends AbstractAvatarResource {
     public void init() {
         RealmModel realm = session.getContext().getRealm();
         if (realm == null) throw new NotFoundException("Realm not found.");
-        Auth auth = getAuth(httpHeaders, session, clientConnection);
+        Auth auth = getAuth(httpHeaders, session);
         adminAuth = new AdminAuth(auth.getRealm(), auth.getToken(), auth.getUser(), auth.getClient());
         realmAuth = AdminPermissions.evaluator(session, realm, adminAuth);
         session.getContext().setRealm(realm);

@@ -26,7 +26,6 @@ import org.keycloak.forms.account.AccountProvider;
 import org.keycloak.forms.account.freemarker.Templates;
 import org.keycloak.forms.account.freemarker.model.*;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.theme.BrowserSecurityHeaderSetup;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
@@ -161,7 +160,6 @@ public class FreeMarkerAccountProvider extends org.keycloak.forms.account.freema
         try {
             String result = freeMarker.processTemplate(attributes, templateName, theme);
             Response.ResponseBuilder builder = Response.status(status).type(MediaType.TEXT_HTML_UTF_8_TYPE).language(locale).entity(result);
-            BrowserSecurityHeaderSetup.headers(builder, realm);
             return builder.build();
         } catch (FreeMarkerException e) {
             logger.error("Failed to process template", e);

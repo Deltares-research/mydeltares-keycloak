@@ -1,7 +1,6 @@
 package nl.deltares.keycloak.storage.rest;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
@@ -25,7 +24,6 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -46,8 +44,8 @@ public class ResourceUtils {
         return appAuthManager.authenticateIdentityCookie(keycloakSession, realm);
     }
 
-    private static String getTokenString(AppAuthManager authManager, HttpHeaders headers, KeycloakSession session) {
-        String tokenString = authManager.extractAuthorizationHeaderToken(headers);
+    private static String getTokenString( HttpHeaders headers, KeycloakSession session) {
+        String tokenString = AppAuthManager.extractAuthorizationHeaderToken(headers);
         MultivaluedMap<String, String> queryParameters = session.getContext().getUri().getQueryParameters();
         if (tokenString == null && queryParameters.containsKey("access_token")) {
             tokenString = queryParameters.getFirst("access_token");
@@ -55,10 +53,8 @@ public class ResourceUtils {
         return tokenString;
     }
 
-    static Auth getAuth(HttpHeaders httpHeaders, KeycloakSession session,
-                        ClientConnection clientConnection){
-        AppAuthManager authManager = new AppAuthManager();
-        String tokenString = getTokenString(authManager, httpHeaders, session);
+    static Auth getAuth(HttpHeaders httpHeaders, KeycloakSession session){
+        String tokenString = getTokenString(httpHeaders, session);
         if (tokenString == null) return null;
         AccessToken token = getAccessToken(tokenString);
 
@@ -70,7 +66,9 @@ public class ResourceUtils {
             throw new NotAuthorizedException("Unknown realm in token");
         }
         session.getContext().setRealm(realm);
-        AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(tokenString, session, realm, session.getContext().getUri(), clientConnection, httpHeaders);
+        final AppAuthManager.BearerTokenAuthenticator bearerTokenAuthenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+        bearerTokenAuthenticator.setRealm(realm).setTokenString(tokenString);
+        AuthenticationManager.AuthResult authResult = bearerTokenAuthenticator.authenticate();
         if (authResult == null) {
             throw new NotAuthorizedException("Bearer");
         }
@@ -131,7 +129,7 @@ public class ResourceUtils {
         }
         catch (Exception e)
         {
-            System.out.println("Error while encrypting: " + e.toString());
+            System.out.println("Error while encrypting: " + e);
         }
         return null;
     }
@@ -147,7 +145,7 @@ public class ResourceUtils {
         }
         catch (Exception e)
         {
-            System.out.println("Error while decrypting: " + e.toString());
+            System.out.println("Error while decrypting: " + e);
         }
         return null;
     }
@@ -178,16 +176,10 @@ public class ResourceUtils {
         }
 
         if (referrerUri != null) {
-            try {
-                referrerUri = URLDecoder.decode(referrerUri, "utf-8");
-            } catch (UnsupportedEncodingException ignored) {
-            }//we tried
+            referrerUri = URLDecoder.decode(referrerUri, StandardCharsets.UTF_8);
         }
         if (referrer != null) {
-            try {
-                referrer = URLDecoder.decode(referrer, "utf-8");
-            } catch (UnsupportedEncodingException ignored) {
-            }//we tried
+            referrer = URLDecoder.decode(referrer, StandardCharsets.UTF_8);
         }
         return new String[]{referrer, referrerUri};
     }
@@ -201,11 +193,11 @@ public class ResourceUtils {
         return rawContentType;
     }
 
-    static AuthenticationManager.AuthResult getAuthResult(KeycloakSession session, HttpHeaders httpHeaders, ClientConnection clientConnection) {
+    static AuthenticationManager.AuthResult getAuthResult(KeycloakSession session, HttpHeaders httpHeaders) {
         AuthenticationManager.AuthResult authResult = resolveAuthentication(session);
         if (authResult == null) {
             //this is when user accesses API via openid request and not GUI
-            Auth auth = getAuth(httpHeaders, session, clientConnection);
+            Auth auth = getAuth(httpHeaders, session);
             if (auth == null) return null; //unauthenticated
             return new AuthenticationManager.AuthResult(auth.getUser(), auth.getSession(), auth.getToken());
         }

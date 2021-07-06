@@ -4,6 +4,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.*;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 public class MockUserProvider implements UserProvider {
 
@@ -36,8 +37,23 @@ public class MockUserProvider implements UserProvider {
     }
 
     @Override
+    public Stream<FederatedIdentityModel> getFederatedIdentitiesStream(RealmModel realm, UserModel user) {
+        return UserProvider.super.getFederatedIdentitiesStream(realm, user);
+    }
+
+    @Override
+    public FederatedIdentityModel getFederatedIdentity(RealmModel realm, UserModel user, String socialProvider) {
+        return UserProvider.super.getFederatedIdentity(realm, user, socialProvider);
+    }
+
+    @Override
     public FederatedIdentityModel getFederatedIdentity(UserModel user, String socialProvider, RealmModel realm) {
         return null;
+    }
+
+    @Override
+    public UserModel getUserByFederatedIdentity(RealmModel realm, FederatedIdentityModel socialLink) {
+        return UserProvider.super.getUserByFederatedIdentity(realm, socialLink);
     }
 
     @Override
@@ -58,6 +74,11 @@ public class MockUserProvider implements UserProvider {
     @Override
     public List<UserConsentModel> getConsents(RealmModel realm, String userId) {
         return null;
+    }
+
+    @Override
+    public Stream<UserConsentModel> getConsentsStream(RealmModel realm, String userId) {
+        return UserProvider.super.getConsentsStream(realm, userId);
     }
 
     @Override
@@ -91,8 +112,18 @@ public class MockUserProvider implements UserProvider {
     }
 
     @Override
+    public Stream<UserModel> getUsersStream(RealmModel realm, boolean includeServiceAccounts) {
+        return UserProvider.super.getUsersStream(realm, includeServiceAccounts);
+    }
+
+    @Override
     public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts) {
         return null;
+    }
+
+    @Override
+    public Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults, boolean includeServiceAccounts) {
+        return UserProvider.super.getUsersStream(realm, firstResult, maxResults, includeServiceAccounts);
     }
 
     @Override
@@ -102,6 +133,11 @@ public class MockUserProvider implements UserProvider {
 
     @Override
     public void preRemove(RealmModel realm) {
+
+    }
+
+    @Override
+    public void preRemove(RealmModel realmModel, IdentityProviderModel identityProviderModel) {
 
     }
 
