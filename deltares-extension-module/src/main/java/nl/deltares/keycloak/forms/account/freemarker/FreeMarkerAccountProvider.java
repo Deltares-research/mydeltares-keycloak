@@ -167,6 +167,7 @@ public class FreeMarkerAccountProvider extends org.keycloak.forms.account.freema
         }
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public AccountProvider setMailings(List<UserMailingRepresentation> userMailings, List<MailingRepresentation> mailings) {
         if (super.attributes == null) super.attributes = new HashMap<>();
         super.attributes.put("mailings" , new UserMailingsBean(userMailings, mailings));

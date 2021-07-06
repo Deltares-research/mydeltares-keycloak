@@ -43,6 +43,7 @@ public class MailingAdminResource {
 
     public void init() {
         Auth auth = getAuth(httpHeaders, session);
+        assert auth != null;
         this.adminAuth = new AdminAuth(auth.getRealm(), auth.getToken(), auth.getUser(), auth.getClient());
         realmAuth = AdminPermissions.evaluator(session, this.adminAuth.getRealm(), this.adminAuth);
 
@@ -85,7 +86,7 @@ public class MailingAdminResource {
 
         logger.info("Updating mailing : " + rep.getName());
         getEntityManager(session).persist(mailing);
-        return Response.ok().build();
+        return Response.ok().type(MediaType.TEXT_PLAIN).build();
     }
 
     @DELETE
@@ -102,7 +103,7 @@ public class MailingAdminResource {
 
         logger.info("Delete mailing : " + mailingId);
         getEntityManager(session).remove(mailing);
-        return Response.ok().build();
+        return Response.ok().type(MediaType.TEXT_PLAIN).build();
     }
 
     /**

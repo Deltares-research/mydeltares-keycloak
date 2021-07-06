@@ -24,14 +24,12 @@ public class KeycloakTestServer {
     private static KeycloakUtilsImpl adminUtils;
     private static KeycloakUtilsImpl viewerUtils;
     private static KeycloakUtilsImpl userUtils;
-    private static String containerId;
     private static GenericContainer dockerClient;
     private static boolean running;
 
     /**
      * Use main method to start keycloak server manually. Server can be stopped by manually updating the 'keepGoing'
      * variable.
-     * @param args
      * @throws Throwable
      */
      public static void main(String[] args) throws Throwable {
@@ -52,8 +50,8 @@ public class KeycloakTestServer {
          Files.copy(new File(testResources, "admin-keycloak.properties").toPath(), new File(dataDir, "admin-keycloak.properties").toPath());
          Files.copy(new File(testResources, "user-keycloak.properties").toPath(), new File(dataDir, "user-keycloak.properties").toPath());
          Files.copy(new File(testResources, "viewer-keycloak.properties").toPath(), new File(dataDir, "viewer-keycloak.properties").toPath());
-         Files.copy(new File(testResources, "deltares-extension-bundle-1.0.ear").toPath(),
-                 new File(deploymentDir, "deltares-extension-bundle-1.0.ear").toPath());
+         Files.copy(new File(testResources, "deltares-extension-bundle-2.0.ear").toPath(),
+                 new File(deploymentDir, "deltares-extension-bundle-2.0.ear").toPath());
 
 
          KeycloakTestServer.startKeycloak(deploymentDir.getPath(), dataDir.getPath());
@@ -84,7 +82,8 @@ public class KeycloakTestServer {
                 .withCommand("-Dcom.sun.management.jmxremote", "-Dcom.sun.management.jmxremote.port=12345",
                         "-Dcom.sun.management.jmxremote.local.only=false", "-Dcom.sun.management.jmxremote.authenticate=false",
                         "-Dcom.sun.management.jmxremote.ssl=false", "-Dcom.sun.management.jmxremote.rmi.port=12345",
-                        "-Djava.rmi.server.hostname=$HOSTNAME","-Dkeycloak.profile.feature.upload_scripts=enabled");
+                        "-Djava.rmi.server.hostname=$HOSTNAME","-Dkeycloak.profile.feature.upload_scripts=enabled",
+                        "-Dcache.export=false");
 
         dockerClient.start();
         String address = dockerClient.getHost();
@@ -121,8 +120,6 @@ public class KeycloakTestServer {
         if (!running){
             stopKeycloak();
             throw new RuntimeException("Keycloak has not started!");
-        } else {
-
         }
 
     }
@@ -209,7 +206,7 @@ public class KeycloakTestServer {
         Charset charset = StandardCharsets.UTF_8;
 
         try {
-            String content = new String(Files.readAllBytes(path), charset);
+            String content = Files.readString(path, charset);
             content = content.replaceAll("localhost", address);
             content = content.replaceAll(":\\d+/auth", ":" + port + "/auth");
             Files.write(path, content.getBytes(charset));

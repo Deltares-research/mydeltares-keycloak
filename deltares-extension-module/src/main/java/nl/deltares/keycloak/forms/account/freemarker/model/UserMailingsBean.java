@@ -2,7 +2,6 @@ package nl.deltares.keycloak.forms.account.freemarker.model;
 
 import nl.deltares.keycloak.storage.jpa.Mailing;
 import nl.deltares.keycloak.storage.rest.MailingRepresentation;
-import nl.deltares.keycloak.storage.rest.ResourceUtils;
 import nl.deltares.keycloak.storage.rest.UserMailingRepresentation;
 
 import java.util.ArrayList;
@@ -34,8 +33,8 @@ public class UserMailingsBean {
     }
 
     public static class UserMailingBean {
-        private UserMailingRepresentation userMailing;
-        private MailingRepresentation mailing;
+        private final UserMailingRepresentation userMailing;
+        private final MailingRepresentation mailing;
 
         public UserMailingBean(UserMailingRepresentation userMailing, MailingRepresentation mailing) {
             this.userMailing = userMailing;
@@ -74,6 +73,7 @@ public class UserMailingsBean {
             return mailing.getFrequencyTxt();
         }
 
+        @SuppressWarnings("unused")
         public List<String> getSupportedDeliveries(){
 
             ArrayList<String> supported = new ArrayList<>();
@@ -89,6 +89,7 @@ public class UserMailingsBean {
             return supported;
         }
 
+        @SuppressWarnings("unused")
         public List<String> getSupportedLanguages(){
             return Arrays.asList(mailing.getLanguages());
         }

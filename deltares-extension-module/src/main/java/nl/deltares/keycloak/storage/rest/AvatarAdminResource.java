@@ -60,7 +60,7 @@ public class AvatarAdminResource extends AbstractAvatarResource {
 //                logger.info("No avatar exists for user " + userId);
                 return Response.status(Response.Status.NO_CONTENT).build();
             }
-            UserModel user = session.users().getUserById(userId, callerRealm);
+            UserModel user = session.users().getUserById(callerRealm, userId);
             if (user == null) throw new NotFoundException("User not found for id " + userId);
 
             return Response.ok(avatar.getAvatar(), avatar.getContentType())
@@ -96,7 +96,7 @@ public class AvatarAdminResource extends AbstractAvatarResource {
             return Response.serverError().entity(e.getMessage()).build();
         }
 
-        return Response.ok().build();
+        return Response.ok().type(MediaType.TEXT_PLAIN).build();
     }
 
     @DELETE
@@ -118,7 +118,7 @@ public class AvatarAdminResource extends AbstractAvatarResource {
             return Response.serverError().entity(e.getMessage()).build();
         }
 
-        return Response.ok().build();
+        return Response.ok().type(MediaType.TEXT_PLAIN).build();
     }
 
 
@@ -135,10 +135,10 @@ public class AvatarAdminResource extends AbstractAvatarResource {
         String realmId = callerRealm.getId();
         UserModel user;
         if (username != null) {
-             user = session.users().getUserByUsername(username, callerRealm);
+             user = session.users().getUserByUsername(callerRealm, username);
             if (user == null) throw new NotFoundException("User not found for username " + username);
         } else if (email != null) {
-            user = session.users().getUserByEmail(email, callerRealm);
+            user = session.users().getUserByEmail(callerRealm, email);
             if (user == null) throw new NotFoundException("User not found for email " + email);
         } else {
             throw new IllegalArgumentException("no filter parameters defined!");

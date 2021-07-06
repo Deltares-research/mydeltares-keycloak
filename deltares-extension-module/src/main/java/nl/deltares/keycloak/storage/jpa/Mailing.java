@@ -1,7 +1,5 @@
 package nl.deltares.keycloak.storage.jpa;
 
-import org.apache.log4j.lf5.util.ResourceUtils;
-
 import javax.persistence.*;
 import java.util.Arrays;
 import java.util.List;

@@ -89,7 +89,7 @@ public class AvatarResource extends AbstractAvatarResource {
             UriBuilder builder = RealmsResource.accountUrl(session.getContext().getUri().getBaseUriBuilder());
             return Response.seeOther(builder.build(realmName)).build();
         } catch (MaxSizeExceededException e){
-            return Response.status(Response.Status.REQUEST_ENTITY_TOO_LARGE.getStatusCode(), e.getMessage()).build();
+            return Response.status(Response.Status.REQUEST_ENTITY_TOO_LARGE.getStatusCode(), e.getMessage()).type(MediaType.TEXT_PLAIN).build();
         } catch (Exception ex) {
             return Response.serverError().build();
         }
@@ -106,7 +106,7 @@ public class AvatarResource extends AbstractAvatarResource {
             String realmName = authResult.getSession().getRealm().getId();
             String userId = authResult.getUser().getId();
             deleteAvatarImage(realmName, userId);
-            return Response.ok().build();
+            return Response.ok().type(MediaType.TEXT_PLAIN).build();
         }  catch (Exception ex) {
             return Response.serverError().build();
         }

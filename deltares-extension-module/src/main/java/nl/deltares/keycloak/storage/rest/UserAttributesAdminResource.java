@@ -41,6 +41,7 @@ private final KeycloakSession session;
         RealmModel realm = session.getContext().getRealm();
         if (realm == null) throw new NotFoundException("Realm not found.");
         Auth auth = getAuth(httpHeaders, session);
+        assert auth != null;
         AdminAuth adminAuth = new AdminAuth(auth.getRealm(), auth.getToken(), auth.getUser(), auth.getClient());
         realmAuth = AdminPermissions.evaluator(session, realm, adminAuth);
         session.getContext().setRealm(realm);

@@ -171,12 +171,11 @@ public class UsernamePasswordForm implements Authenticator {
         return Messages.INVALID_USER;
     }
 
-    protected Response setDuplicateUserChallenge(AuthenticationFlowContext context, String eventError, String loginFormError, AuthenticationFlowError authenticatorError) {
+    protected void setDuplicateUserChallenge(AuthenticationFlowContext context, String eventError, String loginFormError, AuthenticationFlowError authenticatorError) {
         context.getEvent().error(eventError);
         Response challengeResponse = context.form()
                 .setError(loginFormError).createLoginUsernamePassword();
         context.failureChallenge(authenticatorError, challengeResponse);
-        return challengeResponse;
     }
 
     protected void runDefaultDummyHash(AuthenticationFlowContext context) {
@@ -220,8 +219,7 @@ public class UsernamePasswordForm implements Authenticator {
             context.forceChallenge(challengeResponse);
             return false;
         }
-        if (isTemporarilyDisabledByBruteForce(context, user)) return false;
-        return true;
+        return !isTemporarilyDisabledByBruteForce(context, user);
     }
 
     public boolean validatePassword(AuthenticationFlowContext context, UserModel user, MultivaluedMap<String, String> inputData) {

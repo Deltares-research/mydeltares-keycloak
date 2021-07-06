@@ -377,7 +377,8 @@ public class KeycloakUtilsImpl {
         }
 
         ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(urlConnection.getInputStream(), new TypeReference<List<UserMailingRepresentation>>(){});
+        return mapper.readValue(urlConnection.getInputStream(), new TypeReference<>() {
+        });
 
     }
 
@@ -621,7 +622,7 @@ public class KeycloakUtilsImpl {
             result.write(buffer, 0, length);
         }
         // StandardCharsets.UTF_8.name() > JDK 7
-        return result.toString("UTF-8");
+        return result.toString(StandardCharsets.UTF_8);
     }
 
     private static byte[] readAllBytes(InputStream inputStream) throws IOException {

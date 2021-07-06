@@ -9,7 +9,7 @@ public class JpaAvatarStorageProvider implements JpaEntityProvider {
 
     @Override
     public List<Class<?>> getEntities() {
-        return Collections.<Class<?>>singletonList(Avatar.class);
+        return Collections.singletonList(Avatar.class);
     }
 
     @Override

@@ -67,8 +67,8 @@ public class RegistrationUsername implements FormAction, FormActionFactory {
         UserProvider users = context.getSession().users();
         i = 0;
         String validUserName = userName;
-        while (users.getUserByUsername(validUserName, context.getRealm()) != null){
-            validUserName = userName + '_' + String.valueOf(i++);
+        while (users.getUserByUsername(context.getRealm(), validUserName) != null){
+            validUserName = userName + '_' + i++;
         }
         return validUserName;
     }
@@ -126,7 +126,7 @@ public class RegistrationUsername implements FormAction, FormActionFactory {
         return false;
     }
 
-    private static AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
+    private static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
             AuthenticationExecutionModel.Requirement.REQUIRED,
             AuthenticationExecutionModel.Requirement.DISABLED
     };

@@ -7,7 +7,7 @@ import java.util.Collection;
 import java.util.Objects;
 
 @Entity
-@Table(name = "MAILING_ENTITY", schema = "keycloak", catalog = "")
+@Table(name = "MAILING_ENTITY", schema = "keycloak")
 public class MailingEntityEntity {
     private String id;
     private String name;

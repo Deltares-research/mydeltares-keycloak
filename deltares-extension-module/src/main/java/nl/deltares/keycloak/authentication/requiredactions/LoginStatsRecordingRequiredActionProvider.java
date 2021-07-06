@@ -12,7 +12,8 @@ import org.keycloak.models.UserModel;
 
 import java.time.ZoneId;
 import java.util.Collections;
-import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 import static java.time.LocalDateTime.now;
 
@@ -85,15 +86,14 @@ public class LoginStatsRecordingRequiredActionProvider  implements RequiredActio
 
     private void recordLoginCount(String referrer, UserModel user) {
         String key = referrer == null ? LOGIN_LOGIN_COUNT : LOGIN_LOGIN_COUNT + '.' + referrer;
-        List<String> list = user.getAttribute(key);
-
-        if (list == null || list.isEmpty()) {
-            list = Collections.singletonList(ONE);
+        Stream<String> stream = user.getAttributeStream(key);
+        final Optional<String> first = stream.findFirst();
+        if (first.isEmpty()) {
+            user.setAttribute(key, Collections.singletonList(ONE));
         } else {
-            list = Collections.singletonList(String.valueOf(Long.parseLong(list.get(0)) + 1));
+            user.setAttribute(key, Collections.singletonList(String.valueOf(Long.parseLong(first.get()) + 1)));
         }
 
-        user.setAttribute(key, list);
     }
 
     private void recordRecentLogin(String referrer, UserModel user) {
@@ -103,9 +103,9 @@ public class LoginStatsRecordingRequiredActionProvider  implements RequiredActio
 
     private void recordFirstLogin(String referrer, UserModel user) {
         String key = referrer == null ? LOGIN_FIRST_LOGIN_DATE : LOGIN_FIRST_LOGIN_DATE + '.' + referrer;
-        List<String> list = user.getAttribute(key);
-
-        if (list == null || list.isEmpty()) {
+        Stream<String> stream = user.getAttributeStream(key);
+        final Optional<String> first = stream.findFirst();
+        if (first.isEmpty()) {
             user.setAttribute(key, Collections.singletonList(now(ZoneId.of("GMT")).toString()));
         }
     }

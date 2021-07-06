@@ -8,7 +8,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 @Entity
-@Table(name = "USER_AVATAR", schema = "keycloak", catalog = "")
+@Table(name = "USER_AVATAR", schema = "keycloak")
 public class UserAvatarEntity {
     private String id;
     private byte[] avatar;

@@ -67,7 +67,7 @@ abstract class AbstractAvatarResource {
         } else {
             LOG.info("Updating avatar for user: " + userId);
         }
-        avatar.setContentType(contentType != null ? contentType : URLConnection.guessContentTypeFromStream(imageInputStream));
+        avatar.setContentType(contentType);
         avatar.setAvatar(readAllBytes(imageInputStream));
         getEntityManager().persist(avatar);
     }

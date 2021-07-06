@@ -7,7 +7,7 @@ import javax.persistence.*;
 import java.util.Objects;
 
 @Entity
-@Table(name = "USER_MAILING", schema = "keycloak", catalog = "")
+@Table(name = "USER_MAILING", schema = "keycloak")
 public class UserMailingEntity {
     private String id;
     private String language;

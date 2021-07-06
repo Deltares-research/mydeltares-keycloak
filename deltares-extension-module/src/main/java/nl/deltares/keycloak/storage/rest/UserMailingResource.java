@@ -156,7 +156,7 @@ public class UserMailingResource {
         logger.infof("Updating mailing %s for user %s.", rep.getMailingId(), userId);
 
         getEntityManager(session).persist(mailing);
-        return Response.ok().build();
+        return Response.ok().type(MediaType.TEXT_PLAIN).build();
 
     }
 
@@ -186,7 +186,7 @@ public class UserMailingResource {
 
         logger.info("Delete mailing : " + mailingId);
         getEntityManager(session).remove(mailing);
-        return Response.ok().build();
+        return Response.ok().type(MediaType.TEXT_PLAIN).build();
     }
 
     @GET
