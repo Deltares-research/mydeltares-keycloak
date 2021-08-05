@@ -8,7 +8,7 @@ import java.util.Properties;
 public class DeleteUsers {
 
     /**
-     * Deletes users based on their email address. Expected input properties file:
+     * Deletes users based on their userId. Expected input properties file:
      *
      * keycloak properties example:
      *
@@ -16,7 +16,7 @@ public class DeleteUsers {
      * keycloak.baseapiurl=http://keycloak.local.nl:8080/auth/admin/realms/liferay-portal/
      * keycloak.clientid= client id
      * keycloak.clientsecret= client secret
-     * emails= csv file with list of email addresses to delete
+     * users= csv file with list of userids to delete
      *
      * @param args
      */
@@ -28,7 +28,7 @@ public class DeleteUsers {
         KeycloakUtilsImpl keycloakUtils = new KeycloakUtilsImpl(properties);
 
         File usersFile = new File(properties.getProperty("users"));
-        File failed = new File(usersFile.getParent(), "failed.csv");
+        File failed = new File(usersFile.getParent(), "deletion-results.csv");
 
         if (failed.exists()) failed.renameTo(new File(usersFile.getParent(), System.currentTimeMillis() + '_' +usersFile.getName()));
         try(BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(failed)))) {
@@ -54,17 +54,6 @@ public class DeleteUsers {
         }
     }
 
-    private static File getPortraitFile(File userPortraitsDir, String portraitId) {
-
-        FilenameFilter filter = (dir, name) -> name.startsWith(portraitId + ".");
-
-        File[] portraitDir = userPortraitsDir.listFiles(filter);
-        assert portraitDir != null &&  portraitDir.length == 1;
-        File[] portraitFile = portraitDir[0].listFiles();
-        assert portraitFile != null && portraitFile.length == 1;
-        return portraitFile[0];
-
-    }
 
     private static Properties loadProperties(String arg) {
         try (InputStream input = new FileInputStream(arg)) {
