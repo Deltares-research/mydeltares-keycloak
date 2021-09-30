@@ -213,3 +213,4 @@ buildNumber.properties
 /deltares-integration-tests/src/test/resources/docker/standalone/data/
 /deltares-integration-tests/src/test/resources/docker/standalone/deployments/deltares-extension-bundle-1.0.ear.deployed
 /deltares-integration-tests/src/test/resources/docker/testdata/prod-keycloak.properties
+/docker/svn/data/repos/
