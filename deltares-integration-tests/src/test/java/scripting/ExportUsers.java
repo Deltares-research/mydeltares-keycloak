@@ -48,9 +48,9 @@ public class ExportUsers {
         try(BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(exportFile)))) {
             writeResults(bw, "id", "username", "email", "verified", "federationid", "terms", "lastlogin"); // write header
 
-            int nextStartIndex = 10050;
+            int nextStartIndex = 9875;
             while (nextStartIndex > -1) {
-                String userJson = keycloakUtils.getUsersAdminApi(nextStartIndex, 50, null);
+                String userJson = keycloakUtils.getUsersAdminApi(nextStartIndex, 25, null);
 
                 ObjectMapper mapper = new ObjectMapper();
                 List<Map<String, Object>> map = mapper.readValue(userJson, mapper.getTypeFactory().constructCollectionType(List.class, Map.class));

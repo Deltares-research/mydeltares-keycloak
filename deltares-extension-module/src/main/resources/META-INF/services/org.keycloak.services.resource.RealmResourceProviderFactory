@@ -2,3 +2,4 @@ nl.deltares.keycloak.storage.rest.AvatarResourceProviderFactory
 nl.deltares.keycloak.storage.rest.MailingResourceProviderFactory
 nl.deltares.keycloak.storage.rest.UserMailingResourceProviderFactory
 nl.deltares.keycloak.storage.rest.UserAttributesResourceProviderFactory
+nl.deltares.keycloak.storage.rest.UsersResourceProviderFactory

@@ -1,0 +1,31 @@
+version: '3'
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  keycloak:
+
+services:
+
+  mariadb:
+    image: mariadb:10.1.19
+    container_name: localhost-mariadb
+    ports:
+      - "3307:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=keycloak
+      - MYSQL_USER=keycloak
+      - MYSQL_PASSWORD=password
+      - HOSTNAME=keycloak-mariadb
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./resources/dlt-keycloak-dump.sql:/docker-entrypoint-initdb.d/dump.sql
+    restart: always
+    command: ['mysqld', '--character-set-server=utf8', '--collation-server=utf8_general_ci']
+    networks:
+      - keycloak
+#    healthcheck:
+#      test: ["CMD", "mysqladmin", "ping", "--silent", "--user=$MYSQL_USER", "--password=$MYSQL_PASSWORD"]

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import nl.deltares.keycloak.storage.rest.MailingRepresentation;
 import nl.deltares.keycloak.storage.rest.UserMailingRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import javax.ws.rs.core.MediaType;
@@ -22,6 +23,7 @@ public class KeycloakUtilsImpl {
     private static final String KEYCLOAK_ATTRIBUTE_PATH = "user-attributes";
     private static final String KEYCLOAK_AVATAR_PATH = "avatar-provider";
     private static final String KEYCLOAK_USERS_PATH = "users";
+    private static final String KEYCLOAK_USERS_DELTARES_PATH = "users-deltares";
     private static final String KEYCLOAK_ADMIN_ATTRIBUTE_PATH = KEYCLOAK_ATTRIBUTE_PATH + "/admin";
     private static final String KEYCLOAK_ADMIN_USER_MAILING_PATH = KEYCLOAK_USER_MAILING_PATH + "/admin";
     private static final String KEYCLOAK_ADMIN_MAILING_PATH = KEYCLOAK_MAILING_PATH + "/admin";
@@ -81,6 +83,10 @@ public class KeycloakUtilsImpl {
         return basePath + KEYCLOAK_USERS_PATH;
     }
 
+    private String getUsersDeltaresPath() {
+        String basePath = getKeycloakBasePath();
+        return basePath + KEYCLOAK_USERS_DELTARES_PATH;
+    }
 
     public List<UserRepresentation> searchUser(String searchString) throws IOException{
 
@@ -133,6 +139,33 @@ public class KeycloakUtilsImpl {
         return null;
     }
 
+    public List<GroupRepresentation> getGroups() throws IOException {
+
+        HttpURLConnection urlConnection = getConnection( getKeycloakBaseApiPath() + "groups", "GET", getAccessToken(), null);
+        int responseCode = urlConnection.getResponseCode();
+        if (responseCode > 299) {
+            throw new IOException(String.format("Error getGroups: %s %s", responseCode, readError(urlConnection)));
+        }
+        String jsonResponse = readAll(urlConnection);
+        ObjectMapper mapper = new ObjectMapper();
+
+        return mapper.readValue(jsonResponse, mapper.getTypeFactory().constructCollectionLikeType(List.class, GroupRepresentation.class));
+    }
+
+    public List<UserRepresentation> getGroupMember(String groupId) throws IOException {
+
+        String queryParams = String.format("groups/%s/members", groupId);
+        HttpURLConnection urlConnection = getConnection( getKeycloakBaseApiPath() + queryParams, "GET", getAccessToken(), null);
+        int responseCode = urlConnection.getResponseCode();
+        if (responseCode > 299) {
+            throw new IOException(String.format("Error getGroupMember for group %s: %s %s", groupId, responseCode, readError(urlConnection)));
+        }
+        String jsonResponse = readAll(urlConnection);
+        ObjectMapper mapper = new ObjectMapper();
+
+        return mapper.readValue(jsonResponse, mapper.getTypeFactory().constructCollectionLikeType(List.class, UserRepresentation.class));
+    }
+
     public void deleteUser(String id) throws IOException {
         HttpURLConnection urlConnection = getConnection(getUsersPath() + "/" + id, "DELETE", getAccessToken(), null);
         checkResponse(urlConnection);
@@ -165,6 +198,26 @@ public class KeycloakUtilsImpl {
 
     public int uploadUserAvatarUserApi(File portraitFile, String username, String password) throws IOException {
         return uploadUserAvatar(new URL(getAvatarPath()), portraitFile, getAccessToken(username, password));
+    }
+
+    public List<UserRepresentation> getDisabledUsers(int start, int maxResults, boolean briefDescription) throws IOException {
+       return getDisabledUsers(start, maxResults, briefDescription, null, null);
+    }
+
+    public List<UserRepresentation> getDisabledUsers(int start, int maxResults, boolean briefDescription, Long after, Long before) throws IOException {
+
+        String queryParams = String.format("?first=%d&max=%d&briefRepresentation=%s", start, maxResults, briefDescription);
+        if (after != null){
+            queryParams += "&disabledTimeAfter=" + after;
+        }
+        if (before != null){
+            queryParams += "&disabledTimeBefore=" + before;
+        }
+        HttpURLConnection urlConnection = getConnection(getUsersDeltaresPath() + "/disabled" + queryParams, "GET", getAccessToken(), null);
+        checkResponse(urlConnection);
+        String jsonResponse = readAll(urlConnection);
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(jsonResponse, mapper.getTypeFactory().constructCollectionType(List.class, UserRepresentation.class));
     }
 
     public String getUserAsJson(String id) throws IOException {
