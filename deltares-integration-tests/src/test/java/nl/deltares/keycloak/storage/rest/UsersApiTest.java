@@ -13,6 +13,7 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -38,8 +39,8 @@ public class UsersApiTest {
     public void adminApiGetDisabledUsersUnauthorized() {
 
         KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getUserKeycloakUtils();
-        try {
-            keycloakUtils.getDisabledUsers(0, 100, false);
+        try (StringWriter writer = new StringWriter()){
+            keycloakUtils.exportDisabledUsers(writer);
             Assert.fail();
         } catch (IOException e) {
             Assert.assertEquals("Error 403", e.getMessage().substring(0, "Error 403".length()));
@@ -55,16 +56,20 @@ public class UsersApiTest {
         UserRepresentation user = newUserRepresentation("disabled-user1@test.nl");
         keycloakUtils.createUser(user);
 
-        List<UserRepresentation> disabledUsers = keycloakUtils.getDisabledUsers(0, 1, false);
-        Assert.assertFalse(contains(user, disabledUsers));
+        try(StringWriter writer = new StringWriter()) {
+            keycloakUtils.exportDisabledUsers(writer);
+            Assert.assertFalse(writer.toString().contains("disabled-user1@test.nl"));
+        }
 
         user = keycloakUtils.getUserByEmail("disabled-user1@test.nl");
         user.setEnabled(false);
 
         keycloakUtils.updateUser(user);
 
-        disabledUsers = keycloakUtils.getDisabledUsers(0, 1, false);
-        Assert.assertTrue(contains(user, disabledUsers));
+        try(StringWriter writer = new StringWriter()) {
+            keycloakUtils.exportDisabledUsers(writer);
+            Assert.assertTrue(writer.toString().contains("disabled-user1@test.nl"));
+        }
     }
 
     @Test
@@ -129,31 +134,35 @@ public class UsersApiTest {
 
 
         //Get users with disabled time after now - 5sec
-        List<UserRepresentation> disabledUsers = keycloakUtils.getDisabledUsers(0, 10, false, startTest - 5000, null);
-        Assert.assertTrue(contains(user, disabledUsers));
+        try(StringWriter writer = new StringWriter()) {
+            keycloakUtils.exportDisabledUsers(writer, startTest - 5000, null);
+            Assert.assertTrue(writer.toString().contains("disabled-user2@test.nl"));
+        }
 
         //Get users with disabled time after now + 5sec
-        disabledUsers = keycloakUtils.getDisabledUsers(0, 10, false, startTest + 5000, null);
-        Assert.assertFalse(contains(user, disabledUsers));
+        try(StringWriter writer = new StringWriter()) {
+            keycloakUtils.exportDisabledUsers(writer, startTest + 5000, null);
+            Assert.assertFalse(writer.toString().contains("disabled-user2@test.nl"));
+        }
 
         //Get users with disabled time before now + 5sec
-        disabledUsers = keycloakUtils.getDisabledUsers(0, 10, false, null, startTest + 5000);
-        Assert.assertTrue(contains(user, disabledUsers));
+        try(StringWriter writer = new StringWriter()) {
+            keycloakUtils.exportDisabledUsers(writer, null,  startTest + 5000);
+            Assert.assertTrue(writer.toString().contains("disabled-user2@test.nl"));
+        }
 
         //Get users with disabled time before now - 5sec
-        disabledUsers = keycloakUtils.getDisabledUsers(0, 10, false, null, startTest - 5000);
-        Assert.assertFalse(contains(user, disabledUsers));
+        try(StringWriter writer = new StringWriter()) {
+            keycloakUtils.exportDisabledUsers(writer, null,  startTest - 5000);
+            Assert.assertFalse(writer.toString().contains("disabled-user2@test.nl"));
+        }
 
         //Get users with disabled time between now - 5sec and now + 5sec
-        disabledUsers = keycloakUtils.getDisabledUsers(0, 10, false, startTest - 5000, startTest + 5000);
-        Assert.assertTrue(contains(user, disabledUsers));
-
-    }
-
-    private boolean contains(UserRepresentation user, List<UserRepresentation> disabledUsers) {
-        for (UserRepresentation disabledUser : disabledUsers) {
-            if (disabledUser.getEmail().equals(user.getEmail())) return true;
+        try(StringWriter writer = new StringWriter()) {
+            keycloakUtils.exportDisabledUsers(writer, startTest - 5000,  startTest + 5000);
+            Assert.assertTrue(writer.toString().contains("disabled-user2@test.nl"));
         }
-        return false;
+
     }
+
 }
