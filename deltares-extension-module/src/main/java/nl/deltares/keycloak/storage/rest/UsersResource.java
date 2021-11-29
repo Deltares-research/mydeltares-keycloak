@@ -34,7 +34,6 @@ public class UsersResource {
 
     //Realm from request path
     private RealmModel callerRealm;
-    private boolean cacheExport;
 
     public UsersResource(KeycloakSession session, Properties properties) {
         this.session = session;
@@ -49,8 +48,6 @@ public class UsersResource {
         AdminAuth adminAuth = new AdminAuth(auth.getRealm(), auth.getToken(), auth.getUser(), auth.getClient());
         realmAuth = AdminPermissions.evaluator(session, realm, adminAuth);
         session.getContext().setRealm(realm);
-        cacheExport = Boolean.parseBoolean(System.getProperty("cache.export", "true"));
-
         callerRealm = ResourceUtils.getRealmFromPath(session);
     }
 
@@ -63,6 +60,6 @@ public class UsersResource {
 
         realmAuth.users().requireQuery();
         ExportDisabledUser content = new ExportDisabledUser(callerRealm, session, disabledAfterMillis, disabledBeforeMillis);
-        return DataRequestManager.getExportDataResponse(content, properties, cacheExport);
+        return DataRequestManager.getExportDataResponse(content, properties, false);
     }
 }
