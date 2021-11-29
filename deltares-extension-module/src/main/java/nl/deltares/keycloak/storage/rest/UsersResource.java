@@ -41,6 +41,7 @@ public class UsersResource {
     @Context
     private ClientConnection clientConnection;
     private AdminPermissionEvaluator realmAuth;
+    private RealmModel callerRealm;
 
     public UsersResource(KeycloakSession session, Properties properties) {
         this.session = session;
@@ -54,6 +55,7 @@ public class UsersResource {
         AdminAuth adminAuth = new AdminAuth(auth.getRealm(), auth.getToken(), auth.getUser(), auth.getClient());
         realmAuth = AdminPermissions.evaluator(session, realm, adminAuth);
         session.getContext().setRealm(realm);
+        callerRealm = ResourceUtils.getRealmFromPath(session);
     }
 
     @GET
@@ -71,7 +73,7 @@ public class UsersResource {
 
         disabledBeforeMillis = disabledBeforeMillis != null ? disabledBeforeMillis : Long.MAX_VALUE;
         disabledAfterMillis = disabledAfterMillis != null ? disabledAfterMillis : Long.MIN_VALUE;
-        return searchForDisabledUsers(this.realmAuth.adminAuth().getRealm(), userPermissionEvaluator, briefRepresentation,
+        return searchForDisabledUsers(callerRealm, userPermissionEvaluator, briefRepresentation,
                 firstResult, maxResults, false, disabledAfterMillis, disabledBeforeMillis);
 
     }
