@@ -203,24 +203,33 @@ public class KeycloakUtilsImpl {
         return uploadUserAvatar(new URL(getAvatarPath()), portraitFile, getAccessToken(username, password));
     }
 
-    public List<UserRepresentation> getDisabledUsers(int start, int maxResults, boolean briefDescription) throws IOException {
-       return getDisabledUsers(start, maxResults, briefDescription, null, null);
+    public int exportDisabledUsers(Writer writer) throws IOException {
+       return exportDisabledUsers(writer, null, null);
     }
 
-    public List<UserRepresentation> getDisabledUsers(int start, int maxResults, boolean briefDescription, Long after, Long before) throws IOException {
+    public int exportDisabledUsers(Writer writer, Long after, Long before) throws IOException {
 
-        String queryParams = String.format("?first=%d&max=%d&briefRepresentation=%s", start, maxResults, briefDescription);
+        String queryParams = "";
         if (after != null){
-            queryParams += "&disabledTimeAfter=" + after;
+            queryParams += "?disabledTimeAfter=" + after;
         }
         if (before != null){
-            queryParams += "&disabledTimeBefore=" + before;
+            queryParams += after == null ? "?disabledTimeBefore=" + before : "&disabledTimeBefore=" + before;
         }
-        HttpURLConnection urlConnection = getConnection(getUsersDeltaresPath() + "/disabled" + queryParams, "GET", getAccessToken(), null);
-        checkResponse(urlConnection);
-        String jsonResponse = readAll(urlConnection);
-        ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(jsonResponse, mapper.getTypeFactory().constructCollectionType(List.class, UserRepresentation.class));
+        HashMap<String, String> map = new HashMap<>();
+        map.put("Content-Type", MediaType.TEXT_HTML);
+        HttpURLConnection urlConnection = getConnection(getUsersDeltaresPath() + "/disabled" + queryParams, "GET", getAccessToken(), map);
+
+        int status = checkResponse(urlConnection);
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                writer.write(line);
+                writer.write('\n');
+            }
+            writer.flush();
+        }
+        return status;
     }
 
     public String getUserAsJson(String id) throws IOException {

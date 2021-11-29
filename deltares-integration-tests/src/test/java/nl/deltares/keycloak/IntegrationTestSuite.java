@@ -12,7 +12,7 @@ import java.nio.file.Files;
 
 @RunWith(WildcardPatternSuite.class)
 @Categories.IncludeCategory(IntegrationTestCategory.class)
-@SuiteClasses("**/*Test.class")
+@SuiteClasses("**/UsersApiTest.class")
 public class IntegrationTestSuite {
 
     @BeforeClass

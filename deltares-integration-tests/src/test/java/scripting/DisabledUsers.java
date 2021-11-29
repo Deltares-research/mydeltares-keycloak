@@ -2,7 +2,6 @@ package scripting;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import nl.deltares.keycloak.utils.KeycloakUtilsImpl;
-import org.keycloak.representations.idm.UserRepresentation;
 
 import java.io.*;
 import java.util.List;
@@ -31,15 +30,21 @@ public class DisabledUsers {
         if (properties == null) return;
         KeycloakUtilsImpl keycloakUtils = new KeycloakUtilsImpl(properties);
 
-        try {
-            final List<UserRepresentation> disabledUsers = keycloakUtils.getDisabledUsers(10,10, false);
-            for (UserRepresentation user : disabledUsers) {
-                System.out.println(String.format("email: %s, id: %s, enabled:%s", user.getEmail(), user.getId(), user.isEnabled()));
-            }
+        File exportDir = new File(properties.getProperty("exportDir"));
 
+        if (!exportDir.exists() && !exportDir.mkdirs()){
+            throw new RuntimeException(String.format("failed to create exportDir %s", exportDir.getAbsolutePath()));
+        }
+
+        File exportFile = new File(exportDir, "exportedDisabledUsers.csv");
+        if (exportFile.exists()) exportFile.renameTo(new File(exportDir, System.currentTimeMillis() + exportFile.getName()));
+        try(BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(exportFile)))) {
+            keycloakUtils.exportDisabledUsers(bw);
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+
     }
 
     private static String getIdpLink(String id, KeycloakUtilsImpl keycloakUtils) throws IOException {
