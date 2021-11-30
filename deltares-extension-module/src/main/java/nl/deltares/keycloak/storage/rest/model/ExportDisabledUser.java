@@ -13,6 +13,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.TimeZone;
 
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.getEntityManager;
 
@@ -40,6 +41,7 @@ public class ExportDisabledUser implements ExportCsvContent {
         this.session = session;
         this.disabledAfterMillis = disabledAfterMillis == null ? Long.MIN_VALUE : disabledAfterMillis;
         this.disabledBeforeMillis = disabledBeforeMillis == null ? Long.MAX_VALUE: disabledBeforeMillis;
+        this.dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
     }
 
     public void setMaxResults(int maxResults) {
