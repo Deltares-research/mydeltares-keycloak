@@ -3,22 +3,13 @@
     <#if section = "header">
         ${msg("emailForgotTitle")}
     <#elseif section = "form">
-        <div class="alert alert-error" id="validateId" style="display: none">
-            <span class="kc-feedback-text">${msg("deltaresPasswordResetNotAllowed")}</span>
-        </div>
-<!--        <form id="kc-reset-password-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post"> -->
-        <form id="kc-reset-password-form" class="${properties.kcFormClass!}" action="${url.loginAction}"  onsubmit="return validateForm()" method="post">
+        <form id="kc-reset-password-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
                     <label for="username" class="${properties.kcLabelClass!}"><#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if></label>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
-                    <#if auth?has_content && auth.showUsername()>
-                        <input type="text" id="username" name="username" class="${properties.kcInputClass!}" autofocus value="${auth.attemptedUsername}" aria-invalid="<#if messagesPerField.existsError('username')>true</#if>"/>
-                    <#else>
-                        <input type="text" id="username" name="username" class="${properties.kcInputClass!}" autofocus aria-invalid="<#if messagesPerField.existsError('username')>true</#if>"/>
-                    </#if>
-
+                    <input type="text" id="username" name="username" class="${properties.kcInputClass!}" autofocus value="${(auth.attemptedUsername!'')}" aria-invalid="<#if messagesPerField.existsError('username')>true</#if>"/>
                     <#if messagesPerField.existsError('username')>
                         <span id="input-error-username" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
                                     ${kcSanitize(messagesPerField.get('username'))?no_esc}

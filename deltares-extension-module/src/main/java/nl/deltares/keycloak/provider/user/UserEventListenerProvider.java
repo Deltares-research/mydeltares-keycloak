@@ -10,8 +10,8 @@ import org.keycloak.models.*;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Set;
 import java.util.TimeZone;
+import java.util.stream.Stream;
 
 /**
  * Event listener listens to Keycloak events. Configure the event listener in the keycloak admin console of the
@@ -52,10 +52,9 @@ public class UserEventListenerProvider implements EventListenerProvider {
 
         logger.info("Removing user from groups: " + updatedUser.getEmail());
         //Remove user from all groups. This disables any SVN privileges
-        final Set<GroupModel> groups = updatedUser.getGroups();
-        for (GroupModel group : groups) {
-            updatedUser.leaveGroup(group);
-        }
+        final Stream<GroupModel> groupsStream = updatedUser.getGroupsStream();
+        groupsStream.forEach(updatedUser::leaveGroup);
+
     }
 
     private UserModel getUpdatedUser(AdminEvent event) {
@@ -68,7 +67,7 @@ public class UserEventListenerProvider implements EventListenerProvider {
         } else {
             userId = split[0];
         }
-        return session.users().getUserById(userId, realm);
+        return session.users().getUserById(realm, userId);
     }
 
     @Override

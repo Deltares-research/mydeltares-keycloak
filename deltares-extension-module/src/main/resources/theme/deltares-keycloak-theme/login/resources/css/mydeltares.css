@@ -1,0 +1,57 @@
+.navbar-header {
+    float: unset
+}
+
+.navbar-title{
+    font-size: 48px;
+    font-weight: inherit;
+    margin-top:0;
+    color: #080C80;
+    text-transform: none;
+}
+
+.login-pf body {
+    background: url("../img/bg-login.png") no-repeat center center fixed;
+    background-size: cover;
+    height: 100%;
+}
+
+.pf-c-form__label-text {
+    font-size: 14px
+
+}
+
+.login-pf-header h1 {
+    font-weight: normal;
+    font-size: 24px;
+    color: #080C80;
+}
+
+.login-pf a:hover {
+    color: #080C80;
+}
+
+a {
+    color: #080C80;
+    text-decoration: none;
+}
+
+.pf-c-button.pf-m-primary {
+    color: #fff;
+    background-color: #080C80;
+}
+
+.pf-c-button.pf-m-primary:hover {
+    background-color: var(--pf-global--primary-color--100);
+}
+
+.form-group.login-pf-settings a{
+    color: #080C80;
+    font-size: 15px;
+}
+
+.kc-social-section.kc-social-gray h1{
+    font-weight: normal;
+    font-size: 24px;
+    color: #080C80;
+}

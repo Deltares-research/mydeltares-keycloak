@@ -1,7 +1,7 @@
 version: '3'
 
 volumes:
-  mysql_data_13:
+  mysql_data_15:
     driver: local
 
 networks:
@@ -21,8 +21,8 @@ services:
       - MYSQL_PASSWORD=password
       - HOSTNAME=mariadb
     volumes:
-      - mysql_data_13:/var/lib/mysql
-#      - ./resources/dump-keycloak.sql:/docker-entrypoint-initdb.d/dump.sql
+      - mysql_data_15:/var/lib/mysql
+      - ./resources/dump-keycloak.sql:/docker-entrypoint-initdb.d/dump.sql
     restart: always
     command: ['mysqld', '--character-set-server=utf8', '--collation-server=utf8_general_ci']
     networks:
@@ -41,12 +41,14 @@ services:
       - 9990:9990
     volumes:
       - ./keycloak/deployments:/opt/jboss/keycloak/standalone/deployments
+      - ./keycloak/configuration/standalone.xml:/opt/jboss/keycloak/standalone/configruation/standalone.xml
+      - ./keycloak/configuration/standalone-ha.xml:/opt/jboss/keycloak/standalone/configruation/standalone-ha.xml
 #      - ./resources:/opt/jboss/keycloak/resources
     restart: always
     networks:
       - keycloak
     environment:
-      - KEYCLOAK_USER=admin
+      - KEYCLOAK_USER=admin-docker
       - KEYCLOAK_PASSWORD=Pa55w0rd
       - DB_VENDOR=mariadb
       - DB_ADDR=mariadb

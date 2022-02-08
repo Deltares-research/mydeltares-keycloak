@@ -331,17 +331,6 @@ module.factory('ClientOptionalClientScopesLoader', function(Loader, ClientOption
     });
 });
 
-module.factory('ClientRoleListLoader', function(Loader, ClientRole, $route, $q) {
-    return Loader.query(ClientRole, function() {
-        return {
-            realm : $route.current.params.realm,
-            client : $route.current.params.client
-        }
-    });
-});
-
-
-
 module.factory('ClientLoader', function(Loader, Client, $route, $q) {
     return Loader.get(Client, function() {
         return {
@@ -583,8 +572,25 @@ module.factory('ClientRegistrationPolicyProvidersLoader', function(Loader, Clien
     });
 });
 
+module.factory('ClientPoliciesProfilesLoader', function(Loader, ClientPoliciesProfiles, $route , $q) {
+    var clientPoliciesLoader = {};
 
+    clientPoliciesLoader.loadClientProfiles = function(includeGlobalProfiles) {
+        return Loader.get(ClientPoliciesProfiles, function() {
+            return {
+                realm : $route.current.params.realm,
+                includeGlobalProfiles : includeGlobalProfiles
+            }
+        })();
+    };
 
+    return clientPoliciesLoader;
+});
 
-
-
+module.factory('ClientPoliciesLoader', function(Loader, ClientPolicies, $route) {
+    return Loader.get(ClientPolicies, function() {
+        return {
+            realm: $route.current.params.realm
+        }
+    });
+});

@@ -527,6 +527,11 @@ public class MockRealmModel implements RealmModel {
     }
 
     @Override
+    public ParConfig getParPolicy() {
+        return null;
+    }
+
+    @Override
     public Map<String, Integer> getUserActionTokenLifespans() {
         return null;
     }
@@ -688,6 +693,11 @@ public class MockRealmModel implements RealmModel {
 
     @Override
     public Stream<ClientModel> searchClientByClientIdStream(String s, Integer integer, Integer integer1) {
+        return null;
+    }
+
+    @Override
+    public Stream<ClientModel> searchClientByAttributes(Map<String, String> map, Integer integer, Integer integer1) {
         return null;
     }
 
