@@ -93,7 +93,7 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>d:/development/mydeltares/liferay/github/oss-liferay/docker/keycloak/deployments/</outputDirectory>
+                            <outputDirectory>d:/development/mydeltares/liferay/github/oss-liferay-74/docker/keycloak/deployments/</outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>target/</directory>
