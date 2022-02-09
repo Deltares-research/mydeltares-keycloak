@@ -23,12 +23,11 @@
                 ${kcSanitize(msg("acceptSubscriptions"))?no_esc}
             </div>
             <br />
-            <div class="col-md-2 subtitle">
-                <span class="subtitle"><span class="required">*</span> ${msg("requiredFields")}</span>
-            </div>
-            <br />
             <input disabled class="${properties.kcButtonClass!} ${properties.kcButtonSecondaryClass!} ${properties.kcButtonLargeClass!}" name="accept" id="kc-accept" type="submit" value="${msg("doAccept")}"/>
             <input class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!}" name="cancel" id="kc-decline" type="submit" value="${msg("doDecline")}"/>
+            <div class="subtitle">
+                <span class="subtitle"><span class="required">*</span> ${msg("requiredFields")}</span>
+            </div>
         </form>
         <div class="clearfix"></div>
     </#if>

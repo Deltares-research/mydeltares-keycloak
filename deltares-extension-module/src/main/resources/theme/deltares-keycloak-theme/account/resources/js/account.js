@@ -79,6 +79,7 @@ function loadReferrer() {
     if (referrer_name){
         var text = elementById.textContent;
         elementById.textContent = text + ' ' + referrer_name;
+        elementById.display= block;
     }
     var referrer_uri = getCookie("referrer_uri");
     if (referrer_uri){

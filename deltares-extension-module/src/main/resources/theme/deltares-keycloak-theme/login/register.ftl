@@ -6,7 +6,7 @@
         <form id="kc-register-form" class="${properties.kcFormClass!}" action="${url.registrationAction}" method="post">
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="firstName" class="${properties.kcLabelClass!}">${msg("firstName")}</label>
+                    <label for="firstName" class="${properties.kcLabelClass!}">${msg("firstName")}</label><span class="required">*</span>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
                     <input type="text" id="firstName" class="${properties.kcInputClass!}" name="firstName"
@@ -24,7 +24,7 @@
 
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="lastName" class="${properties.kcLabelClass!}">${msg("lastName")}</label>
+                    <label for="lastName" class="${properties.kcLabelClass!}">${msg("lastName")}</label><span class="required">*</span>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
                     <input type="text" id="lastName" class="${properties.kcInputClass!}" name="lastName"
@@ -42,7 +42,7 @@
 
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="email" class="${properties.kcLabelClass!}">${msg("email")}</label>
+                    <label for="email" class="${properties.kcLabelClass!}">${msg("email")}</label><span class="required">*</span>
                 </div>
                 <div class="${properties.kcInputWrapperClass!}">
                     <input type="text" id="email" class="${properties.kcInputClass!}" name="email"
@@ -81,7 +81,7 @@
             <#if passwordRequired??>
                 <div class="${properties.kcFormGroupClass!}">
                     <div class="${properties.kcLabelWrapperClass!}">
-                        <label for="password" class="${properties.kcLabelClass!}">${msg("password")}</label>
+                        <label for="password" class="${properties.kcLabelClass!}">${msg("password")}</label><span class="required">*</span>
                     </div>
                     <div class="${properties.kcInputWrapperClass!}">
                         <input type="password" id="password" class="${properties.kcInputClass!}" name="password"
@@ -100,7 +100,7 @@
                 <div class="${properties.kcFormGroupClass!}">
                     <div class="${properties.kcLabelWrapperClass!}">
                         <label for="password-confirm"
-                               class="${properties.kcLabelClass!}">${msg("passwordConfirm")}</label>
+                               class="${properties.kcLabelClass!}">${msg("passwordConfirm")}</label><span class="required">*</span>
                     </div>
                     <div class="${properties.kcInputWrapperClass!}">
                         <input type="password" id="password-confirm" class="${properties.kcInputClass!}"
@@ -136,6 +136,12 @@
                     <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doRegister")}"/>
                 </div>
             </div>
+
+            <div>
+                   <span class="subtitle"><span class="required">*</span> ${msg("requiredFields")}</span>
+            </div>
         </form>
+    <#elseif section = "info" >
+        ${msg("registerWelcome")}
     </#if>
 </@layout.registrationLayout>

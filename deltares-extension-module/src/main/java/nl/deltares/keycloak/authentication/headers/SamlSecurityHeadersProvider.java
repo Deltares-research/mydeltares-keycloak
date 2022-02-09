@@ -35,7 +35,7 @@ public class SamlSecurityHeadersProvider extends DefaultSecurityHeadersProvider 
     }
 
     /**
-     * Replace the default Refferrer Policy from 'no-referres' to 'strict-origin-when-cross-origin'.
+     * Replace the default Referrer Policy from 'no-referres' to 'strict-origin-when-cross-origin'.
      * <p>
      * Do this only for the SAML logins.
      *

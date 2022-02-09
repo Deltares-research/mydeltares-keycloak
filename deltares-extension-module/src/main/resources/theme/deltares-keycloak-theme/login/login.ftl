@@ -63,29 +63,31 @@
                   </div>
             </form>
         </#if>
+          <#if realm.password && social.providers??>
+              <div id="kc-social-providers" class="${properties.kcFormSocialAccountSectionClass!}">
+                  <hr/>
+                  <h1>${msg("loginDeltaresAccountTitle")}</h1>
+                  <h3>${msg("deltaresLogin")}</h3>
+                  <ul class="${properties.kcFormSocialAccountListClass!} <#if social.providers?size gt 3>${properties.kcFormSocialAccountListGridClass!}</#if>">
+                      <#list social.providers as p>
+                          <a id="social-${p.alias}" class="${properties.kcFormSocialAccountListButtonClass!} <#if social.providers?size gt 3>${properties.kcFormSocialAccountGridItem!}</#if>"
+                             type="button" href="${p.loginUrl}">
+                              <#if p.iconClasses?has_content>
+                                  <i class="${properties.kcCommonLogoIdP!} ${p.iconClasses!}" aria-hidden="true"></i>
+                                  <span class="${properties.kcFormSocialAccountNameClass!} kc-social-icon-text">${p.displayName!}</span>
+                              <#else>
+                                  <span class="${properties.kcFormSocialAccountNameClass!}">${p.displayName!}</span>
+                              </#if>
+                          </a>
+                      </#list>
+                  </ul>
+              </div>
+          </#if>
+
         </div>
     </div>
     <#elseif section = "info" >
-        <#if realm.password && social.providers??>
-            <div id="kc-social-providers" class="${properties.kcFormSocialAccountSectionClass!}">
-                <hr/>
-                <h1>${msg("deltaresLogin")}</h1>
 
-                <ul class="${properties.kcFormSocialAccountListClass!} <#if social.providers?size gt 3>${properties.kcFormSocialAccountListGridClass!}</#if>">
-                    <#list social.providers as p>
-                        <a id="social-${p.alias}" class="${properties.kcFormSocialAccountListButtonClass!} <#if social.providers?size gt 3>${properties.kcFormSocialAccountGridItem!}</#if>"
-                           type="button" href="${p.loginUrl}">
-                            <#if p.iconClasses?has_content>
-                                <i class="${properties.kcCommonLogoIdP!} ${p.iconClasses!}" aria-hidden="true"></i>
-                                <span class="${properties.kcFormSocialAccountNameClass!} kc-social-icon-text">${p.displayName!}</span>
-                            <#else>
-                                <span class="${properties.kcFormSocialAccountNameClass!}">${p.displayName!}</span>
-                            </#if>
-                        </a>
-                    </#list>
-                </ul>
-            </div>
-        </#if>
 
     </#if>
 

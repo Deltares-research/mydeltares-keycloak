@@ -162,6 +162,8 @@
 
         <img src="${avatarUrl}" style="max-width:100px"
              onerror="if (this.src != '${errorImg}') this.src = '${errorImg}';"/>
+
+        <label for="avatar" class="avatar-button">${msg("upload")}</label>
         <input type="file" id="avatar" name="image" onchange="checkFileSize();">
 
         <input type="hidden" name="stateChecker" value="${stateChecker}">
