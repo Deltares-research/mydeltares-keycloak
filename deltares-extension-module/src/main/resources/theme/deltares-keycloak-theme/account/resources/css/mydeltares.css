@@ -25,7 +25,6 @@ body{
 .referrer {
     float: left;
     padding: 10px;
-    display: none;
 }
 
 .navbar-pf .navbar-utility > li > a {

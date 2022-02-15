@@ -26,6 +26,7 @@ import org.keycloak.forms.account.AccountProvider;
 import org.keycloak.forms.account.freemarker.Templates;
 import org.keycloak.forms.account.freemarker.model.*;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
@@ -88,7 +89,7 @@ public class FreeMarkerAccountProvider extends org.keycloak.forms.account.freema
         if (referrer == null){
             referrer = new String[2];
         }
-        for (Map.Entry<String, List<String>> e : uriInfo.getQueryParameters().entrySet()) {
+        for (Map.Entry<String, List<String>> e : ((KeycloakUriInfo) uriInfo).getDelegate().getQueryParameters().entrySet()) {
             Object[] values = e.getValue().toArray();
             baseUriBuilder.queryParam(e.getKey(), values);
             if (e.getKey().equals("referrer") && values.length > 0) referrer[0] = (String) values[0];

@@ -52,7 +52,7 @@
             <div class="navbar-collapse navbar-collapse-1">
                 <div class="container">
                     <div class="sign-out"><a href="${url.logoutUrl}">${msg("doSignOut")}</a></div>
-                    <div class="referrer"><a id="backPage" href="#">${msg("back")}</a></div>
+                    <div class="referrer"><a id="backPage" href="#" style="display: none">${msg("back")}</a></div>
 
                     <ul class="nav navbar-nav navbar-utility">
 

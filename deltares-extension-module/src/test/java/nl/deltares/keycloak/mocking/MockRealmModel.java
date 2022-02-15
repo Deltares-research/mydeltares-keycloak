@@ -1272,7 +1272,7 @@ public class MockRealmModel implements RealmModel {
     }
 
     @Override
-    public void patchRealmLocalizationTexts(String s, Map<String, String> map) {
+    public void createOrUpdateRealmLocalizationTexts(String s, Map<String, String> map) {
 
     }
 
@@ -1294,6 +1294,11 @@ public class MockRealmModel implements RealmModel {
     @Override
     public Stream<ClientScopeModel> getDefaultClientScopesStream(boolean b) {
         return null;
+    }
+
+    @Override
+    public void addToDefaultRoles(RoleModel role) {
+        RealmModel.super.addToDefaultRoles(role);
     }
 
     @Override

@@ -1,5 +1,5 @@
 <#import "template.ftl" as layout>
-<@layout.registrationLayout displayMessage=!messagesPerField.existsError('username','password') displayInfo=realm.password && realm.registrationAllowed && !registrationDisabled??; section>
+<@layout.registrationLayout displayMessage=!messagesPerField.existsError('username','password') displayInfo=false; section>
     <#if section = "header">
         ${msg("loginAccountTitle")}
     <#elseif section = "form">
@@ -66,8 +66,8 @@
           <#if realm.password && social.providers??>
               <div id="kc-social-providers" class="${properties.kcFormSocialAccountSectionClass!}">
                   <hr/>
-<#--                  <h1>${msg("loginDeltaresAccountTitle")}</h1>-->
-                  <h2>${msg("deltaresLogin")}</h2>
+                  <h1>${msg("loginDeltaresAccountTitle")}</h1>
+                  ${msg("deltaresLogin")}
                   <ul class="${properties.kcFormSocialAccountListClass!} <#if social.providers?size gt 3>${properties.kcFormSocialAccountListGridClass!}</#if>">
                       <#list social.providers as p>
                           <a id="social-${p.alias}" class="${properties.kcFormSocialAccountListButtonClass!} <#if social.providers?size gt 3>${properties.kcFormSocialAccountGridItem!}</#if>"
@@ -86,6 +86,8 @@
 
         </div>
     </div>
+    <#elseif section = "info" >
+
     </#if>
 
 </@layout.registrationLayout>

@@ -312,7 +312,7 @@ public class UserMailingResource {
     }
 
     private boolean isInitAccount() {
-        List<PathSegment> pathSegments = request.getUri().getPathSegments();
+        List<PathSegment> pathSegments = session.getContext().getUri().getPathSegments();
         for (PathSegment pathSegment : pathSegments) {
             if (pathSegment.getPath().equals("mailings-page") || pathSegment.getPath().equals("unsubscribe")) return true;
         }
