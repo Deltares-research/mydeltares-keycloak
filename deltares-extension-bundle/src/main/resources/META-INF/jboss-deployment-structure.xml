@@ -3,7 +3,7 @@
     <deployment>
         <module-alias name="deployment.deltares-extension-bundle"/>
     </deployment>
-    <sub-deployment name="nl.deltares.keycloak-deltares-extension-module-1.0.jar">
+    <sub-deployment name="nl.deltares.keycloak-deltares-extension-module-2.0.jar">
         <dependencies>
             <module name="javax.servlet.api"/>
             <module name="javax.ws.rs.api"/>

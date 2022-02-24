@@ -82,12 +82,6 @@ public class ExportUserAttributes implements ExportCsvContent {
     }
 
     @Override
-    protected void finalize() throws Throwable {
-        close();
-        super.finalize();
-    }
-
-    @Override
     public boolean hasNextRow() {
 
         if (query == null) initialize();

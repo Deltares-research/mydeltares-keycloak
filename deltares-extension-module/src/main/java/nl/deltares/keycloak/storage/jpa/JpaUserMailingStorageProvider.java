@@ -9,7 +9,7 @@ public class JpaUserMailingStorageProvider implements JpaEntityProvider {
 
     @Override
     public List<Class<?>> getEntities() {
-        return Collections.<Class<?>>singletonList(UserMailing.class);
+        return Collections.singletonList(UserMailing.class);
     }
 
     @Override

@@ -156,7 +156,7 @@ public class UserMailingResource {
         logger.infof("Updating mailing %s for user %s.", rep.getMailingId(), userId);
 
         getEntityManager(session).persist(mailing);
-        return Response.ok().build();
+        return Response.ok().type(MediaType.TEXT_PLAIN).build();
 
     }
 
@@ -186,7 +186,7 @@ public class UserMailingResource {
 
         logger.info("Delete mailing : " + mailingId);
         getEntityManager(session).remove(mailing);
-        return Response.ok().build();
+        return Response.ok().type(MediaType.TEXT_PLAIN).build();
     }
 
     @GET
@@ -312,7 +312,7 @@ public class UserMailingResource {
     }
 
     private boolean isInitAccount() {
-        List<PathSegment> pathSegments = request.getUri().getPathSegments();
+        List<PathSegment> pathSegments = session.getContext().getUri().getPathSegments();
         for (PathSegment pathSegment : pathSegments) {
             if (pathSegment.getPath().equals("mailings-page") || pathSegment.getPath().equals("unsubscribe")) return true;
         }
@@ -321,7 +321,7 @@ public class UserMailingResource {
 
     private void initApi(){
         ResteasyProviderFactory.getInstance().injectProperties(this);
-        authResult = getAuthResult(session, httpHeaders, connection);
+        authResult = getAuthResult(session, httpHeaders);
         realm = session.getContext().getRealm();
     }
 

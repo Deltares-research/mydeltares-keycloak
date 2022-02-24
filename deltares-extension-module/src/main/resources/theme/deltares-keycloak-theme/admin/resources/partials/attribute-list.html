@@ -6,7 +6,7 @@
         <div class="form-group clearfix">
             <label class="col-md-2 control-label" for="exportAttributes"><span class="required">*</span> {{:: 'attribute-label' | translate}}</label>
             <div class="col-md-6">
-                <input class="form-control" id="exportAttributes" type="text" ng-model="query.search" placeholder="{{:: 'attribute-hint' | translate}}" required>
+                <input class="form-control" id="exportAttributes" type="text" data-ng-model="query.search" placeholder="{{:: 'attribute-hint' | translate}}" required>
             </div>
             <div class="col-sm-4">
                 <a class="btn btn-primary" data-ng-click="exportUserAttributes()">{{:: 'attribute-export' | translate}}</a>

@@ -3,7 +3,6 @@ package nl.deltares.keycloak.storage.rest;
 import nl.deltares.keycloak.storage.jpa.Mailing;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.managers.AuthenticationManager;
 
@@ -27,16 +26,13 @@ public class MailingResource {
     @Context
     private HttpHeaders httpHeaders;
 
-    @Context
-    private ClientConnection clientConnection;
-
     MailingResource(KeycloakSession session) {
         this.session = session;
     }
 
     public void init() {
         ResteasyProviderFactory.getInstance().injectProperties(this);
-        authResult = getAuthResult(session, httpHeaders, clientConnection);
+        authResult = getAuthResult(session, httpHeaders);
     }
 
     @Path("/admin")

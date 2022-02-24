@@ -68,6 +68,7 @@ public class MailingRepresentation {
         return Mailing.frequencies.get(frequency);
     }
 
+    @SuppressWarnings("unused")
     public void setFrequencyTxt(String frequencies) {
         int frequency = Mailing.frequencies.indexOf(frequencies);
         this.frequency = frequency == -1 ? 4 : frequency;
@@ -81,13 +82,16 @@ public class MailingRepresentation {
         return delivery;
     }
 
+    @SuppressWarnings("unused")
     public String getDeliveryTxt() {
         return Mailing.deliveries.get(delivery);
     }
 
+    @SuppressWarnings("unused")
     public String getPreferredDeliveryTxt(){
         return Mailing.frequencies.get(Mailing.getPreferredMailingDelivery());
     }
+    @SuppressWarnings("unused")
     public void setDeliveryTxt(String deliveryTxt) {
         int delivery = Mailing.deliveries.indexOf(deliveryTxt);
         this.delivery = delivery == -1 ? 0 : delivery;
@@ -96,6 +100,7 @@ public class MailingRepresentation {
         this.delivery = delivery;
     }
 
+    @SuppressWarnings("unused")
     public Long getCreatedTimestamp() {
         return createdTimestamp;
     }
@@ -112,6 +117,7 @@ public class MailingRepresentation {
         this.access = access;
     }
 
+    @SuppressWarnings("unused")
     public List<String> getSupportedFrequencies() {
         return new ArrayList<>(Mailing.frequencies);
     }

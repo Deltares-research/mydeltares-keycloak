@@ -4,7 +4,6 @@ import nl.deltares.keycloak.storage.jpa.Avatar;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.RealmsResource;
@@ -26,16 +25,13 @@ public class AvatarResource extends AbstractAvatarResource {
     @Context
     private HttpHeaders httpHeaders;
 
-    @Context
-    private ClientConnection clientConnection;
-
     AvatarResource(KeycloakSession session, Properties properties) {
         super(session, properties);
     }
 
     public void init(){
         ResteasyProviderFactory.getInstance().injectProperties(this);
-        authResult = getAuthResult(session, httpHeaders, clientConnection);
+        authResult = getAuthResult(session, httpHeaders);
     }
 
     @Path("/admin")
@@ -93,7 +89,7 @@ public class AvatarResource extends AbstractAvatarResource {
             UriBuilder builder = RealmsResource.accountUrl(session.getContext().getUri().getBaseUriBuilder());
             return Response.seeOther(builder.build(realmName)).build();
         } catch (MaxSizeExceededException e){
-            return Response.status(Response.Status.REQUEST_ENTITY_TOO_LARGE.getStatusCode(), e.getMessage()).build();
+            return Response.status(Response.Status.REQUEST_ENTITY_TOO_LARGE.getStatusCode(), e.getMessage()).type(MediaType.TEXT_PLAIN).build();
         } catch (Exception ex) {
             return Response.serverError().build();
         }
@@ -110,7 +106,7 @@ public class AvatarResource extends AbstractAvatarResource {
             String realmName = authResult.getSession().getRealm().getId();
             String userId = authResult.getUser().getId();
             deleteAvatarImage(realmName, userId);
-            return Response.ok().build();
+            return Response.ok().type(MediaType.TEXT_PLAIN).build();
         }  catch (Exception ex) {
             return Response.serverError().build();
         }

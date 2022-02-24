@@ -26,7 +26,7 @@ import org.keycloak.forms.account.AccountProvider;
 import org.keycloak.forms.account.freemarker.Templates;
 import org.keycloak.forms.account.freemarker.model.*;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.theme.BrowserSecurityHeaderSetup;
+import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
@@ -89,7 +89,7 @@ public class FreeMarkerAccountProvider extends org.keycloak.forms.account.freema
         if (referrer == null){
             referrer = new String[2];
         }
-        for (Map.Entry<String, List<String>> e : uriInfo.getQueryParameters().entrySet()) {
+        for (Map.Entry<String, List<String>> e : ((KeycloakUriInfo) uriInfo).getDelegate().getQueryParameters().entrySet()) {
             Object[] values = e.getValue().toArray();
             baseUriBuilder.queryParam(e.getKey(), values);
             if (e.getKey().equals("referrer") && values.length > 0) referrer[0] = (String) values[0];
@@ -161,7 +161,6 @@ public class FreeMarkerAccountProvider extends org.keycloak.forms.account.freema
         try {
             String result = freeMarker.processTemplate(attributes, templateName, theme);
             Response.ResponseBuilder builder = Response.status(status).type(MediaType.TEXT_HTML_UTF_8_TYPE).language(locale).entity(result);
-            BrowserSecurityHeaderSetup.headers(builder, realm);
             return builder.build();
         } catch (FreeMarkerException e) {
             logger.error("Failed to process template", e);
@@ -169,6 +168,7 @@ public class FreeMarkerAccountProvider extends org.keycloak.forms.account.freema
         }
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public AccountProvider setMailings(List<UserMailingRepresentation> userMailings, List<MailingRepresentation> mailings) {
         if (super.attributes == null) super.attributes = new HashMap<>();
         super.attributes.put("mailings" , new UserMailingsBean(userMailings, mailings));

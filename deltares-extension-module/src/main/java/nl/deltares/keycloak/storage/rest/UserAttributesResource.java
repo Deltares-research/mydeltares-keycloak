@@ -3,7 +3,6 @@ package nl.deltares.keycloak.storage.rest;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.forms.account.AccountProvider;
@@ -12,8 +11,12 @@ import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import javax.ws.rs.ForbiddenException;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.Path;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.PathSegment;
 import java.util.List;
 import java.util.Properties;
 
@@ -26,15 +29,11 @@ public class UserAttributesResource {
     private final AppAuthManager authManager;
 
     private AuthenticationManager.AuthResult authResult;
-    private AccountProvider account;
     private RealmModel realm;
     private final Properties properties;
 
     @Context
     private HttpHeaders httpHeaders;
-
-    @Context
-    private ClientConnection connection;
 
     @Context
     protected HttpRequest request;
@@ -66,7 +65,7 @@ public class UserAttributesResource {
     }
 
     private boolean isInitAccount() {
-        List<PathSegment> pathSegments = request.getUri().getPathSegments();
+        List<PathSegment> pathSegments = session.getContext().getUri().getPathSegments();
         for (PathSegment pathSegment : pathSegments) {
             if (pathSegment.getPath().equals("mailings-page")) return true;
         }
@@ -75,7 +74,7 @@ public class UserAttributesResource {
 
     private void initApi(){
         ResteasyProviderFactory.getInstance().injectProperties(this);
-        authResult = getAuthResult(session, httpHeaders, connection);
+        authResult = getAuthResult(session, httpHeaders);
         realm = session.getContext().getRealm();
     }
 
@@ -99,7 +98,7 @@ public class UserAttributesResource {
             }
         }
 
-        account = session.getProvider(AccountProvider.class).setRealm(realm).setUriInfo(session.getContext().getUri()).setHttpHeaders(httpHeaders);
+        AccountProvider account = session.getProvider(AccountProvider.class).setRealm(realm).setUriInfo(session.getContext().getUri()).setHttpHeaders(httpHeaders);
         account.setReferrer(ResourceUtils.getReferrer(session));
         authResult = authManager.authenticateIdentityCookie(session, realm);
         if (authResult != null) {

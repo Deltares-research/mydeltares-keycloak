@@ -3,7 +3,6 @@ package nl.deltares.keycloak.storage.rest;
 import nl.deltares.keycloak.storage.jpa.Mailing;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -35,9 +34,6 @@ public class MailingAdminResource {
     @Context
     private HttpHeaders httpHeaders;
 
-    @Context
-    private ClientConnection clientConnection;
-
     private AdminAuth adminAuth;
     private RealmModel callerRealm;
 
@@ -46,7 +42,8 @@ public class MailingAdminResource {
     }
 
     public void init() {
-        Auth auth = getAuth(httpHeaders, session, clientConnection);
+        Auth auth = getAuth(httpHeaders, session);
+        assert auth != null;
         this.adminAuth = new AdminAuth(auth.getRealm(), auth.getToken(), auth.getUser(), auth.getClient());
         realmAuth = AdminPermissions.evaluator(session, this.adminAuth.getRealm(), this.adminAuth);
 
@@ -89,7 +86,7 @@ public class MailingAdminResource {
 
         logger.info("Updating mailing : " + rep.getName());
         getEntityManager(session).persist(mailing);
-        return Response.ok().build();
+        return Response.ok().type(MediaType.TEXT_PLAIN).build();
     }
 
     @DELETE
@@ -106,7 +103,7 @@ public class MailingAdminResource {
 
         logger.info("Delete mailing : " + mailingId);
         getEntityManager(session).remove(mailing);
-        return Response.ok().build();
+        return Response.ok().type(MediaType.TEXT_PLAIN).build();
     }
 
     /**

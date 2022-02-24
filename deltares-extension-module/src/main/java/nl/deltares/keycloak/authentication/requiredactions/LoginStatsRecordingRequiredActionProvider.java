@@ -1,7 +1,6 @@
 package nl.deltares.keycloak.authentication.requiredactions;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
@@ -12,7 +11,8 @@ import org.keycloak.models.UserModel;
 
 import java.time.ZoneId;
 import java.util.Collections;
-import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 import static java.time.LocalDateTime.now;
 
@@ -34,43 +34,28 @@ public class LoginStatsRecordingRequiredActionProvider  implements RequiredActio
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
         UserModel user = context.getUser();
-        String referrer = getReferrer(context);
+        String clientId = getClientId(context);
         try {
-            recordFirstLogin(referrer, user);
+            recordFirstLogin(clientId, user);
         } catch (Exception ex) {
             LOG.warnv(ex,"Couldn't record first login <{0}>", this);
         }
 
         try {
-            recordRecentLogin(referrer, user);
+            recordRecentLogin(clientId, user);
         } catch (Exception ex) {
             LOG.warnv(ex, "Couldn't record recent login <{0}>", this);
         }
 
         try {
-            recordLoginCount(referrer, user);
+            recordLoginCount(clientId, user);
         } catch (Exception ex) {
             LOG.warnv(ex, "Couldn't record login count <{0}>", this);
         }
     }
 
-    private String getReferrer(RequiredActionContext context) {
-        HttpRequest httpRequest = context.getHttpRequest();
-        if (httpRequest == null) return null;
-        String headerString = httpRequest.getHttpHeaders().getHeaderString("Referer");
-        if (headerString == null) return null;
-        int startIndex = headerString.indexOf("client_id");
-        if (startIndex < 0) return null;
-        String substring = headerString.substring(startIndex);
-        String[] params = substring.split("&");
-        for (String param : params) {
-            if (param.startsWith("client_id")) {
-                String[] keyValue = param.split("=");
-                if (keyValue.length > 1)
-                    return keyValue[1];
-            }
-        }
-        return null;
+    private String getClientId(RequiredActionContext context) {
+        return context.getAuthenticationSession().getClient().getClientId();
     }
 
     @Override
@@ -85,15 +70,14 @@ public class LoginStatsRecordingRequiredActionProvider  implements RequiredActio
 
     private void recordLoginCount(String referrer, UserModel user) {
         String key = referrer == null ? LOGIN_LOGIN_COUNT : LOGIN_LOGIN_COUNT + '.' + referrer;
-        List<String> list = user.getAttribute(key);
-
-        if (list == null || list.isEmpty()) {
-            list = Collections.singletonList(ONE);
+        Stream<String> stream = user.getAttributeStream(key);
+        final Optional<String> first = stream.findFirst();
+        if (first.isEmpty()) {
+            user.setAttribute(key, Collections.singletonList(ONE));
         } else {
-            list = Collections.singletonList(String.valueOf(Long.parseLong(list.get(0)) + 1));
+            user.setAttribute(key, Collections.singletonList(String.valueOf(Long.parseLong(first.get()) + 1)));
         }
 
-        user.setAttribute(key, list);
     }
 
     private void recordRecentLogin(String referrer, UserModel user) {
@@ -101,11 +85,11 @@ public class LoginStatsRecordingRequiredActionProvider  implements RequiredActio
         user.setAttribute(key, Collections.singletonList(now(ZoneId.of("GMT")).toString()));
     }
 
-    private void recordFirstLogin(String referrer, UserModel user) {
-        String key = referrer == null ? LOGIN_FIRST_LOGIN_DATE : LOGIN_FIRST_LOGIN_DATE + '.' + referrer;
-        List<String> list = user.getAttribute(key);
-
-        if (list == null || list.isEmpty()) {
+    private void recordFirstLogin(String clientId, UserModel user) {
+        String key = clientId == null ? LOGIN_FIRST_LOGIN_DATE : LOGIN_FIRST_LOGIN_DATE + '.' + clientId;
+        Stream<String> stream = user.getAttributeStream(key);
+        final Optional<String> first = stream.findFirst();
+        if (first.isEmpty()) {
             user.setAttribute(key, Collections.singletonList(now(ZoneId.of("GMT")).toString()));
         }
     }

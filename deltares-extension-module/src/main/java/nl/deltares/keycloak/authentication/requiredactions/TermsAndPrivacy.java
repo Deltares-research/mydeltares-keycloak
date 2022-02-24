@@ -20,17 +20,13 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.getEntityManager;
 
 public class TermsAndPrivacy  implements RequiredActionProvider, RequiredActionFactory, DisplayTypeRequiredActionFactory {
     private static final Logger logger = Logger.getLogger(TermsAndPrivacy.class);
-
-
-    public static final String PROVIDER_ID = "terms_and_privacy";
-    public static final String USER_ATTRIBUTE = "terms_and_privacy";
 
     public TermsAndPrivacy() {
     }
@@ -73,7 +69,7 @@ public class TermsAndPrivacy  implements RequiredActionProvider, RequiredActionF
             context.getUser().removeAttribute("terms_and_conditions");
             context.failure();
         } else {
-            context.getUser().setAttribute("terms_and_conditions", Arrays.asList(Integer.toString(Time.currentTime())));
+            context.getUser().setAttribute("terms_and_conditions", Collections.singletonList(Integer.toString(Time.currentTime())));
             context.success();
             if (isAccepted("acceptSubscriptions", decodedFormParameters)){
                 enableSubscriptions(context.getUser(), context.getRealm(), context.getSession());

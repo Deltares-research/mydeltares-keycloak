@@ -1,6 +1,7 @@
 package scripting;
 
 import nl.deltares.keycloak.utils.KeycloakUtilsImpl;
+import org.keycloak.representations.idm.UserRepresentation;
 
 import java.io.*;
 import java.util.Properties;
@@ -36,13 +37,19 @@ public class DeleteUsers {
             try (BufferedReader reader = new BufferedReader(new FileReader(usersFile))) {
                 String line = reader.readLine();
                 while (line != null) {
-                    String userId = line.trim();
+                    String email = line.trim();
+                    final UserRepresentation userRep;
                     try {
-                        keycloakUtils.deleteUser(userId);
-                        writeResults(bw, userId, "success");
-                    } catch (IOException e) {
+                         userRep = keycloakUtils.getUserByEmail(email);
+                         if (userRep != null){
+                             keycloakUtils.deleteUser(userRep.getId());
+                             writeResults(bw, email, "success");
+                         } else {
+                             writeResults(bw, email, "user not found");
+                         }
+                    } catch (IOException e){
                         System.out.println(e.getMessage());
-                        writeResults(bw, userId, "error");
+                        writeResults(bw, email, "error");
                     }
                     line = reader.readLine();
                 }

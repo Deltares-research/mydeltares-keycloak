@@ -4,7 +4,6 @@ import nl.deltares.keycloak.storage.jpa.Avatar;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -31,9 +30,6 @@ public class AvatarAdminResource extends AbstractAvatarResource {
     @Context
     private HttpHeaders httpHeaders;
 
-    @Context
-    private ClientConnection clientConnection;
-
     private AdminAuth adminAuth;
     //Realm from request path
     private RealmModel callerRealm;
@@ -45,7 +41,7 @@ public class AvatarAdminResource extends AbstractAvatarResource {
     public void init() {
         RealmModel realm = session.getContext().getRealm();
         if (realm == null) throw new NotFoundException("Realm not found.");
-        Auth auth = getAuth(httpHeaders, session, clientConnection);
+        Auth auth = getAuth(httpHeaders, session);
         adminAuth = new AdminAuth(auth.getRealm(), auth.getToken(), auth.getUser(), auth.getClient());
         realmAuth = AdminPermissions.evaluator(session, realm, adminAuth);
         session.getContext().setRealm(realm);
@@ -64,7 +60,7 @@ public class AvatarAdminResource extends AbstractAvatarResource {
 //                logger.info("No avatar exists for user " + userId);
                 return Response.status(Response.Status.NO_CONTENT).build();
             }
-            UserModel user = session.users().getUserById(userId, callerRealm);
+            UserModel user = session.users().getUserById(callerRealm, userId);
             if (user == null) throw new NotFoundException("User not found for id " + userId);
 
             return Response.ok(avatar.getAvatar(), avatar.getContentType())
@@ -100,7 +96,7 @@ public class AvatarAdminResource extends AbstractAvatarResource {
             return Response.serverError().entity(e.getMessage()).build();
         }
 
-        return Response.ok().build();
+        return Response.ok().type(MediaType.TEXT_PLAIN).build();
     }
 
     @DELETE
@@ -122,7 +118,7 @@ public class AvatarAdminResource extends AbstractAvatarResource {
             return Response.serverError().entity(e.getMessage()).build();
         }
 
-        return Response.ok().build();
+        return Response.ok().type(MediaType.TEXT_PLAIN).build();
     }
 
 
@@ -139,10 +135,10 @@ public class AvatarAdminResource extends AbstractAvatarResource {
         String realmId = callerRealm.getId();
         UserModel user;
         if (username != null) {
-             user = session.users().getUserByUsername(username, callerRealm);
+             user = session.users().getUserByUsername(callerRealm, username);
             if (user == null) throw new NotFoundException("User not found for username " + username);
         } else if (email != null) {
-            user = session.users().getUserByEmail(email, callerRealm);
+            user = session.users().getUserByEmail(callerRealm, email);
             if (user == null) throw new NotFoundException("User not found for email " + email);
         } else {
             throw new IllegalArgumentException("no filter parameters defined!");

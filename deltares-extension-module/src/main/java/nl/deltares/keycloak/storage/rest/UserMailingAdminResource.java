@@ -8,7 +8,6 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -50,9 +49,6 @@ public class UserMailingAdminResource {
     @Context
     private HttpHeaders httpHeaders;
 
-    @Context
-    private ClientConnection clientConnection;
-
     //Realm from request path
     private RealmModel callerRealm;
     private boolean cacheExport;
@@ -65,7 +61,8 @@ public class UserMailingAdminResource {
     public void init() {
         RealmModel realm = session.getContext().getRealm();
         if (realm == null) throw new NotFoundException("Realm not found.");
-        Auth auth = getAuth(httpHeaders, session, clientConnection);
+        Auth auth = getAuth(httpHeaders, session);
+        assert auth != null;
         AdminAuth adminAuth = new AdminAuth(auth.getRealm(), auth.getToken(), auth.getUser(), auth.getClient());
         realmAuth = AdminPermissions.evaluator(session, realm, adminAuth);
         session.getContext().setRealm(realm);
@@ -85,7 +82,7 @@ public class UserMailingAdminResource {
     public Response getUserMailings(final @QueryParam("email") String email) {
 
         realmAuth.users().requireQuery();
-        UserModel userByEmail = session.users().getUserByEmail(email, callerRealm);
+        UserModel userByEmail = session.users().getUserByEmail(callerRealm, email);
         if (userByEmail == null){
             return Response.status(Response.Status.BAD_REQUEST).entity("user does not exist for email: " + email).build();
         }
@@ -105,7 +102,7 @@ public class UserMailingAdminResource {
                                                 final @QueryParam("email") String email ){
 
         realmAuth.users().requireManage();
-        UserModel userByEmail = session.users().getUserByEmail(email, callerRealm);
+        UserModel userByEmail = session.users().getUserByEmail(callerRealm, email);
         if (userByEmail == null){
             return Response.status(Response.Status.BAD_REQUEST).entity("user does not exist for email: " + email).build();
         }
@@ -116,7 +113,7 @@ public class UserMailingAdminResource {
         }
         logger.info("Delete mailing : " + mailingId);
         getEntityManager(session).remove(userMailing);
-        return Response.ok().entity("user unsubscribed for mailing").build();
+        return Response.ok().type(MediaType.TEXT_PLAIN).entity("user unsubscribed for mailing").build();
     }
 
     @PUT
@@ -125,7 +122,7 @@ public class UserMailingAdminResource {
                                                 final @QueryParam("email") String email ){
 
         realmAuth.users().requireManage();
-        UserModel userByEmail = session.users().getUserByEmail(email, callerRealm);
+        UserModel userByEmail = session.users().getUserByEmail(callerRealm,email);
         if (userByEmail == null){
             return Response.status(Response.Status.BAD_REQUEST).entity("user does not exist for email: " + email).build();
         }
@@ -134,7 +131,7 @@ public class UserMailingAdminResource {
             return Response.ok().entity("user already subscribed for mailing").build();
         }
         insertNewUserMailing(callerRealm.getId(), mailingId, userByEmail.getId());
-        return Response.ok().entity("user subscribed for mailing").build();
+        return Response.ok().type(MediaType.TEXT_PLAIN).entity("user subscribed for mailing").build();
     }
 
     @GET
@@ -167,7 +164,7 @@ public class UserMailingAdminResource {
             logger.error("error importing user mailings", e);
             return Response.serverError().entity(e.getMessage()).build();
         }
-        return Response.ok().build();
+        return Response.ok().type(MediaType.TEXT_PLAIN).build();
     }
 
     private int importUserMailings(String realmId, String mailingId, MultipartFormDataInput input) throws IOException {
