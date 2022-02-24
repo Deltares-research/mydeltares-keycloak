@@ -93,6 +93,24 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
+                            <outputDirectory>d:/development/mydeltares/liferay/github/oss-liferay/docker/keycloak/deployments/</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>target/</directory>
+                                    <includes>
+                                        <include>deltares-extension-bundle-${project.version}.ear</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-ear-liferay74-docker</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
                             <outputDirectory>d:/development/mydeltares/liferay/github/oss-liferay-74/docker/keycloak/deployments/</outputDirectory>
                             <resources>
                                 <resource>
