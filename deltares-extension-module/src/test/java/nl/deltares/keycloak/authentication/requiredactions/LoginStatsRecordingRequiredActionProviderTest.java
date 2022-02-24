@@ -28,17 +28,19 @@ public class LoginStatsRecordingRequiredActionProviderTest {
         UserModel user = context.getUser();
 
         long startTime = LocalDateTime.now(ZoneId.of("GMT")).toEpochSecond(ZoneOffset.UTC);
-        String firstLoginDate = user.getFirstAttribute(LoginStatsRecordingRequiredActionProvider.LOGIN_FIRST_LOGIN_DATE);
+
+        final String clientId = context.getAuthenticationSession().getClient().getClientId();
+        String firstLoginDate = user.getFirstAttribute(LoginStatsRecordingRequiredActionProvider.LOGIN_FIRST_LOGIN_DATE + '.' + clientId);
         Assert.assertNotNull(firstLoginDate);
         LocalDateTime dateTime = LocalDateTime.parse(firstLoginDate);
         long timeStamp = dateTime.toEpochSecond(ZoneOffset.UTC);
         Assert.assertEquals(startTime, timeStamp, 10);
 
-        String loginCount = user.getFirstAttribute(LoginStatsRecordingRequiredActionProvider.LOGIN_LOGIN_COUNT);
+        String loginCount = user.getFirstAttribute(LoginStatsRecordingRequiredActionProvider.LOGIN_LOGIN_COUNT + '.' + clientId);
         Assert.assertNotNull(loginCount);
         Assert.assertTrue(Integer.parseInt(loginCount) == 1);
 
-        String recentLoginDate = user.getFirstAttribute(LoginStatsRecordingRequiredActionProvider.LOGIN_RECENT_LOGIN_DATE);
+        String recentLoginDate = user.getFirstAttribute(LoginStatsRecordingRequiredActionProvider.LOGIN_RECENT_LOGIN_DATE + '.' + clientId);
         Assert.assertNotNull(recentLoginDate);
         timeStamp = dateTime.toEpochSecond(ZoneOffset.UTC);
         Assert.assertEquals(startTime, timeStamp, 10);

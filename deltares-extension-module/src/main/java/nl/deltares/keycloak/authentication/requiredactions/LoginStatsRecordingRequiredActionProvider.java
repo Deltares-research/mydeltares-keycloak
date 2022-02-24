@@ -8,6 +8,7 @@ import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import java.time.ZoneId;
 import java.util.Collections;
@@ -55,7 +56,9 @@ public class LoginStatsRecordingRequiredActionProvider  implements RequiredActio
     }
 
     private String getClientId(RequiredActionContext context) {
-        return context.getAuthenticationSession().getClient().getClientId();
+        final AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
+        if (authenticationSession == null) return null;
+        return authenticationSession.getClient().getClientId();
     }
 
     @Override

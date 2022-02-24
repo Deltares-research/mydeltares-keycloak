@@ -17,6 +17,7 @@ import java.net.URI;
 public class MockRequiredActionContext implements RequiredActionContext {
 
     private UserModel userModel;
+    private MockAuthenticationSessionModel authenticationSession;
 
     public void setUserModel(UserModel userModel) {
         this.userModel = userModel;
@@ -64,7 +65,7 @@ public class MockRequiredActionContext implements RequiredActionContext {
 
     @Override
     public AuthenticationSessionModel getAuthenticationSession() {
-        return null;
+        return authenticationSession;
     }
 
     @Override
@@ -115,5 +116,9 @@ public class MockRequiredActionContext implements RequiredActionContext {
     @Override
     public void ignore() {
 
+    }
+
+    public void setAuthenticationSession(MockAuthenticationSessionModel authenticationSessionModel) {
+        this.authenticationSession = authenticationSessionModel;
     }
 }
