@@ -31,7 +31,7 @@ services:
 #      test: ["CMD", "mysqladmin", "ping", "--silent", "--user=$MYSQL_USER", "--password=$MYSQL_PASSWORD"]
 
   keycloak:
-    image: quay.io/keycloak/keycloak:15.0.0
+    image: quay.io/keycloak/keycloak:16.1.1
     container_name: keycloak-15
 #    build: server
     ports:
