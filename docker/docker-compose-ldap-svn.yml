@@ -3,8 +3,8 @@ version: '3'
 volumes:
   mysql_data:
     driver: local
-  openldap_data:
-    driver: local
+#  openldap_data:
+#    driver: local
 
 networks:
   keycloak:
@@ -12,7 +12,7 @@ networks:
 services:
 
   mariadb:
-    image: mariadb:10.1.19
+    image: mariadb:10.2.25
     container_name: keycloak-mariadb
     ports:
       - "3307:3306"
@@ -55,7 +55,7 @@ services:
       - DB_USER=keycloak
       - DB_PASSWORD=password
       - DEBUG=true
-      - DEBUG_PORT=8787
+      - DEBUG_PORT=*:8787
       - HOSTNAME=keycloak
     depends_on:
       - mariadb
@@ -64,7 +64,7 @@ services:
               "-Dcom.sun.management.jmxremote.local.only=false", "-Dcom.sun.management.jmxremote.authenticate=false",
               "-Dcom.sun.management.jmxremote.ssl=false", "-Dcom.sun.management.jmxremote.rmi.port=12345",
               "-Djava.rmi.server.hostname=$HOSTNAME",
-              "-Dkeycloak.import=/opt/jboss/keycloak/resources/realm-lportal-openldap.json",
+              "-Dkeycloak.import=/opt/jboss/keycloak/resources/realm-export.json",
               "-Dkeycloak.profile.feature.upload_scripts=enabled"]
 
   openldap:
@@ -77,6 +77,8 @@ services:
       environment:
         - LDAP_ADMIN_USERNAME=admin
         - LDAP_ADMIN_PASSWORD=admin
+        - LDAP_CONFIG_ADMIN_ENABLED=yes
+        - LDAP_CONFIG_ADMIN_PASSWORD=config
         - LDAP_USERS=rooij_e
         - LDAP_PASSWORDS=password
         - LDAP_ROOT=dc=oss,dc=deltares,dc=nl
@@ -84,30 +86,32 @@ services:
 #        - LDAP_BIND_PASSWORD=password
         - LDAP_USER_DC=people
         - LDAP_GROUP=groups
+        - LDAP_ADD_SCHEMAS=yes
+        - LDAP_EXTRA_SCHEMAS=cosine,inetorgperson,nis,ppolicy
       volumes:
-        - openldap_data:/bitnami/openldap
+        - ./openldap/data/:/bitnami/openldap
       networks:
         - keycloak
 
 #   https://github.com/iaean/docker-subversion
-  svn:
-      image: iaean/subversion
-      container_name: subversion
-      ports:
-        - '8081:80'
-        - '3690:3690'
-      environment:
-        - SUBVERSION_REPOS=repos/delft3d;repos/delftfews;repos/imod;repos/oem;repos/oed;repos/oet;repos/xbeach
-        - SVN_LOCAL_ADMIN_USER=admin
-        - SVN_LOCAL_ADMIN_PASS=admin
+#  svn:
+#      image: iaean/subversion
+#      container_name: subversion
+#      ports:
+#        - '8081:80'
+#        - '3690:3690'
+#      environment:
+#        - SUBVERSION_REPOS=repos/delft3d;repos/delftfews;repos/imod;repos/oem;repos/oed;repos/oet;repos/xbeach
+#        - SVN_LOCAL_ADMIN_USER=admin
+#        - SVN_LOCAL_ADMIN_PASS=admin
 #        - LDAP_BindDN=cn=admin,dc=oss,dc=deltares,dc=nl
 #        - LDAP_BindPW=admin
 #        - SASL_LDAP_SERVER=ldap://openldap
 #        - SASL_LDAP_SEARCHBASE=ou=people,dc=oss,dc=deltares,dc=nl
 #        - SASL_LDAP_FILTER=(uid=%U)
 #        - APACHE_LDAP_URL=ldap://openldap:1389/ou=people,dc=oss,dc=deltares,dc=nl?mail
-      volumes:
-        - ./svn/config/:/etc/apache2/conf.d/
-        - ./svn/data/:/data/svn/
-      networks:
-        - keycloak
+#      volumes:
+#        - ./svn/config/:/etc/apache2/conf.d/
+#        - ./svn/data/:/data/svn/
+#      networks:
+#        - keycloak

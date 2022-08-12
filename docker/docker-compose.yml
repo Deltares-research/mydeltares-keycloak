@@ -11,7 +11,7 @@ services:
 
   mariadb:
     image: mariadb
-    container_name: keycloak-mariadb-15
+    container_name: keycloak-mariadb
     ports:
       - "3307:3306"
     environment:
@@ -32,7 +32,7 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:16.1.1
-    container_name: keycloak-15
+    container_name: keycloak-16
 #    build: server
     ports:
       - 8080:8080
