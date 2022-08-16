@@ -377,6 +377,14 @@ public class UserMailingResource {
         return Response.temporaryRedirect(uriBuilder.build()).build();
     }
 
+    static void updateUserMailing(KeycloakSession session, UserMailing userMailing){
+        try {
+            getEntityManager(session).persist(userMailing);
+        } catch (Exception e){
+            logger.warn(String.format("Failed to update user-mailing mailingId=%s userId=%s", userMailing.getMailingId(), userMailing.getUserId()));
+        }
+    }
+
     static void insertUserMailing(KeycloakSession session, UserMailingRepresentation rep) {
         UserMailing userMailing = new UserMailing();
         userMailing.setRealmId(rep.getRealmId());

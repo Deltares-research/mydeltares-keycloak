@@ -119,7 +119,8 @@ public class UserMailingAdminResource {
     @PUT
     @Path("subscriptions/{mailing_id}")
     public Response subscribeUserForUserMailing(final @PathParam("mailing_id") String mailingId,
-                                                final @QueryParam("email") String email ){
+                                                final @QueryParam("email") String email,  final @QueryParam("language") String language,
+                                                final @QueryParam("delivery") String delivery){
 
         realmAuth.users().requireManage();
         UserModel userByEmail = session.users().getUserByEmail(callerRealm,email);
@@ -128,9 +129,10 @@ public class UserMailingAdminResource {
         }
         UserMailing userMailing = getUserMailing(session, callerRealm.getId(), userByEmail.getId(), mailingId);
         if (userMailing != null){
-            return Response.ok().entity("user already subscribed for mailing").build();
+            updateUserMailing(userMailing, language, delivery);
+        } else {
+            insertNewUserMailing(callerRealm.getId(), mailingId, userByEmail.getId(), language, delivery);
         }
-        insertNewUserMailing(callerRealm.getId(), mailingId, userByEmail.getId());
         return Response.ok().type(MediaType.TEXT_PLAIN).entity("user subscribed for mailing").build();
     }
 
@@ -184,7 +186,7 @@ public class UserMailingAdminResource {
             while ((userId = reader.readLine()) != null) {
                 UserMailing userMailing = getUserMailing(session, realmId, userId.trim(), mailingId);
                 if (userMailing == null) {
-                    insertNewUserMailing(realmId, mailingId, userId);
+                    insertNewUserMailing(realmId, mailingId, userId, null, null);
                     writeCount++;
                 } //skip existing
             }
@@ -192,12 +194,30 @@ public class UserMailingAdminResource {
         return writeCount;
     }
 
-    private void insertNewUserMailing(String realmId, String mailingId, String userId) {
+    private void updateUserMailing(UserMailing userMailing, String language, String delivery){
+        if(delivery == null) {
+            userMailing.setDelivery(Mailing.getPreferredMailingDelivery());
+        } else {
+            final int index = Mailing.deliveries.indexOf(delivery);
+            userMailing.setDelivery(index == -1 ?  Mailing.getPreferredMailingDelivery() : index);
+        }
+        if (language != null) userMailing.setLanguage(language);
+
+        UserMailingResource.updateUserMailing(session, userMailing);
+    }
+
+    private void insertNewUserMailing(String realmId, String mailingId, String userId, String language, String delivery) {
         UserMailingRepresentation rep = new UserMailingRepresentation();
         rep.setUserId(userId);
         rep.setRealmId(realmId);
         rep.setMailingId(mailingId);
-        rep.setDelivery(Mailing.getPreferredMailingDelivery());
+        if(delivery == null) {
+            rep.setDelivery(Mailing.getPreferredMailingDelivery());
+        } else {
+            final int index = delivery.indexOf(delivery);
+            rep.setDelivery(index == -1 ?  Mailing.getPreferredMailingDelivery() : index);
+        }
+        if (language != null) rep.setLanguage(language);
         rep.setId(KeycloakModelUtils.generateId());
         insertUserMailing(session, rep);
     }
