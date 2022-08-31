@@ -2024,7 +2024,7 @@ CREATE TABLE `REALM_SMTP_CONFIG` (
 
 LOCK TABLES `REALM_SMTP_CONFIG` WRITE;
 /*!40000 ALTER TABLE `REALM_SMTP_CONFIG` DISABLE KEYS */;
-INSERT INTO `REALM_SMTP_CONFIG` VALUES ('liferay-portal','true','auth'),('liferay-portal','mydeltares@deltares.nl','from'),('liferay-portal','MyDeltares Account Management','fromDisplayName'),('liferay-portal','smtp.office365.com','host'),('liferay-portal','qywplkxggxrtlhhz','password'),('liferay-portal','587','port'),('liferay-portal','false','ssl'),('liferay-portal','true','starttls'),('liferay-portal','mydeltares@deltares.nl','user');
+INSERT INTO `REALM_SMTP_CONFIG` VALUES ('liferay-portal','true','auth'),('liferay-portal','mydeltares@deltares.nl','from'),('liferay-portal','MyDeltares Account Management','fromDisplayName'),('liferay-portal','smtp.office365.com','host'),('liferay-portal','xxxx','password'),('liferay-portal','587','port'),('liferay-portal','false','ssl'),('liferay-portal','true','starttls'),('liferay-portal','mydeltares@deltares.nl','user');
 /*!40000 ALTER TABLE `REALM_SMTP_CONFIG` ENABLE KEYS */;
 UNLOCK TABLES;
 

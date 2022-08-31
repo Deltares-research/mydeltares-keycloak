@@ -215,3 +215,5 @@ buildNumber.properties
 /docker/keycloak/deployments/deltares-extension-bundle-1.0.ear.deployed
 /docker/keycloak/deployments/deltares-extension-bundle-1.0.ear.undeployed
 /docker/keycloak/deployments/deltares-extension-bundle-2.0.ear.deployed
+/docker/svn/data/
+/deltares-integration-tests/src/test/resources/docker/testdata/prod-keycloak.properties
