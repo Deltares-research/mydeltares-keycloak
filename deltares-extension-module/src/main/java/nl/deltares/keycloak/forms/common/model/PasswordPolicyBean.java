@@ -1,4 +1,4 @@
-package nl.deltares.keycloak.forms.login.freemarker.model;
+package nl.deltares.keycloak.forms.common.model;
 
 import org.keycloak.models.PasswordPolicy;
 

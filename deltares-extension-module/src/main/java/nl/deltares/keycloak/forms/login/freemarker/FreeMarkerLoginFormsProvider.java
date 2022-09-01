@@ -16,7 +16,7 @@
  */
 package nl.deltares.keycloak.forms.login.freemarker;
 
-import nl.deltares.keycloak.forms.login.freemarker.model.PasswordPolicyBean;
+import nl.deltares.keycloak.forms.common.model.PasswordPolicyBean;
 import org.jboss.logging.Logger;
 import org.keycloak.forms.login.LoginFormsPages;
 import org.keycloak.models.KeycloakSession;

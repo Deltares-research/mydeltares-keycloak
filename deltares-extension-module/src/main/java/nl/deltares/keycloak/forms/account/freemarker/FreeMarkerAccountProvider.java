@@ -18,6 +18,7 @@ package nl.deltares.keycloak.forms.account.freemarker;
 
 import nl.deltares.keycloak.forms.account.freemarker.model.ExtendedUrlBean;
 import nl.deltares.keycloak.forms.account.freemarker.model.UserMailingsBean;
+import nl.deltares.keycloak.forms.common.model.PasswordPolicyBean;
 import nl.deltares.keycloak.storage.rest.MailingRepresentation;
 import nl.deltares.keycloak.storage.rest.UserMailingRepresentation;
 import org.jboss.logging.Logger;
@@ -27,6 +28,7 @@ import org.keycloak.forms.account.freemarker.Templates;
 import org.keycloak.forms.account.freemarker.model.*;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
+import org.keycloak.models.UserModel;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
@@ -65,6 +67,7 @@ public class FreeMarkerAccountProvider extends org.keycloak.forms.account.freema
     public Response createResponse(AccountPages page) {
         return createResponse(page.name(), Templates.getTemplate(page));
     }
+
 
     public Response createResponse(String pageName, String templateName) {
         Map<String, Object> attributes = new HashMap<>();
@@ -112,13 +115,14 @@ public class FreeMarkerAccountProvider extends org.keycloak.forms.account.freema
         }
 
         attributes.put("url", new ExtendedUrlBean(realm, theme, baseUri, baseQueryUri, uriInfo.getRequestUri(), stateChecker));
+        attributes.put("ppolicy", new PasswordPolicyBean(realm.getPasswordPolicy()));
 
         if (realm.isInternationalizationEnabled()) {
             UriBuilder b = UriBuilder.fromUri(baseQueryUri).path(uriInfo.getPath());
             attributes.put("locale", new LocaleBean(realm, locale, b, messagesBundle));
         }
-
-        attributes.put("features", new FeaturesBean(identityProviderEnabled, eventsEnabled, passwordUpdateSupported, authorizationSupported));
+        boolean updatePasswordSupportedForUser = checkPasswordUpdateSupported(passwordUpdateSupported, user);
+        attributes.put("features", new FeaturesBean(identityProviderEnabled, eventsEnabled, updatePasswordSupportedForUser, authorizationSupported));
         if (user != null) {
             attributes.put("account", new AccountBean(user, profileFormData));
         }
@@ -155,6 +159,14 @@ public class FreeMarkerAccountProvider extends org.keycloak.forms.account.freema
         }
 
         return processTemplate(theme, templateName, attributes, locale);
+    }
+
+    private boolean checkPasswordUpdateSupported(boolean passwordUpdateSupported, UserModel user) {
+        final String lowerEmail = user.getEmail().toLowerCase();
+        if (lowerEmail.endsWith("@deltares.nl") || lowerEmail.endsWith("@deltares.org") || lowerEmail.endsWith("@deltares.com")) {
+            return false;
+        }
+        return passwordUpdateSupported;
     }
 
     protected Response processTemplate(Theme theme, String templateName, Map<String, Object> attributes, Locale locale) {
