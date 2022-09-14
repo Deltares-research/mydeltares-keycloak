@@ -71,7 +71,7 @@ public class KeycloakTestServer {
 
     static void startKeycloak(String deploymentDir, String resourcesDir)  {
 
-        dockerClient =  new GenericContainer(DockerImageName.parse("quay.io/keycloak/keycloak:15.0.0"))
+        dockerClient =  new GenericContainer(DockerImageName.parse("quay.io/keycloak/keycloak:16.1.1"))
                 .withExposedPorts(8080, 8787)
                 .withEnv("DB_VENDOR", "h2")
                 .withEnv("DEBUG", "true")
