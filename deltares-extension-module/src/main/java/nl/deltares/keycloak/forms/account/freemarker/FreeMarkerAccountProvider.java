@@ -121,10 +121,12 @@ public class FreeMarkerAccountProvider extends org.keycloak.forms.account.freema
             UriBuilder b = UriBuilder.fromUri(baseQueryUri).path(uriInfo.getPath());
             attributes.put("locale", new LocaleBean(realm, locale, b, messagesBundle));
         }
-        boolean updatePasswordSupportedForUser = checkPasswordUpdateSupported(passwordUpdateSupported, user);
-        attributes.put("features", new FeaturesBean(identityProviderEnabled, eventsEnabled, updatePasswordSupportedForUser, authorizationSupported));
         if (user != null) {
+            boolean updatePasswordSupportedForUser = checkPasswordUpdateSupported(passwordUpdateSupported, user);
+            attributes.put("features", new FeaturesBean(identityProviderEnabled, eventsEnabled, updatePasswordSupportedForUser, authorizationSupported));
             attributes.put("account", new AccountBean(user, profileFormData));
+        } else {
+            attributes.put("features", new FeaturesBean(identityProviderEnabled, eventsEnabled, false, authorizationSupported));
         }
 
         switch (pageName) {
