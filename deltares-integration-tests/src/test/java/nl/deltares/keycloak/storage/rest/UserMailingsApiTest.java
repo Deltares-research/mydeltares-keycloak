@@ -101,7 +101,7 @@ public class UserMailingsApiTest {
             Assert.assertEquals(200, status);
             String subscribeUserMailings = writer.toString();
             System.out.println("adminApiSubscribeUserMailings: " + subscribeUserMailings);
-            Assert.assertTrue(subscribeUserMailings.contains( "user already subscribed for mailing"));
+            Assert.assertTrue(subscribeUserMailings.contains( "user subscribed for mailing"));
         }
 
     }
