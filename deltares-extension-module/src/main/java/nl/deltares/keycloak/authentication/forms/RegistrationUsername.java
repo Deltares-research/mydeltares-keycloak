@@ -1,5 +1,6 @@
 package nl.deltares.keycloak.authentication.forms;
 
+import org.apache.commons.text.StringEscapeUtils;
 import org.keycloak.Config;
 import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormActionFactory;
@@ -49,7 +50,24 @@ public class RegistrationUsername implements FormAction, FormActionFactory {
                 formData.putSingle(Details.USERNAME, strippedUsername);
             }
         }
+        //technically this method should be in its own FormAction but that would be an overkill.
+        escapeHtmlFormFields(formData);
+
         context.success();
+    }
+
+    /**
+     * This method is additional check to make sure no XSS or template injection occurs
+     * @param formData User entered data
+     */
+    private void escapeHtmlFormFields(MultivaluedMap<String, String> formData) {
+
+        final String fistName = formData.getFirst(RegistrationPage.FIELD_FIRST_NAME);
+        formData.putSingle(RegistrationPage.FIELD_FIRST_NAME, StringEscapeUtils.escapeHtml4(fistName));
+
+        final String lastName = formData.getFirst(RegistrationPage.FIELD_LAST_NAME);
+        formData.putSingle(RegistrationPage.FIELD_LAST_NAME, StringEscapeUtils.escapeHtml4(lastName));
+
     }
 
     private String createUserName(String email, ValidationContext context) {

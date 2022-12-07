@@ -1,5 +1,7 @@
 package nl.deltares.keycloak.provider.user;
 
+import org.apache.commons.text.StringEscapeUtils;
+import org.keycloak.events.EventType;
 import org.jboss.logging.Logger;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
@@ -8,9 +10,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.*;
 
 import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.Date;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.stream.Stream;
 
 /**
@@ -31,7 +31,11 @@ public class UserEventListenerProvider implements EventListenerProvider {
 
     @Override
     public void onEvent(Event event) {
-        //
+        if (event.getType() == EventType.REGISTER) {
+            //escapeHtmlRegistration(event); does not work
+        } else if (event.getType() == EventType.UPDATE_PROFILE) {
+            escapeHtmlProfile(event);
+        }
     }
 
     @Override
@@ -54,6 +58,52 @@ public class UserEventListenerProvider implements EventListenerProvider {
         //Remove user from all groups. This disables any SVN privileges
         final Stream<GroupModel> groupsStream = updatedUser.getGroupsStream();
         groupsStream.forEach(updatedUser::leaveGroup);
+
+    }
+
+//    private void escapeHtmlRegistration(Event event) {
+//
+//        final Map<String, String> details = event.getDetails();
+//
+//        final UserModel updatedUser = session.users().getUserById(model.getRealm(event.getRealmId()), event.getUserId());
+//        for (String key : details.keySet()) {
+//            final String updatedValue = details.get(key);
+//            switch (key){
+//                case "first_name":
+//                    updatedUser.setFirstName(StringEscapeUtils.escapeHtml4(updatedValue));
+//                    break;
+//                case "last_name":
+//                    updatedUser.setLastName(StringEscapeUtils.escapeHtml4(updatedValue));
+//                    break;
+//            }
+//        }
+//    }
+
+    private void escapeHtmlProfile(Event event) {
+
+        final Map<String, String> details = event.getDetails();
+
+        final UserModel updatedUser = session.users().getUserById(model.getRealm(event.getRealmId()), event.getUserId());
+
+        for (String key : details.keySet()) {
+            if (!key.startsWith("updated_")) continue;
+            final String updatedValue = details.get(key);
+
+            switch (key){
+                case "updated_first_name":
+                    updatedUser.setFirstName(StringEscapeUtils.escapeHtml4(updatedValue));
+                    break;
+                case "updated_last_name":
+                    updatedUser.setLastName(StringEscapeUtils.escapeHtml4(updatedValue));
+                    break;
+                default:
+                    final String attributeKey = key.substring("updated_".length());
+                    final List<String> escapedValue = Collections.singletonList(StringEscapeUtils.escapeHtml4(updatedValue));
+                    updatedUser.setAttribute(attributeKey, escapedValue);
+                    break;
+            }
+        }
+
 
     }
 
