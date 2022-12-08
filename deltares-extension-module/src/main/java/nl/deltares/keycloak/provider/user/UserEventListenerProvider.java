@@ -104,7 +104,10 @@ public class UserEventListenerProvider implements EventListenerProvider {
             }
         }
 
-
+        if (updatedUser.getEmail() == null && details.containsKey("previous_email")){
+            //apparently needs to be reset when changes take place
+            updatedUser.setEmail(details.get("previous_email"));
+        }
     }
 
     private UserModel getUpdatedUser(AdminEvent event) {
