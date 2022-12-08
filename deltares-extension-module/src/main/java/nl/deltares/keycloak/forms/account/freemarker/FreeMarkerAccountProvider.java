@@ -164,7 +164,9 @@ public class FreeMarkerAccountProvider extends org.keycloak.forms.account.freema
     }
 
     private boolean checkPasswordUpdateSupported(boolean passwordUpdateSupported, UserModel user) {
-        final String lowerEmail = user.getEmail().toLowerCase();
+        final String email = user.getEmail();
+        if (email == null) return false;
+        final String lowerEmail = email.toLowerCase();
         if (lowerEmail.endsWith("@deltares.nl") || lowerEmail.endsWith("@deltares.org") || lowerEmail.endsWith("@deltares.com")) {
             return false;
         }
