@@ -17,6 +17,7 @@ import java.util.TimeZone;
 
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.getEntityManager;
 
+@Deprecated
 public class ExportDisabledUser implements ExportCsvContent {
 
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");

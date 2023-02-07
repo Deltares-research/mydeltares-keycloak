@@ -19,6 +19,7 @@ import java.util.Properties;
 
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.getAuth;
 
+@Deprecated
 public class UsersResource {
 
     private final KeycloakSession session;

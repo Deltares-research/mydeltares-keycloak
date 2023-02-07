@@ -10,6 +10,7 @@ import java.util.Properties;
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.getResourceProperties;
 import static org.keycloak.Config.Scope;
 
+@Deprecated
 public class UsersResourceProviderFactory implements RealmResourceProviderFactory {
 
     private Properties properties = new Properties();
