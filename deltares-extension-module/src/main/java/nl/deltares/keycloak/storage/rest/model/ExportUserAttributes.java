@@ -15,7 +15,7 @@ import static nl.deltares.keycloak.storage.rest.ResourceUtils.getEntityManager;
 public class ExportUserAttributes implements ExportCsvContent {
 
     private static final Logger logger = Logger.getLogger(ExportUserAttributes.class);
-    private final String[] headers = new String[]{"attribute", "value", "email"};
+    private final String[] headers = new String[]{"attribute", "value", "email", "id"};
     private final String[] values;
     private final RealmModel realm;
     private final KeycloakSession session;
@@ -120,6 +120,7 @@ public class ExportUserAttributes implements ExportCsvContent {
         values[0] = userAttributes.getName();
         values[1] = userAttributes.getValue();
         values[2] = userAttributes.getUser().getEmail();
+        values[3] = userAttributes.getUser().getId();
         return values;
     }
 
