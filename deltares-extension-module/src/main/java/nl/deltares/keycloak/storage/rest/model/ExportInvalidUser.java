@@ -112,7 +112,7 @@ public class ExportInvalidUser implements ExportCsvContent {
     }
 
     private boolean isSystemEmail(String email) {
-        return email.endsWith("@liferay.com") || email.endsWith("@placeholder.org");
+        return email == null || email.endsWith("@liferay.com") || email.endsWith("@placeholder.org");
     }
 
     private int getNextValidRow() {
