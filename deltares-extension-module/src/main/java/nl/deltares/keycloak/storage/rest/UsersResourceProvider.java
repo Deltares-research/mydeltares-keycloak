@@ -5,7 +5,6 @@ import org.keycloak.services.resource.RealmResourceProvider;
 
 import java.util.Properties;
 
-@Deprecated
 public class UsersResourceProvider implements RealmResourceProvider {
 
     private final KeycloakSession keycloakSession;

@@ -1,7 +1,7 @@
 package nl.deltares.keycloak.storage.rest;
 
 import nl.deltares.keycloak.storage.jpa.model.DataRequestManager;
-import nl.deltares.keycloak.storage.rest.model.ExportDisabledUser;
+import nl.deltares.keycloak.storage.rest.model.ExportInvalidUser;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.models.KeycloakSession;
@@ -19,7 +19,6 @@ import java.util.Properties;
 
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.getAuth;
 
-@Deprecated
 public class UsersResource {
 
     private final KeycloakSession session;
@@ -52,13 +51,12 @@ public class UsersResource {
 
     @GET
     @NoCache
-    @Path("/disabled")
+    @Path("/invalid")
     @Produces("text/plain")
-    public Response exportDisabledUsers(@QueryParam("disabledTimeAfter") Long disabledAfterMillis,
-                                        @QueryParam("disabledTimeBefore") Long disabledBeforeMillis) {
+    public Response exportInvalidUsers() {
 
         realmAuth.users().requireQuery();
-        ExportDisabledUser content = new ExportDisabledUser(callerRealm, session, disabledAfterMillis, disabledBeforeMillis);
+        ExportInvalidUser content = new ExportInvalidUser(callerRealm, session);
         return DataRequestManager.getExportDataResponse(content, properties, false);
     }
 }

@@ -118,13 +118,13 @@ public class KeycloakUtilsImpl {
         }
     }
 
-    public int updateUser(UserRepresentation user) throws IOException {
+    public void updateUser(UserRepresentation user) throws IOException {
         HashMap<String, String> map = new HashMap<>();
         map.put("Content-Type", MediaType.APPLICATION_JSON);
         HttpURLConnection urlConnection = getConnection(getUsersPath() + '/' + user.getId(), "PUT", getAccessToken(), map);
         ObjectMapper mapper = new ObjectMapper();
         mapper.writeValue(urlConnection.getOutputStream(), user);
-        return checkResponse(urlConnection);
+        checkResponse(urlConnection);
     }
     public UserRepresentation getUserByEmail(String email) throws IOException {
 
@@ -203,22 +203,11 @@ public class KeycloakUtilsImpl {
         return uploadUserAvatar(new URL(getAvatarPath()), portraitFile, getAccessToken(username, password));
     }
 
-    public int exportDisabledUsers(Writer writer) throws IOException {
-       return exportDisabledUsers(writer, null, null);
-    }
+    public int exportInvalidUsers(Writer writer) throws IOException {
 
-    public int exportDisabledUsers(Writer writer, Long after, Long before) throws IOException {
-
-        String queryParams = "";
-        if (after != null){
-            queryParams += "?disabledTimeAfter=" + after;
-        }
-        if (before != null){
-            queryParams += after == null ? "?disabledTimeBefore=" + before : "&disabledTimeBefore=" + before;
-        }
         HashMap<String, String> map = new HashMap<>();
         map.put("Content-Type", MediaType.TEXT_HTML);
-        HttpURLConnection urlConnection = getConnection(getUsersDeltaresPath() + "/disabled" + queryParams, "GET", getAccessToken(), map);
+        HttpURLConnection urlConnection = getConnection(getUsersDeltaresPath() + "/invalid", "GET", getAccessToken(), map);
 
         int status = checkResponse(urlConnection);
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()))) {

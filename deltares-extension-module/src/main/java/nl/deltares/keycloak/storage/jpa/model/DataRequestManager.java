@@ -14,9 +14,9 @@ import java.util.*;
 public class DataRequestManager {
 
     private static final Logger logger = Logger.getLogger(DataRequestManager.class);
-    private Map<String, DataRequest> dataRequests = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, DataRequest> dataRequests = Collections.synchronizedMap(new HashMap<>());
     private static DataRequestManager requestManager;
-    private static Queue<String> pendingRequestsIds = new LinkedList<>();
+    private static final Queue<String> pendingRequestsIds = new LinkedList<>();
 
     public static DataRequestManager getInstance(){
         if (requestManager == null){
@@ -94,17 +94,30 @@ public class DataRequestManager {
 
         DataRequestManager instance = DataRequestManager.getInstance();
         DataRequest dataRequest = instance.getDataRequest(content.getId());
-        if (dataRequest == null ||
-                dataRequest.getStatus() == DataRequest.STATUS.expired ||
+        if (dataRequest == null || //request does not exist
+                dataRequest.getStatus() == DataRequest.STATUS.expired || //request is no longer valid
                 (dataRequest.getStatus() == DataRequest.STATUS.available && !dataRequest.getDataFile().exists())){
+                //request is available however data is not
             try {
                 dataRequest = new ExportCsvDataRequest(content, properties);
-                if (dataRequest.getStatus() == DataRequest.STATUS.pending || !cacheExport) {
-                    instance.addToQueue(dataRequest);
-                }
             } catch (IOException e) {
                 return Response.serverError().entity(e.getMessage()).build();
             }
+            // New or existing Pending requests always added to queue
+            if (dataRequest.getStatus() == DataRequest.STATUS.pending) {
+                instance.addToQueue(dataRequest);
+            } else if (dataRequest.getStatus() == DataRequest.STATUS.available && !cacheExport){
+                //New or existing Available requests with an existing datafile should have data file deleted
+                //if we are not interested in cached content
+                try {
+                    Files.deleteIfExists(dataRequest.getDataFile().toPath());
+                    dataRequest = new ExportCsvDataRequest(content, properties);
+                } catch (IOException e) {
+                    return Response.serverError().entity(e.getMessage()).build();
+                }
+                instance.addToQueue(dataRequest);
+            }
+
         }
         DataRequest.STATUS status = dataRequest.getStatus();
         if (status == DataRequest.STATUS.available && dataRequest.getDataFile().exists()){

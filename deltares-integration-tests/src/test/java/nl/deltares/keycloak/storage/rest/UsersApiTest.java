@@ -40,7 +40,7 @@ public class UsersApiTest {
 
         KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getUserKeycloakUtils();
         try (StringWriter writer = new StringWriter()){
-            keycloakUtils.exportDisabledUsers(writer);
+            keycloakUtils.exportInvalidUsers(writer);
             Assert.fail();
         } catch (IOException e) {
             Assert.assertEquals("Error 403", e.getMessage().substring(0, "Error 403".length()));
@@ -49,7 +49,7 @@ public class UsersApiTest {
     }
 
     @Test
-    public void adminApiGetDisabledUsers() throws IOException {
+    public void adminApiGetInvalidUsers() throws IOException {
 
         KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getAdminKeycloakUtils();
 
@@ -57,7 +57,7 @@ public class UsersApiTest {
         keycloakUtils.createUser(user);
 
         try(StringWriter writer = new StringWriter()) {
-            keycloakUtils.exportDisabledUsers(writer);
+            keycloakUtils.exportInvalidUsers(writer);
             Assert.assertFalse(writer.toString().contains("disabled-user1@test.nl"));
         }
 
@@ -67,7 +67,7 @@ public class UsersApiTest {
         keycloakUtils.updateUser(user);
 
         try(StringWriter writer = new StringWriter()) {
-            keycloakUtils.exportDisabledUsers(writer);
+            keycloakUtils.exportInvalidUsers(writer);
             Assert.assertTrue(writer.toString().contains("disabled-user1@test.nl"));
         }
     }
@@ -117,51 +117,6 @@ public class UsersApiTest {
         //Attribute disableTime is removed
         user = keycloakUtils.getUserByEmail("user.withgroups@test.nl");
         Assert.assertNull(user.getAttributes());
-
-    }
-
-    @Test
-    public void adminApiGetDisabledUsersByTime() throws IOException {
-
-        final long startTest = System.currentTimeMillis();
-        KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getAdminKeycloakUtils();
-        UserRepresentation user = newUserRepresentation("disabled-user2@test.nl");
-        final HashMap<String, List<String>> attributes = new HashMap<>();
-        attributes.put("disabledTime", Collections.singletonList(simpleDateFormat.format(new Date(startTest))));
-        user.setAttributes(attributes);
-        user.setEnabled(false);
-        keycloakUtils.createUser(user);
-
-
-        //Get users with disabled time after now - 5sec
-        try(StringWriter writer = new StringWriter()) {
-            keycloakUtils.exportDisabledUsers(writer, startTest - 5000, null);
-            Assert.assertTrue(writer.toString().contains("disabled-user2@test.nl"));
-        }
-
-        //Get users with disabled time after now + 5sec
-        try(StringWriter writer = new StringWriter()) {
-            keycloakUtils.exportDisabledUsers(writer, startTest + 5000, null);
-            Assert.assertFalse(writer.toString().contains("disabled-user2@test.nl"));
-        }
-
-        //Get users with disabled time before now + 5sec
-        try(StringWriter writer = new StringWriter()) {
-            keycloakUtils.exportDisabledUsers(writer, null,  startTest + 5000);
-            Assert.assertTrue(writer.toString().contains("disabled-user2@test.nl"));
-        }
-
-        //Get users with disabled time before now - 5sec
-        try(StringWriter writer = new StringWriter()) {
-            keycloakUtils.exportDisabledUsers(writer, null,  startTest - 5000);
-            Assert.assertFalse(writer.toString().contains("disabled-user2@test.nl"));
-        }
-
-        //Get users with disabled time between now - 5sec and now + 5sec
-        try(StringWriter writer = new StringWriter()) {
-            keycloakUtils.exportDisabledUsers(writer, startTest - 5000,  startTest + 5000);
-            Assert.assertTrue(writer.toString().contains("disabled-user2@test.nl"));
-        }
 
     }
 

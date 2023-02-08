@@ -3,7 +3,6 @@ package scripting;
 import nl.deltares.keycloak.utils.KeycloakUtilsImpl;
 
 import java.io.*;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Properties;
 
@@ -25,8 +24,6 @@ public class DisabledUsers {
     public static void main(String[] args) {
         assert args.length > 0;
 
-        final SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmss");
-
         Properties properties = loadProperties(args[0]);
         if (properties == null) return;
         KeycloakUtilsImpl keycloakUtils = new KeycloakUtilsImpl(properties);
@@ -41,9 +38,8 @@ public class DisabledUsers {
         if (exportFile.exists())
             exportFile.renameTo(new File(exportDir, System.currentTimeMillis() + exportFile.getName()));
         try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(exportFile)))) {
-            Long after =  format.parse("20211101000000").getTime();
-            keycloakUtils.exportDisabledUsers(bw, after, null);
-        } catch (IOException | ParseException e) {
+            keycloakUtils.exportInvalidUsers(bw);
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
