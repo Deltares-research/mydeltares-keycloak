@@ -111,7 +111,7 @@ public class ExportCsvDataRequest implements DataRequest {
                     status = available;
                 } catch (Exception e) {
                     errorMessage = e.getMessage();
-                    logger.warn("Error serializing csv content: %s", e);
+                    logger.warn("Error serializing csv content: " + errorMessage , e);
                     status = terminated;
                 } finally {
                     content.close();
