@@ -37,6 +37,7 @@ public class UsernamePasswordForm extends org.keycloak.authentication.authentica
     @Override
     public void testInvalidUser(AuthenticationFlowContext context, UserModel user) {
         super.testInvalidUser(context, user);
+        if (user == null || user.getEmail() == null) return;
         if (user.getEmail().endsWith("@deltares.nl")) {
             context.getEvent().error(Errors.USER_NOT_FOUND);
             Response challengeResponse = challenge(context, Messages.DELTARES_EMAIL);
