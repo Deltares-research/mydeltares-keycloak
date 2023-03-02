@@ -195,6 +195,52 @@ public class KeycloakUtilsImpl {
         return deleteUserAvatar(new URL(getAvatarPath()), getAccessToken(userName, password));
     }
 
+    public String uploadCheckUsersExistAdminApi(File dataFile) throws IOException {
+        URL url = new URL(getUsersDeltaresPath() + "/check-users-exist");
+
+        String boundaryString = "----CheckUsersExist";
+
+        HashMap<String, String> map = new HashMap<>();
+        map.put("Content-Type", "multipart/form-data; boundary=" + boundaryString);
+        HttpURLConnection urlConnection = getHttpConnection(url, "POST", map);
+        urlConnection.setRequestProperty("Authorization", "Bearer " + getAccessToken());
+
+        OutputStream outputStream = urlConnection.getOutputStream();
+        BufferedWriter httpRequestBodyWriter =
+                new BufferedWriter(new OutputStreamWriter(outputStream));
+
+        // Include the section to describe the file
+        httpRequestBodyWriter.write("\n--" + boundaryString + "\n");
+        String fileName = dataFile.getName();
+        httpRequestBodyWriter.write("Content-Disposition: form-data;"
+                + "name=\"data\";"
+                + "filename=\"" + fileName + "\""
+                + "\nContent-Type: application/octet-stream\n\n");
+        httpRequestBodyWriter.flush();
+
+        // Write the actual file contents
+        FileInputStream inputStreamToLogFile = new FileInputStream(dataFile);
+
+        int bytesRead;
+        byte[] dataBuffer = new byte[1024];
+        while ((bytesRead = inputStreamToLogFile.read(dataBuffer)) != -1) {
+            outputStream.write(dataBuffer, 0, bytesRead);
+        }
+
+        outputStream.flush();
+
+        // Mark the end of the multipart http request
+        httpRequestBodyWriter.write("\n--" + boundaryString + "--\n");
+        httpRequestBodyWriter.flush();
+
+        // Close the streams
+        outputStream.close();
+        httpRequestBodyWriter.close();
+
+        // Read response from web server, which will trigger the multipart HTTP request to be sent.
+        return readAll(urlConnection);
+    }
+
     public int uploadUserAvatarAdminApi(String userId, File portraitFile) throws IOException {
         return uploadUserAvatar(new URL(getAdminAvatarPath() + '/' + userId), portraitFile, getAccessToken());
     }

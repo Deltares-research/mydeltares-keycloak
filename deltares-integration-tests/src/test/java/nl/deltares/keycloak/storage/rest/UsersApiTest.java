@@ -12,8 +12,7 @@ import org.junit.rules.TestName;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
-import java.io.IOException;
-import java.io.StringWriter;
+import java.io.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -117,6 +116,54 @@ public class UsersApiTest {
         //Attribute disableTime is removed
         user = keycloakUtils.getUserByEmail("user.withgroups@test.nl");
         Assert.assertNull(user.getAttributes());
+
+    }
+
+    @Test
+    public void adminApiTestCheckNonExistingUsers() throws IOException {
+        KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getAdminKeycloakUtils();
+
+        UserRepresentation user = newUserRepresentation("existing-user1@test.nl");
+        keycloakUtils.createUser(user);
+        user = newUserRepresentation("existing-user2@test.nl");
+        keycloakUtils.createUser(user);
+
+        final File tempFile = File.createTempFile("test", ".csv");
+        try(BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile))) {
+            fileWriter.write("Existing User1;existing-user1@test.nl\n");
+            fileWriter.write("Existing User2;existing-user2@test.nl\n");
+            fileWriter.write("Non, existing User1;none-existing-user3@test.nl");
+            fileWriter.flush();
+        }
+
+        String response = keycloakUtils.uploadCheckUsersExistAdminApi(tempFile);
+        Assert.assertTrue(response.contains("none-existing-user3@test.nl"));
+        Assert.assertFalse(response.contains("existing-user1@test.nl"));
+        Assert.assertFalse(response.contains("existing-user2@test.nl"));
+
+    }
+
+    @Test
+    public void adminApiTestCheckNonExistingUsersWithQuotes() throws IOException {
+        KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getAdminKeycloakUtils();
+
+        UserRepresentation user = newUserRepresentation("existing-user4@test.nl");
+        keycloakUtils.createUser(user);
+        user = newUserRepresentation("existing-user5@test.nl");
+        keycloakUtils.createUser(user);
+
+        final File tempFile = File.createTempFile("test", ".csv");
+        try(BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile))) {
+            fileWriter.write("\"Existing, User1\";existing-user4@test.nl\n");
+            fileWriter.write("\"Existing; User2\";existing-user5@test.nl\n");
+            fileWriter.write("Non existing User1;none-existing-user3@test.nl");
+            fileWriter.flush();
+        }
+
+        String response = keycloakUtils.uploadCheckUsersExistAdminApi(tempFile);
+        Assert.assertTrue(response.contains("none-existing-user3@test.nl"));
+        Assert.assertFalse(response.contains("existing-user1@test.nl"));
+        Assert.assertFalse(response.contains("existing-user2@test.nl"));
 
     }
 

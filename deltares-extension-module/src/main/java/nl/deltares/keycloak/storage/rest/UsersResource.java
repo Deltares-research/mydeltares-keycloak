@@ -2,7 +2,10 @@ package nl.deltares.keycloak.storage.rest;
 
 import nl.deltares.keycloak.storage.jpa.model.DataRequestManager;
 import nl.deltares.keycloak.storage.rest.model.ExportInvalidUser;
+import nl.deltares.keycloak.storage.rest.model.ExtractNonKeycloakUsers;
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.plugins.providers.multipart.InputPart;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -14,12 +17,23 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.getAuth;
 
 public class UsersResource {
+
+    private static final String DATA_PARAMETER = "data";
+    private File tempDir;
 
     private final KeycloakSession session;
     private final Properties properties;
@@ -58,5 +72,50 @@ public class UsersResource {
         realmAuth.users().requireQuery();
         ExportInvalidUser content = new ExportInvalidUser(callerRealm, session);
         return DataRequestManager.getExportDataResponse(content, properties, false);
+    }
+
+    @POST
+    @Path("/check-users-exist")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces("text/plain")
+    public Response checkIfUsersExist(MultipartFormDataInput input) {
+
+        realmAuth.users().requireQuery();
+        File temp;
+        try {
+            temp = saveInputFile(input);
+        } catch (IOException e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), e.getMessage()).type(MediaType.TEXT_PLAIN).build();
+        }
+        ExtractNonKeycloakUsers content = new ExtractNonKeycloakUsers(callerRealm, session, temp);
+        return DataRequestManager.getExportDataResponse(content, properties, false);
+    }
+
+    private File saveInputFile(MultipartFormDataInput input) throws IOException {
+        Map<String, List<InputPart>> formDataMap = input.getFormDataMap();
+        List<InputPart> inputParts = formDataMap.get(DATA_PARAMETER);
+        if (inputParts == null || inputParts.isEmpty()) {
+            throw new IllegalArgumentException("Missing data file");
+        }
+        InputPart inputPart = inputParts.get(0);
+        File temp = new File(getExportDir(), "non-existing-users-" + realmAuth.adminAuth().getUser().getId());
+        try (InputStream inputStream = inputPart.getBody(InputStream.class, null)) {
+            if (inputStream.available() == 0) {
+                return null; //save pressed when no image selected
+            }
+            Files.copy(inputStream, temp.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        }
+        return temp;
+    }
+
+    private File getExportDir() throws IOException {
+        if (tempDir != null) return tempDir;
+        String property = System.getProperty("jboss.server.temp.dir");
+        if (property == null) {
+            throw new IOException("Missing system property: jboss.server.temp.dir");
+        }
+        tempDir = new File(property, "deltares");
+        if (!tempDir.exists()) Files.createDirectory(tempDir.toPath());
+        return tempDir;
     }
 }
