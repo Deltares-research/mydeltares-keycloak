@@ -3,8 +3,6 @@ version: '3'
 volumes:
   keycloak_db:
     driver: local
-  openldap:
-    driver: local
 
 networks:
   keycloak:
@@ -12,7 +10,7 @@ networks:
 services:
 
   mariadb:
-    image: mariadb
+    image: mariadb:10.2.25
     container_name: keycloak-mariadb
     ports:
       - "3307:3306"
@@ -34,13 +32,13 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:16.1.1
-    container_name: keycloak-16
+    container_name: keycloak
 #    build: server
     ports:
       - 8080:8080
       - 8443:8443
       - 8787:8787
-      - 9990:9990
+#      - 9990:9990
     volumes:
       - ./keycloak/deployments:/opt/jboss/keycloak/standalone/deployments
       - ./keycloak/configuration/standalone.xml:/opt/jboss/keycloak/standalone/configruation/standalone.xml
@@ -50,7 +48,7 @@ services:
     networks:
       - keycloak
     environment:
-      - KEYCLOAK_USER=admin-docker
+      - KEYCLOAK_USER=admin
       - KEYCLOAK_PASSWORD=Pa55w0rd
       - DB_VENDOR=mariadb
       - DB_ADDR=mariadb
@@ -68,34 +66,4 @@ services:
               "-Dcom.sun.management.jmxremote.ssl=false", "-Dcom.sun.management.jmxremote.rmi.port=12345",
               "-Djava.rmi.server.hostname=$HOSTNAME", "-Dkeycloak.profile.feature.upload_scripts=enabled"]
 
-  openldap:
-    image: bitnami/openldap:2
-    container_name: openldap
-    #      build: openldap
-    ports:
-      - '1389:1389'
-      - '1636:1636'
-    environment:
-      - BITNAMI_DEBUG=true
-      - LDAP_ADMIN_USERNAME=admin
-      - LDAP_ADMIN_PASSWORD=admin
-      #        - LDAP_USERS=rooij_e
-      #        - LDAP_PASSWORDS=password
-      - LDAP_ROOT=dc=oss,dc=deltares,dc=nl
-      - LDAP_BindDN=cn=admin,dc=oss,dc=deltares,dc=nl
-      - LDAP_BindPW=admin
-      - LDAP_USER_DC=people
-      - LDAP_GROUP=groups
-      - LDAP_ADD_SCHEMAS=yes
-#      - LDAP_CONFIG_ADMIN_ENABLED=yes
-#      - LDAP_CONFIG_ADMIN_USERNAME=admin
-#      - LDAP_CONFIG_ADMIN_PASSWORD=admin
-      - LDAP_EXTRA_SCHEMAS=cosine,inetorgperson,nis,ppolicy
-      - LDAP_CUSTOM_LDIF_DIR=/opt/bitnami/openldap/etc/ldifs/
-    volumes:
-      - openldap:/bitnami/openldap
-#      - ./openldap-schema:/opt/bitnami/openldap/etc/schema
-#      - ./openldap-ldifs:/opt/bitnami/openldap/etc/ldifs
-    networks:
-      - keycloak
 
