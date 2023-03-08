@@ -106,7 +106,12 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
         while ((line = reader.readLine()) != null) {
             if (checkSeparator) separator = getSeparator(line);
             String email = getEmail(line);
-            if (session.users().getUserByEmail(realm, email) == null) return email;
+            try {
+                if (session.users().getUserByEmail(realm, email) == null) return email;
+            } catch (Exception e){
+                logger.warnf("Error finding user for email %s : %s", email, e.getMessage());
+                return email;
+            }
         }
         return null;
     }
