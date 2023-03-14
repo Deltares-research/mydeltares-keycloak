@@ -25,6 +25,7 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
     private int emailColumn = -1;
 
     private int totalCount = 0;
+    private KeycloakSession localSession;
 
     public ExtractNonKeycloakUsers(RealmModel realmModel, KeycloakSession session, File checkEmailsFile) {
         this.values = new String[headers.length];
@@ -48,6 +49,7 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
 
     private void initialize() {
 
+        localSession = session.getKeycloakSessionFactory().create();
         if (input == null || !input.exists()) {
             reader = null;
             return;
@@ -111,7 +113,7 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
             if (checkSeparator) separator = getSeparator(line);
             String email = getEmail(line);
             try {
-                if (session.userStorageManager().getUserByEmail(realm, email) == null) return email;
+                if (localSession.userStorageManager().getUserByEmail(realm, email) == null) return email;
             } catch (Exception e){
                 logger.warnf("Error finding user for email %s : %s", email, e.getMessage());
             }
