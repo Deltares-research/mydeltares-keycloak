@@ -3,6 +3,7 @@ package nl.deltares.keycloak.storage.rest.model;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.storage.UserStorageManager;
 
 import java.io.*;
 
@@ -25,7 +26,7 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
     private int emailColumn = -1;
 
     private int totalCount = 0;
-    private KeycloakSession localSession;
+    private UserStorageManager users;
 
     public ExtractNonKeycloakUsers(RealmModel realmModel, KeycloakSession session, File checkEmailsFile) {
         this.values = new String[headers.length];
@@ -49,7 +50,9 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
 
     private void initialize() {
 
-        localSession = session.getKeycloakSessionFactory().create();
+        KeycloakSession localSession = session.getKeycloakSessionFactory().create();
+        users = new UserStorageManager(localSession);
+
         if (input == null || !input.exists()) {
             reader = null;
             return;
@@ -75,6 +78,11 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
     @Override
     public void close() {
         logger.info("Finished checking for non-existing users: " + getName());
+
+        if (users != null){
+            users.close();
+            users = null;
+        }
         if (reader != null) {
             try {
                 reader.close();
@@ -113,7 +121,7 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
             if (checkSeparator) separator = getSeparator(line);
             String email = getEmail(line);
             try {
-                if (localSession.userStorageManager().getUserByEmail(realm, email) == null) return email;
+                if (users.getUserByEmail(realm, email) == null) return email;
             } catch (Exception e){
                 logger.warnf("Error finding user for email %s : %s", email, e.getMessage());
             }
