@@ -25,7 +25,6 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
     private int emailColumn = -1;
 
     private int totalCount = 0;
-    private KeycloakSession localSession;
 
     public ExtractNonKeycloakUsers(RealmModel realmModel, KeycloakSession session, File checkEmailsFile) {
         this.values = new String[headers.length];
@@ -49,9 +48,6 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
 
     private void initialize() {
 
-        if (localSession == null) {
-            localSession = session.getKeycloakSessionFactory().create();
-        }
         if (input == null || !input.exists()) {
             reader = null;
             return;
@@ -76,10 +72,7 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
 
     @Override
     public void close() {
-        if (localSession != null){
-            localSession.close();
-            localSession = null;
-        }
+        logger.info("Finished checking for non-existing users: " + getName());
         if (reader != null) {
             try {
                 reader.close();
@@ -94,7 +87,10 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
     @Override
     public boolean hasNextRow() {
 
-        if (reader == null) initialize();
+        if (reader == null) {
+            initialize();
+            logger.info("Start checking for non-existing users: " + getName());
+        }
         if (reader == null) {
             return false;
         }
@@ -115,7 +111,7 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
             if (checkSeparator) separator = getSeparator(line);
             String email = getEmail(line);
             try {
-                if (localSession.users().getUserByEmail(realm, email) == null) return email;
+                if (session.userStorageManager().getUserByEmail(realm, email) == null) return email;
             } catch (Exception e){
                 logger.warnf("Error finding user for email %s : %s", email, e.getMessage());
             }
