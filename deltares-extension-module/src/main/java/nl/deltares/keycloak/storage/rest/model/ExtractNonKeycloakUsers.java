@@ -3,9 +3,14 @@ package nl.deltares.keycloak.storage.rest.model;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.storage.UserStorageManager;
+import org.keycloak.models.jpa.entities.UserEntity;
 
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
 import java.io.*;
+import java.util.List;
+
+import static nl.deltares.keycloak.storage.rest.ResourceUtils.getEntityManager;
 
 /**
  * This task reads a file containing user e-mails and checks these against existing Keycloak users.
@@ -18,6 +23,8 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
     private final String[] values;
     private final RealmModel realm;
     private final KeycloakSession session;
+    private TypedQuery<UserEntity> query;
+
     private final File input;
     private InputStream inputStream;
     private BufferedReader reader;
@@ -26,7 +33,8 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
     private int emailColumn = -1;
 
     private int totalCount = 0;
-    private UserStorageManager users;
+    private KeycloakSession localSession;
+
 
     public ExtractNonKeycloakUsers(RealmModel realmModel, KeycloakSession session, File checkEmailsFile) {
         this.values = new String[headers.length];
@@ -50,8 +58,13 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
 
     private void initialize() {
 
-        KeycloakSession localSession = session.getKeycloakSessionFactory().create();
-        users = new UserStorageManager(localSession);
+        localSession = session.getKeycloakSessionFactory().create();
+        EntityManager entityManager = getEntityManager(localSession);
+        query = entityManager.createQuery("SELECT u " +
+                "FROM UserEntity AS u " +
+                " WHERE u.realmId=:realmId AND u.email=:email", UserEntity.class);
+        query.setParameter("realmId", realm.getId());
+        query.setMaxResults(1);
 
         if (input == null || !input.exists()) {
             reader = null;
@@ -79,9 +92,9 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
     public void close() {
         logger.info("Finished checking for non-existing users: " + getName());
 
-        if (users != null){
-            users.close();
-            users = null;
+        if (localSession != null) {
+            localSession.close();
+            localSession = null;
         }
         if (reader != null) {
             try {
@@ -97,7 +110,7 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
     @Override
     public boolean hasNextRow() {
 
-        if (reader == null) {
+        if (query == null) {
             initialize();
             logger.info("Start checking for non-existing users: " + getName());
         }
@@ -121,7 +134,9 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
             if (checkSeparator) separator = getSeparator(line);
             String email = getEmail(line);
             try {
-                if (users.getUserByEmail(realm, email) == null) return email;
+                query.setParameter("email", email);
+                final List<UserEntity> resultList = query.getResultList();
+                if (resultList.size() == 0) return email;
             } catch (Exception e){
                 logger.warnf("Error finding user for email %s : %s", email, e.getMessage());
             }
