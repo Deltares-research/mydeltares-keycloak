@@ -8,6 +8,7 @@ import org.keycloak.models.jpa.entities.UserEntity;
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.io.*;
+import java.nio.file.Files;
 import java.util.List;
 
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.getEntityManager;
@@ -102,6 +103,13 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
                 inputStream.close();
             } catch (IOException e) {
                 logger.warn("Error closing reader: " + e.getMessage());
+            }
+        }
+        if (input != null){
+            try {
+                Files.deleteIfExists(input.toPath());
+            } catch (IOException e) {
+                logger.warn("Error removing input file: " + e.getMessage());
             }
         }
 

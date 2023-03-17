@@ -176,9 +176,7 @@ public class ExportCsvDataRequest implements DataRequest {
     public String getStatusMessage() {
         if (content != null) {
             int count = content.totalExportedCount();
-            return String.format("Downloading %s " +
-                    "status: %s, " +
-                    "processed: %d" , content.getName(), status, count);
+            return String.format("{id:%s,status:%s,processed:%d}", getId(),status, count);
         }
         return "unknown";
     }

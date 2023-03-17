@@ -66,7 +66,7 @@ public class UsersResource {
     @GET
     @NoCache
     @Path("/invalid")
-    @Produces("text/plain")
+    @Produces({"text/plain", "text/csv", "application/json"} )
     public Response exportInvalidUsers() {
 
         realmAuth.users().requireQuery();
@@ -74,10 +74,18 @@ public class UsersResource {
         return DataRequestManager.getExportDataResponse(content, properties, false);
     }
 
+    @GET
+    @Path("/check-users-exist/{id}")
+    @Produces({"text/plain", "text/csv", "application/json"} )
+    public Response checkIfUsersExist(final @PathParam("id") String id) {
+        realmAuth.users().requireQuery();
+        return DataRequestManager.getExportDataResponse(id);
+    }
+
     @POST
     @Path("/check-users-exist")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    @Produces("text/plain")
+    @Produces({"text/plain", "text/csv", "application/json"} )
     public Response checkIfUsersExist(MultipartFormDataInput input) {
 
         realmAuth.users().requireQuery();

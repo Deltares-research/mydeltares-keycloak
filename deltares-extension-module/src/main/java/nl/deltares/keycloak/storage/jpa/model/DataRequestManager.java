@@ -18,30 +18,30 @@ public class DataRequestManager {
     private static DataRequestManager requestManager;
     private static final Queue<String> pendingRequestsIds = new LinkedList<>();
 
-    public static DataRequestManager getInstance(){
-        if (requestManager == null){
+    public static DataRequestManager getInstance() {
+        if (requestManager == null) {
             requestManager = new DataRequestManager();
         }
         return requestManager;
     }
 
-    public DataRequest getDataRequest(String id){
+    public DataRequest getDataRequest(String id) {
         return dataRequests.get(id);
     }
 
-    public void removeDataRequest(DataRequest dataRequest)  {
+    public void removeDataRequest(DataRequest dataRequest) {
         if (dataRequest == null) throw new IllegalArgumentException("dataRequest == null");
         dataRequest.dispose();
         dataRequests.remove(dataRequest.getId());
     }
 
-    public void addToQueue(DataRequest dataRequest){
+    public void addToQueue(DataRequest dataRequest) {
         if (dataRequest == null) throw new IllegalArgumentException("dataRequest == null");
         if (dataRequest.getStatus() != DataRequest.STATUS.pending)
             throw new IllegalStateException(String.format("Data request %s has invalid state %s! State must be 'pending' to add to queue.", dataRequest.getId(), dataRequest.getStatus()));
 
         DataRequest existingRequest = dataRequests.get(dataRequest.getId());
-        if (existingRequest != null && existingRequest.getStatus() == DataRequest.STATUS.running){
+        if (existingRequest != null && existingRequest.getStatus() == DataRequest.STATUS.running) {
             throw new IllegalStateException(String.format("Data request %s is still running! Either terminate this request or wait for it to complete.", dataRequest.getId()));
         }
         dataRequests.put(dataRequest.getId(), dataRequest);
@@ -72,7 +72,7 @@ public class DataRequestManager {
     void fireStateChanged(DataRequest changedRequest) {
         DataRequest.STATUS status = changedRequest.getStatus();
         if (status == DataRequest.STATUS.available
-                || status == DataRequest.STATUS.terminated ){
+                || status == DataRequest.STATUS.terminated) {
             changedRequest.setDataRequestManager(null); //stop listening
             startNextRequest();
         }
@@ -90,14 +90,38 @@ public class DataRequestManager {
         }
     }
 
+    public static Response getExportDataResponse(String requestId){
+        DataRequestManager instance = DataRequestManager.getInstance();
+        DataRequest dataRequest = instance.getDataRequest(requestId);
+
+        if (dataRequest == null){
+            return Response.status(Response.Status.BAD_REQUEST).entity(
+                    String.format("Processes id %s does not exist",requestId)).type("text/plain").build();
+        }
+        DataRequest.STATUS status = dataRequest.getStatus();
+        if (status == DataRequest.STATUS.available && dataRequest.getDataFile().exists()) {
+            DataRequest finalDataRequest = dataRequest;
+            DownloadCallback callback = () -> instance.removeDataRequest(finalDataRequest);
+            return Response.
+                    ok(getStreamingOutput(dataRequest.getDataFile(), callback)).
+                    type("text/csv").
+                    build();
+        } else if (status == DataRequest.STATUS.terminated) {
+            instance.removeDataRequest(dataRequest);
+            return Response.serverError().entity(dataRequest.getErrorMessage()).build();
+        } else {
+            return Response.ok(dataRequest.getStatusMessage()).type("application/json").build();
+        }
+    }
+
     public static Response getExportDataResponse(ExportCsvContent content, Properties properties, boolean cacheExport) {
 
         DataRequestManager instance = DataRequestManager.getInstance();
         DataRequest dataRequest = instance.getDataRequest(content.getId());
         if (dataRequest == null || //request does not exist
                 dataRequest.getStatus() == DataRequest.STATUS.expired || //request is no longer valid
-                (dataRequest.getStatus() == DataRequest.STATUS.available && !dataRequest.getDataFile().exists())){
-                //request is available however data is not
+                (dataRequest.getStatus() == DataRequest.STATUS.available && !dataRequest.getDataFile().exists())) {
+            //request is available however data is not
             try {
                 dataRequest = new ExportCsvDataRequest(content, properties);
             } catch (IOException e) {
@@ -106,7 +130,7 @@ public class DataRequestManager {
             // New or existing Pending requests always added to queue
             if (dataRequest.getStatus() == DataRequest.STATUS.pending) {
                 instance.addToQueue(dataRequest);
-            } else if (dataRequest.getStatus() == DataRequest.STATUS.available && !cacheExport){
+            } else if (dataRequest.getStatus() == DataRequest.STATUS.available && !cacheExport) {
                 //New or existing Available requests with an existing datafile should have data file deleted
                 //if we are not interested in cached content
                 try {
@@ -120,7 +144,7 @@ public class DataRequestManager {
 
         }
         DataRequest.STATUS status = dataRequest.getStatus();
-        if (status == DataRequest.STATUS.available && dataRequest.getDataFile().exists()){
+        if (status == DataRequest.STATUS.available && dataRequest.getDataFile().exists()) {
 
             DataRequest finalDataRequest = dataRequest;
             DownloadCallback callback = () -> {
@@ -134,7 +158,7 @@ public class DataRequestManager {
             instance.removeDataRequest(dataRequest);
             return Response.serverError().entity(dataRequest.getErrorMessage()).build();
         } else {
-            return Response.ok(dataRequest.getStatusMessage()).type("text/plain").build();
+            return Response.ok(dataRequest.getStatusMessage()).type("application/json").build();
         }
 
     }
