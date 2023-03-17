@@ -14,7 +14,7 @@ public interface ExportCsvContent {
 
     String[] nextRow();
 
-    int totalExportedCount();
+    int percentProcessed();
 
     void setMaxResults(int max_query_results);
 

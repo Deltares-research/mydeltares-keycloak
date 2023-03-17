@@ -33,7 +33,8 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
     private boolean checkSeparator = true;
     private int emailColumn = -1;
 
-    private int totalCount = 0;
+    private long processedSize = 0;
+    private long fileSize = 0;
     private KeycloakSession localSession;
 
 
@@ -70,6 +71,12 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
         if (input == null || !input.exists()) {
             reader = null;
             return;
+        }
+
+        try {
+            fileSize = Files.size(input.toPath());
+        } catch (IOException e) {
+            //
         }
         try {
             inputStream = new FileInputStream(input);
@@ -139,6 +146,7 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
     private String findNextNonExistingEmail() throws IOException {
         String line;
         while ((line = reader.readLine()) != null) {
+            processedSize += line.length();
             if (checkSeparator) separator = getSeparator(line);
             String email = getEmail(line);
             try {
@@ -180,12 +188,11 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
         if (values[0] == null) {
             throw new IllegalStateException("First call 'hasNextRow'!");
         }
-        totalCount++;
         return values;
     }
 
     @Override
-    public int totalExportedCount() {
-        return totalCount;
+    public int percentProcessed() {
+        return (int) (processedSize / fileSize);
     }
 }

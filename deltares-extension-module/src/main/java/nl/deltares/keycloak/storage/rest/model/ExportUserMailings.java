@@ -29,9 +29,11 @@ public class ExportUserMailings implements ExportCsvContent {
     private final Mailing mailing;
 
     private int totalCount = 0;
+    private long processedCount = 0;
     private int rsCount = 0;
     private List<Object[]> resultSets = null; // UserEntity, UserMailing
     private int maxResults = 500;
+    private int iterationCount = 0;
     private KeycloakSession localSession;
 
     public ExportUserMailings(RealmModel realmModel, KeycloakSession session, Mailing mailing) {
@@ -98,15 +100,18 @@ public class ExportUserMailings implements ExportCsvContent {
         if (resultSets == null){
             logger.info("Start downloading user mailings for " + mailing.getName());
             resultSets = query.getResultList();
+            totalCount = resultSets.size();
         }
         //Check if all list items have been processed
         if (rsCount < resultSets.size()) return true;
 
         //Reached end of list get more elements
         logger.info(String.format("%d user mailings downloaded", totalCount));
-        query.setFirstResult(totalCount);
+        iterationCount++;
+        query.setFirstResult(maxResults * iterationCount);
         rsCount = 0;
         resultSets = query.getResultList();
+        totalCount += resultSets.size();
         boolean hasNext = resultSets.size() > 0;
         if (!hasNext){
             logger.info(String.format("Finished downloading %d user mailings for %s", totalCount, mailing.getName()));
@@ -122,7 +127,7 @@ public class ExportUserMailings implements ExportCsvContent {
         }
         int curr = rsCount;
         rsCount++;
-        totalCount++;
+        processedCount++;
         Object[] results  = resultSets.get(curr);
         if (results.length != 2) {
             throw new IllegalStateException("Expected resultSet to have two arguments; UserEntity and UserMailing! Found " + results.length);
@@ -162,7 +167,7 @@ public class ExportUserMailings implements ExportCsvContent {
     }
 
     @Override
-    public int totalExportedCount() {
-        return totalCount;
+    public int percentProcessed() {
+        return (int) (processedCount / totalCount);
     }
 }

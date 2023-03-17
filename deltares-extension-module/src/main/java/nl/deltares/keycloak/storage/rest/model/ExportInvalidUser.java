@@ -21,7 +21,8 @@ public class ExportInvalidUser implements ExportCsvContent {
     private final KeycloakSession session;
     private TypedQuery<UserEntity> query;
 
-    private int totalCount = 0;
+    private long totalCount = 0;
+    private long processedCount = 0;
     private int rsCount = 0;
     private List<UserEntity> resultSets = null; // UserEntity, UserMailing
     private int maxResults = 500;
@@ -88,6 +89,7 @@ public class ExportInvalidUser implements ExportCsvContent {
         if (resultSets == null) {
             logger.info("Start downloading users for search: " + getName());
             resultSets = query.getResultList();
+            totalCount = resultSets.size();
         }
 
         //Loop through RS looking for next matching value
@@ -102,7 +104,7 @@ public class ExportInvalidUser implements ExportCsvContent {
         query.setFirstResult(maxResults * iterationCount);
         rsCount = 0;
         resultSets = query.getResultList();
-
+        totalCount += resultSets.size();
         rsCount = getNextValidRow();
         //Check if all list items have been processed
         if (rsCount < resultSets.size()) return true;
@@ -119,6 +121,7 @@ public class ExportInvalidUser implements ExportCsvContent {
 
         Arrays.fill(values, "");
         for (int i = rsCount; i < resultSets.size(); i++) {
+            processedCount++;
             final UserEntity userEntity = resultSets.get(i);
             if (!isSystemEmail(userEntity.getEmail())) {
                 Arrays.fill(values, "");
@@ -138,12 +141,11 @@ public class ExportInvalidUser implements ExportCsvContent {
             throw new IllegalStateException("First call 'hasNextRow'!");
         }
         rsCount++;
-        totalCount++;
         return values;
     }
 
     @Override
-    public int totalExportedCount() {
-        return totalCount;
+    public int percentProcessed() {
+        return (int) (processedCount / totalCount);
     }
 }

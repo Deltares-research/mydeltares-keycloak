@@ -22,10 +22,12 @@ public class ExportUserAttributes implements ExportCsvContent {
     private final String search;
     private TypedQuery<UserAttributeEntity> query;
 
-    private int totalCount = 0;
+    private long totalCount = 0;
+    private long processedCount = 0;
     private int rsCount = 0;
     private List<UserAttributeEntity> resultSets = null; // UserEntity, UserMailing
     private int maxResults = 500;
+    private int iterationCount = 0;
     private KeycloakSession localSession;
 
     public ExportUserAttributes(RealmModel realmModel, KeycloakSession session, String search) {
@@ -90,15 +92,18 @@ public class ExportUserAttributes implements ExportCsvContent {
         if (resultSets == null){
             logger.info("Start downloading user attributes for search: " + getName());
             resultSets = query.getResultList();
+            totalCount = resultSets.size();
         }
         //Check if all list items have been processed
         if (rsCount < resultSets.size()) return true;
 
         //Reached end of list get more elements
         logger.info(String.format("%d user attributes downloaded", totalCount));
-        query.setFirstResult(totalCount);
+        iterationCount++;
+        query.setFirstResult(maxResults * iterationCount);
         rsCount = 0;
         resultSets = query.getResultList();
+        totalCount += resultSets.size();
         boolean hasNext = resultSets.size() > 0;
         if (!hasNext){
             logger.info(String.format("Finished downloading %d user attributes for search '%s'", totalCount, getName()));
@@ -114,7 +119,7 @@ public class ExportUserAttributes implements ExportCsvContent {
         }
         int curr = rsCount;
         rsCount++;
-        totalCount++;
+        processedCount++;
         UserAttributeEntity userAttributes  = resultSets.get(curr);
         Arrays.fill(values, "");
         values[0] = userAttributes.getName();
@@ -126,7 +131,7 @@ public class ExportUserAttributes implements ExportCsvContent {
 
 
     @Override
-    public int totalExportedCount() {
-        return totalCount;
+    public int percentProcessed() {
+        return (int) (processedCount / totalCount);
     }
 }

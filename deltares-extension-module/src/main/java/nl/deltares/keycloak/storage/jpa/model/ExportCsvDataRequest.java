@@ -175,7 +175,7 @@ public class ExportCsvDataRequest implements DataRequest {
     @Override
     public String getStatusMessage() {
         if (content != null) {
-            int count = content.totalExportedCount();
+            int count = content.percentProcessed();
             return String.format("{id:%s,status:%s,processed:%d}", getId(),status, count);
         }
         return "unknown";
