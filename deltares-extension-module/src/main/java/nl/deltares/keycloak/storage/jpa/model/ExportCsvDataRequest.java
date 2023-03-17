@@ -130,12 +130,12 @@ public class ExportCsvDataRequest implements DataRequest {
         }, content.getName());
 
         thread.start();
-//        //wait for export to get started. quick exports can return values
-//        try {
-//            thread.join(5000);
-//        } catch (InterruptedException e) {
-//            //
-//        }
+        //wait for export to get started. quick exports can return values
+        try {
+            thread.join(5000);
+        } catch (InterruptedException e) {
+            //
+        }
     }
 
     private File getExportFile(String prefix, String extension) throws IOException {
