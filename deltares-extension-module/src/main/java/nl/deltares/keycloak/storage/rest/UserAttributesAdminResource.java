@@ -52,7 +52,7 @@ private final KeycloakSession session;
     @GET
     @NoCache
     @Path("/export")
-    @Produces("text/plain")
+    @Produces({"text/plain", "text/csv", "application/json"} )
     public Response downloadUserAttributes(@QueryParam("search") String search) {
         realmAuth.users().requireManage();
         if (search != null) {

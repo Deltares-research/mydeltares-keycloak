@@ -80,10 +80,10 @@ module.controller('MailingListCtrl', function($scope, realm, Mailing, MailingSea
             .then(response => {
                 var fileName = mailing.name + '-export.csv';
                 let mimeType = response.headers("Content-Type");
-                if (mimeType.includes("text/plain") ){
-                    Notifications.info(response.data);
-                } else if (mimeType.includes("text/csv") ){
+                if (mimeType.includes("text/csv") ){
                     saveAs(new Blob([response.data], { type: 'application/octet-stream' }), fileName);
+                } else {
+                    Notifications.info(response.data);
                 }
 
             }).catch(function(err) {

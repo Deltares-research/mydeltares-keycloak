@@ -193,6 +193,6 @@ public class ExtractNonKeycloakUsers implements ExportCsvContent {
 
     @Override
     public int percentProcessed() {
-        return (int) (processedSize / fileSize);
+        return (int)(100 * ((float)processedSize/fileSize));
     }
 }

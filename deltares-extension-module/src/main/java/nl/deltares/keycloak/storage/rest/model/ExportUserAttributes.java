@@ -132,6 +132,6 @@ public class ExportUserAttributes implements ExportCsvContent {
 
     @Override
     public int percentProcessed() {
-        return (int) (processedCount / totalCount);
+        return (int)(100 * ((float)processedCount/totalCount));
     }
 }

@@ -12,10 +12,10 @@ module.controller('AttributeListCtrl', function($scope, realm, BruteForce, Notif
             .then(response => {
                 var fileName = 'attributes-export.csv';
                 let mimeType = response.headers("Content-Type");
-                if (mimeType.includes("text/plain") ){
-                    Notifications.info(response.data);
-                } else if (mimeType.includes("text/csv") ){
+                if (mimeType.includes("text/csv") ){
                     saveAs(new Blob([response.data], { type: 'application/octet-stream' }), fileName);
+                } else {
+                    Notifications.info(response.data);
                 }
 
             }).catch(function(err) {

@@ -139,7 +139,7 @@ public class UserMailingAdminResource {
     @GET
     @NoCache
     @Path("/export/{mailing_id}")
-    @Produces("text/plain")
+    @Produces({"text/plain", "text/csv", "application/json"} )
     public Response downloadUserMailings(final @PathParam("mailing_id") String mailingId) {
         realmAuth.users().requireQuery();
         String realmId = callerRealm.getId();

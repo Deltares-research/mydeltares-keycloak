@@ -65,13 +65,17 @@ public class UsersResource {
 
     @GET
     @NoCache
-    @Path("/invalid")
+    @Path("/invalid{p : /?}{id : (.+)?}")
     @Produces({"text/plain", "text/csv", "application/json"} )
-    public Response exportInvalidUsers() {
+    public Response exportInvalidUsers(final @PathParam("id") String id) {
 
         realmAuth.users().requireQuery();
-        ExportInvalidUser content = new ExportInvalidUser(callerRealm, session);
-        return DataRequestManager.getExportDataResponse(content, properties, false);
+        if (id.isEmpty()) {
+            ExportInvalidUser content = new ExportInvalidUser(callerRealm, session);
+            return DataRequestManager.getExportDataResponse(content, properties, false);
+        } else {
+            return DataRequestManager.getExportDataResponse(id);
+        }
     }
 
     @GET
