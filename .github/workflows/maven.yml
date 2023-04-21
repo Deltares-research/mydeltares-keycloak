@@ -27,6 +27,8 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
         cache: maven
+    - name: Create folders
+      run: mkdir -p /opt/jboss/keycloak/standalone/data/content && mkdir -p /opt/jboss/keycloak/standalone/deployments
     - name: Build with Maven
       run: mvn install
 
