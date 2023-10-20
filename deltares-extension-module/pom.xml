@@ -50,6 +50,12 @@
 
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-common</artifactId>
+            <version>${keycloak.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-model-jpa</artifactId>
             <version>${keycloak.version}</version>
         </dependency>
@@ -93,7 +99,6 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-saml-core</artifactId>
             <version>${keycloak.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -105,7 +110,6 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-saml-core-public</artifactId>
             <version>${keycloak.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
