@@ -1,4 +1,4 @@
-version: '3'
+version: '3.3'
 
 volumes:
   keycloak_db:
@@ -10,7 +10,7 @@ networks:
 services:
 
   mariadb:
-    image: mariadb:10.2.25
+    image:  mariadb:11.2-rc
     container_name: keycloak-mariadb
     ports:
       - "3307:3306"
@@ -22,48 +22,27 @@ services:
       - HOSTNAME=mariadb
     volumes:
       - keycloak_db:/var/lib/mysql
-      - ./resources/dump-keycloak.sql:/docker-entrypoint-initdb.d/dump.sql
+#      - ./resources/dump-keycloak.sql:/docker-entrypoint-initdb.d/dump.sql
     restart: always
-    command: ['mysqld', '--character-set-server=utf8', '--collation-server=utf8_general_ci']
     networks:
       - keycloak
-#    healthcheck:
-#      test: ["CMD", "mysqladmin", "ping", "--silent", "--user=$MYSQL_USER", "--password=$MYSQL_PASSWORD"]
 
   keycloak:
-    image: quay.io/keycloak/keycloak:16.1.1
+    image: quay.io/keycloak/keycloak:23.0.0
     container_name: keycloak
-#    build: server
     ports:
       - 8080:8080
-      - 8443:8443
       - 8787:8787
-#      - 9990:9990
+    entrypoint: ["/opt/keycloak/bin/kc.sh", "start-dev", "--import-realm"]
     volumes:
-      - ./keycloak/deployments:/opt/jboss/keycloak/standalone/deployments
-      - ./keycloak/configuration/standalone.xml:/opt/jboss/keycloak/standalone/configruation/standalone.xml
-      - ./keycloak/configuration/standalone-ha.xml:/opt/jboss/keycloak/standalone/configruation/standalone-ha.xml
-#      - ./resources:/opt/jboss/keycloak/resources
+      - ./keycloak/data/import/realm-export.json:/opt/keycloak/data/import/realm-export.json
+      - ./keycloak/conf/keycloak.conf:/opt/keycloak/conf/keycloak.conf
+      - ./keycloak/providers:/opt/keycloak/providers
     restart: always
     networks:
       - keycloak
     environment:
-      - KEYCLOAK_USER=admin
-      - KEYCLOAK_PASSWORD=Pa55w0rd
-      - DB_VENDOR=mariadb
-      - DB_ADDR=mariadb
-      - DB_DATABASE=keycloak
-      - DB_USER=keycloak
-      - DB_PASSWORD=password
-      - DEBUG=true
-      - DEBUG_PORT=*:8787
-      - HOSTNAME=keycloak
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=Pa55w0rd
     depends_on:
       - mariadb
-#    These commands are required to allow remote debugging with docker
-    command: ["-Dcom.sun.management.jmxremote", "-Dcom.sun.management.jmxremote.port=12345",
-              "-Dcom.sun.management.jmxremote.local.only=false", "-Dcom.sun.management.jmxremote.authenticate=false",
-              "-Dcom.sun.management.jmxremote.ssl=false", "-Dcom.sun.management.jmxremote.rmi.port=12345",
-              "-Djava.rmi.server.hostname=$HOSTNAME", "-Dkeycloak.profile.feature.upload_scripts=enabled"]
-
-

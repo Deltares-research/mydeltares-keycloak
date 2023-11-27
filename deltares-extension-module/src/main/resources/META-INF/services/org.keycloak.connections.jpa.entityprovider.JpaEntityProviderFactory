@@ -1,3 +1,0 @@
-nl.deltares.keycloak.storage.jpa.JpaAvatarStorageProviderFactory
-nl.deltares.keycloak.storage.jpa.JpaMailingStorageProviderFactory
-nl.deltares.keycloak.storage.jpa.JpaUserMailingStorageProviderFactory
