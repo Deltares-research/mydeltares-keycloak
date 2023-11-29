@@ -44,5 +44,7 @@ services:
     environment:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=Pa55w0rd
+      - DEBUG=true
+      - DEBUG_PORT=*:8787
     depends_on:
       - mariadb

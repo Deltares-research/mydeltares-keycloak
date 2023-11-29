@@ -4,10 +4,8 @@
       "name": "deltares-keycloak-theme",
       "types": [
         "account",
-        "admin",
         "email",
-        "login",
-        "welcome"
+        "login"
       ]
     }
   ]

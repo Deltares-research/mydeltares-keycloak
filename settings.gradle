@@ -1,2 +1,4 @@
 rootProject.name = 'mydeltares-keycloak'
+include 'mydeltares-keycloak-spi'
+include 'mydeltares-keycloak-theme'
 

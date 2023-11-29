@@ -32,11 +32,12 @@ test {
     useJUnitPlatform()
 }
 
-jar {
-    exclude('theme', 'META-INF/keycloak-themes.json')
-}
 
 tasks.register('copyJarsToDocker', Copy) {
-    from('build/libs')
-    into('docker/keycloak/providers/')
+    from('build/libs/')
+    into( '../docker/keycloak/providers/')
+}
+
+build {
+    finalizedBy( 'copyJarsToDocker')
 }

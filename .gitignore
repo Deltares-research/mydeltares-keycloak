@@ -42,3 +42,5 @@ bin/
 .DS_Store
 /.idea/
 /docker/keycloak/providers/mydeltares-keycloak-3.0.jar
+/docker/keycloak/providers/mydeltares-keycloak-spi-3.0.jar
+/docker/keycloak/providers/mydeltares-keycloak-theme-3.0.jar
