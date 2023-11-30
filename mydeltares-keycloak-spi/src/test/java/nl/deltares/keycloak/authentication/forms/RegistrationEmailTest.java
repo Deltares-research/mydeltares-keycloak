@@ -8,7 +8,6 @@ import org.jboss.resteasy.mock.MockHttpRequest;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.http.HttpRequest;

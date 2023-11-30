@@ -266,14 +266,17 @@ public class KeycloakUtilsImpl {
         return readAll(urlConnection);
     }
 
-    public int createUser(UserRepresentation user) throws IOException {
+    public String createUser(UserRepresentation user) throws IOException {
 
         HashMap<String, String> map = new HashMap<>();
         map.put("Content-Type", MediaType.APPLICATION_JSON);
         HttpURLConnection urlConnection = getConnection(getUsersPath(), "POST", getAccessToken(), map);
         ObjectMapper mapper = new ObjectMapper();
         mapper.writeValue(urlConnection.getOutputStream(), user);
-        return checkResponse(urlConnection);
+        final int i = checkResponse(urlConnection);
+
+        final UserRepresentation userByEmail = getUserByEmail(user.getEmail());
+        return userByEmail.getId();
     }
 
     public int exportUserAttributesAdminApi(Writer writer, String search) throws IOException {
@@ -589,6 +592,20 @@ public class KeycloakUtilsImpl {
         } finally {
             urlConnection.disconnect();
         }
+
+    }
+
+    public String createUser(String firstName, String lastName, String username, String email) throws IOException {
+
+        UserRepresentation userRepresentation = new UserRepresentation();
+        userRepresentation.setEmail(email);
+        userRepresentation.setUsername(username);
+        userRepresentation.setFirstName(firstName);
+        userRepresentation.setLastName(lastName);
+        userRepresentation.setEmailVerified(true);
+        userRepresentation.setEnabled(true);
+
+        return createUser(userRepresentation);
 
     }
 }

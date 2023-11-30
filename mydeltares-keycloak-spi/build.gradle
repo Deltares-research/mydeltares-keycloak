@@ -26,10 +26,12 @@ dependencies {
     implementation('org.keycloak:keycloak-model-jpa:' + keycloakVersion)
     implementation('org.keycloak:keycloak-saml-core:' + keycloakVersion)
     implementation('org.keycloak:keycloak-saml-core-public:' + keycloakVersion)
-    testImplementation('org.junit:junit-bom:5.4.2')
-    testImplementation('org.junit.jupiter:junit-jupiter:5.4.2')
-//    testImplementation('com.github.dasniko:testcontainers-keycloak:3.0.0')
-//    testImplementation('com.testcontainers:testcontainers:1.16.3')
+//    testImplementation('org.junit:junit-bom:5.10.0-RC2')
+    testImplementation('org.junit.jupiter:junit-jupiter:5.9.1')
+    implementation platform('org.testcontainers:testcontainers-bom:1.19.3') //import bom
+    testImplementation('org.testcontainers:mysql') //no version specified
+    testImplementation('org.junit.platform:junit-platform-suite-engine')
+
 
     extraLibs('org.apache.commons:commons-text:1.10.0')
 }
@@ -44,8 +46,14 @@ jar {
 }
 
 tasks.register('copyJarsToDocker', Copy) {
-    from('build/libs/')
-    into( '../docker/keycloak/providers/')
+    copy {
+        from('build/libs/')
+        into( 'src/test/resources/docker/keycloak/providers/')
+    }
+    copy {
+        from('build/libs/')
+        into( '../docker/keycloak/providers/')
+    }
 }
 
 build {
