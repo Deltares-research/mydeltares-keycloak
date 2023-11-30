@@ -1,11 +1,8 @@
 package nl.deltares.keycloak.authentication.forms;
 
-import jakarta.ws.rs.core.MultivaluedMap;
 import nl.deltares.keycloak.mocking.MockValidationContext;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.keycloak.common.Profile;
-import org.keycloak.events.Details;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.validation.Validation;
@@ -45,7 +42,7 @@ public class RegistrationUsernameTest {
 
         RegistrationUserCreation registrationUsername = new RegistrationUserCreation();
         MockValidationContext context = getMockValidationContext();
-        UserModel test = context.getSession().users().addUser(context.getRealm(), "test");
+        context.getSession().users().addUser(context.getRealm(), "test");
 
         HttpRequest request = context.getHttpRequest();
         request.getDecodedFormParameters().add(Validation.FIELD_EMAIL, "test@domain.nl");
