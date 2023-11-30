@@ -8,6 +8,7 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.jpa.ClientAdapter;
 import org.keycloak.models.jpa.entities.ClientEntity;
+import org.keycloak.services.DefaultKeycloakContext;
 import org.keycloak.services.DefaultKeycloakSession;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.HttpRequestImpl;
@@ -18,17 +19,22 @@ public class TestUtils {
 
     public static MockValidationContext getMockValidationContext() throws URISyntaxException {
         final MockHttpRequest delegate = MockHttpRequest.get("http://localhost:8080/test");
-        delegate.addFormHeader("Content-Type","application/x-www-form-urlencoded");
+        delegate.addFormHeader("Content-Type", "application/x-www-form-urlencoded");
         HttpRequest request = new HttpRequestImpl(delegate);
         MockValidationContext context = new MockValidationContext();
-        context.setRequest( request);
+        context.setRequest(request);
+
         KeycloakSession session = new MockKeycloakSession(new DefaultKeycloakSessionFactory());
+        context.setSession(session);
+
+        final DefaultKeycloakContext sessionContext = (DefaultKeycloakContext) session.getContext();
         MockRealmModel realm = new MockRealmModel();
+        sessionContext.setRealm(realm);
         context.setRealm(realm);
+
         ClientConnection connection = new MockClientConnection();
         EventBuilder eventBuilder = new EventBuilder(realm, session, connection);
         context.setEventBuilder(eventBuilder);
-        context.setSession(session);
 
         return context;
 

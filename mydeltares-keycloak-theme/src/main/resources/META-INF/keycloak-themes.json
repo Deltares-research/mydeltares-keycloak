@@ -3,7 +3,6 @@
     {
       "name": "deltares-keycloak-theme",
       "types": [
-        "account",
         "email",
         "login"
       ]

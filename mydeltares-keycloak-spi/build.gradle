@@ -9,6 +9,11 @@ repositories {
     mavenCentral()
 }
 
+
+configurations {
+    extraLibs
+}
+
 dependencies {
 
     implementation('jakarta.ws.rs:jakarta.ws.rs-api:3.1.0')
@@ -26,12 +31,17 @@ dependencies {
 //    testImplementation('com.github.dasniko:testcontainers-keycloak:3.0.0')
 //    testImplementation('com.testcontainers:testcontainers:1.16.3')
 
+    extraLibs('org.apache.commons:commons-text:1.10.0')
 }
 
 test {
     useJUnitPlatform()
 }
 
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from { configurations.extraLibs.collect { it.isDirectory() ? it : zipTree(it) } }
+}
 
 tasks.register('copyJarsToDocker', Copy) {
     from('build/libs/')
