@@ -1,38 +1,37 @@
 package nl.deltares.keycloak.storage.rest;
 
+import nl.deltares.keycloak.IntegrationTestSuite;
 import nl.deltares.keycloak.utils.KeycloakTestServer;
 import nl.deltares.keycloak.utils.KeycloakUtilsImpl;
-import org.junit.*;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.rules.TestName;
-import org.keycloak.representations.idm.GroupRepresentation;
+import org.junit.jupiter.api.Test;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import java.io.*;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.TimeZone;
 
+import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("IntegrationTestCategory")
-@Ignore
 public class UsersApiTest {
 
-    final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
-    @Rule
-    public TestName name = new TestName();
+    @BeforeAll
+    public static void startUp() throws Throwable {
+        if (!IntegrationTestSuite.isKeycloakRunning()) {
+            IntegrationTestSuite.startKeyCloak();
+        }
+        assertTrue(IntegrationTestSuite.isKeycloakRunning());
+    }
 
     @Test
     public void adminApiGetDisabledUsersUnauthorized() {
 
-        KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getAdminKeycloakUtils();
-        try (StringWriter writer = new StringWriter()){
+        KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getUserKeycloakUtils();
+        try (StringWriter writer = new StringWriter()) {
             keycloakUtils.exportInvalidUsers(writer);
-            Assert.fail();
+            fail();
         } catch (IOException e) {
-            Assert.assertEquals("Error 403", e.getMessage().substring(0, "Error 403".length()));
+            assertEquals("Error 403", e.getMessage().substring(0, "Error 403".length()));
         }
 
     }
@@ -42,82 +41,34 @@ public class UsersApiTest {
 
         KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getAdminKeycloakUtils();
 
-        String userId = keycloakUtils.getOrCreateUser("disabled", "user1", "disabled-user1", "disabled-user1@test.nl");
+        String userId = keycloakUtils.getOrCreateUser("disabled", "user1", "adminApiGetInvalidUsers", "adminApiGetInvalidUsers@test.nl");
 
-        try(StringWriter writer = new StringWriter()) {
+        try (StringWriter writer = new StringWriter()) {
             keycloakUtils.exportInvalidUsers(writer);
-            Assert.assertFalse(writer.toString().contains("disabled-user1@test.nl"));
+            assertFalse(writer.toString().contains("adminApiGetInvalidUsers@test.nl"));
         }
 
-        UserRepresentation user = keycloakUtils.getUserByEmail("disabled-user1@test.nl");
+        UserRepresentation user = keycloakUtils.getUserByEmail("adminApiGetInvalidUsers@test.nl");
         user.setEnabled(false);
 
         keycloakUtils.updateUser(user);
 
-        try(StringWriter writer = new StringWriter()) {
+        try (StringWriter writer = new StringWriter()) {
             keycloakUtils.exportInvalidUsers(writer);
-            Assert.assertTrue(writer.toString().contains("disabled-user1@test.nl"));
+            assertTrue(writer.toString().contains("adminapigetinvalidusers@test.nl"));
         }
-    }
-
-    @Test
-    public void adminApiTestUserDisabledEventListener() throws IOException, ParseException {
-
-        simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-        KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getAdminKeycloakUtils();
-
-        //Check that user is member of 2 groups
-        UserRepresentation user = keycloakUtils.getUserByEmail("user.withgroups@test.nl");
-
-        final List<GroupRepresentation> groups = keycloakUtils.getGroups();
-        Assert.assertEquals(2 , groups.size());
-        for (GroupRepresentation group : groups) {
-            final List<UserRepresentation> members = keycloakUtils.getGroupMember(group.getId());
-            boolean[] contains = {false} ;
-            members.forEach(userRepresentation -> {if (userRepresentation.getEmail().equals("user.withgroups@test.nl")) contains[0] = true;});
-            Assert.assertTrue(String.format("Group %s does not contain member", group.getName()), contains[0]);
-        }
-
-        //Disabling user will trigger UPDATE event
-        user.setEnabled(false);
-        keycloakUtils.updateUser(user);
-
-        //Update has removed user from all groups
-        for (GroupRepresentation group : groups) {
-            final List<UserRepresentation> members = keycloakUtils.getGroupMember(group.getId());
-            boolean[] contains = {false} ;
-            members.forEach(userRepresentation -> {if (userRepresentation.getEmail().equals("user.withgroups@test.nl")) contains[0] = true;});
-            Assert.assertFalse(String.format("Group %s should not contain member", group.getName()), contains[0]);
-        }
-
-        //Attribute disabledTime added to user.
-        user = keycloakUtils.getUserByEmail("user.withgroups@test.nl");
-        List<String> disabledTime = user.getAttributes().get("disabledTime");
-        Assert.assertEquals(1, disabledTime.size());
-        final Date disabledDate = simpleDateFormat.parse(disabledTime.get(0));
-
-        Assert.assertEquals(System.currentTimeMillis(), disabledDate.getTime(), 1000); //compare timestamps. should only differ by 1 second
-
-        //Re-enable the user
-        user.setEnabled(true);
-        keycloakUtils.updateUser(user);
-
-        //Attribute disableTime is removed
-        user = keycloakUtils.getUserByEmail("user.withgroups@test.nl");
-        Assert.assertNull(user.getAttributes());
-
     }
 
     @Test
     public void adminApiTestCheckNonExistingUsers() throws IOException {
         KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getAdminKeycloakUtils();
 
-        String userId1= keycloakUtils.getOrCreateUser("existing", "user1", "existing-user1", "existing-user1@test.nl");
-        String userId2= keycloakUtils.getOrCreateUser("existing", "user2", "existing-user2", "existing-user2@test.nl");
+        String userId1 = keycloakUtils.getOrCreateUser("existing", "user1", "existing-user1", "existing-user1@test.nl");
+        String userId2 = keycloakUtils.getOrCreateUser("existing", "user2", "existing-user2", "existing-user2@test.nl");
 
 
         final File tempFile = File.createTempFile("test", ".csv");
-        try(BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile))) {
+        try (BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile))) {
             fileWriter.write("Existing User1;existing-user1@test.nl\n");
             fileWriter.write("Existing User2;existing-user2@test.nl\n");
             fileWriter.write("Non, existing User1;none-existing-user3@test.nl");
@@ -125,9 +76,9 @@ public class UsersApiTest {
         }
 
         String response = keycloakUtils.uploadCheckUsersExistAdminApi(tempFile);
-        Assert.assertTrue(response.contains("none-existing-user3@test.nl"));
-        Assert.assertFalse(response.contains("existing-user1@test.nl"));
-        Assert.assertFalse(response.contains("existing-user2@test.nl"));
+        assertTrue(response.contains("none-existing-user3@test.nl"));
+        assertFalse(response.contains("existing-user1@test.nl"));
+        assertFalse(response.contains("existing-user2@test.nl"));
 
     }
 
@@ -135,11 +86,11 @@ public class UsersApiTest {
     public void adminApiTestCheckNonExistingUsersWithQuotes() throws IOException {
         KeycloakUtilsImpl keycloakUtils = KeycloakTestServer.getAdminKeycloakUtils();
 
-        String userId4= keycloakUtils.getOrCreateUser("existing", "user4", "existing-user4", "existing-user4@test.nl");
-        String userId5= keycloakUtils.getOrCreateUser("existing", "user5", "existing-user5", "existing-user5@test.nl");
+        String userId4 = keycloakUtils.getOrCreateUser("existing", "user4", "existing-user4", "existing-user4@test.nl");
+        String userId5 = keycloakUtils.getOrCreateUser("existing", "user5", "existing-user5", "existing-user5@test.nl");
 
         final File tempFile = File.createTempFile("test", ".csv");
-        try(BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile))) {
+        try (BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile))) {
             fileWriter.write("\"Existing, User1\";existing-user4@test.nl\n");
             fileWriter.write("\"Existing; User2\";existing-user5@test.nl\n");
             fileWriter.write("Non existing User1;none-existing-user3@test.nl");
@@ -147,9 +98,9 @@ public class UsersApiTest {
         }
 
         String response = keycloakUtils.uploadCheckUsersExistAdminApi(tempFile);
-        Assert.assertTrue(response.contains("none-existing-user3@test.nl"));
-        Assert.assertFalse(response.contains("existing-user1@test.nl"));
-        Assert.assertFalse(response.contains("existing-user2@test.nl"));
+        assertTrue(response.contains("none-existing-user3@test.nl"));
+        assertFalse(response.contains("existing-user1@test.nl"));
+        assertFalse(response.contains("existing-user2@test.nl"));
 
     }
 

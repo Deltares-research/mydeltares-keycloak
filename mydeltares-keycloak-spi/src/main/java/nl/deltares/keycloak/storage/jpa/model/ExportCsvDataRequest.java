@@ -51,9 +51,9 @@ public class ExportCsvDataRequest implements DataRequest {
 
     private File getExportDir() throws IOException {
         if (tempDir != null) return tempDir;
-        String property = System.getProperty("jboss.server.temp.dir");
+        String property = System.getProperty("java.io.tmpdir");
         if (property == null){
-            throw new IOException("Missing system property: jboss.server.temp.dir");
+            throw new IOException("Missing system property: java.io.tmpdir");
         }
         tempDir = new File(property, "deltares");
         if (!tempDir.exists()) Files.createDirectory(tempDir.toPath());

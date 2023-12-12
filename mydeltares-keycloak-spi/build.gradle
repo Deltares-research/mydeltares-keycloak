@@ -42,7 +42,7 @@ dependencies {
 
 test {
 //    filter {
-////        excludeTestsMatching('nl.deltares.keycloak.storage.rest.*')
+//        excludeTestsMatching('nl.deltares.keycloak.storage.rest.*')
 //        include('nl.deltares.**')
 //    }
     useJUnitPlatform()

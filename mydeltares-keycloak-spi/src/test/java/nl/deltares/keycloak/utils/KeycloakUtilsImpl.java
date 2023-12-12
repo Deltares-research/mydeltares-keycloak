@@ -8,10 +8,10 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import java.io.*;
@@ -55,11 +55,6 @@ public class KeycloakUtilsImpl {
         return basePath + KEYCLOAK_AVATAR_PATH;
     }
 
-//    private String getAdminAvatarPath() {
-//        String basePath = getKeycloakBasePath();
-//        return basePath + KEYCLOAK_ADMIN_AVATAR_PATH;
-//    }
-
     private String getUsersPath() {
         String basePath = getKeycloakBaseApiPath();
         return basePath + KEYCLOAK_USERS_PATH;
@@ -91,20 +86,6 @@ public class KeycloakUtilsImpl {
         return readAll(urlConnection);
     }
 
-    public UserRepresentation getUser(String id) throws IOException {
-        HttpURLConnection urlConnection = getConnection(getUsersPath() + "/" + id, "GET", getAccessToken(), null);
-        int response = checkResponse(urlConnection);
-        if (response == Response.Status.NO_CONTENT.getStatusCode()) {
-            return null;
-        }
-        ObjectMapper mapper = new ObjectMapper();
-        try (InputStream inputStream = urlConnection.getInputStream()) {
-            return mapper.readValue(inputStream, mapper.getTypeFactory().constructType(UserRepresentation.class));
-        } finally {
-            urlConnection.disconnect();
-        }
-    }
-
     public void updateUser(UserRepresentation user) throws IOException {
         HashMap<String, String> map = new HashMap<>();
         map.put("Content-Type", MediaType.APPLICATION_JSON);
@@ -124,37 +105,10 @@ public class KeycloakUtilsImpl {
         String jsonResponse = readAll(urlConnection);
         ObjectMapper mapper = new ObjectMapper();
         List<UserRepresentation> map = mapper.readValue(jsonResponse, mapper.getTypeFactory().constructCollectionType(List.class, UserRepresentation.class));
-        if (map.size() > 0) {
+        if (!map.isEmpty()) {
             return map.get(0);
         }
         return null;
-    }
-
-    public List<GroupRepresentation> getGroups() throws IOException {
-
-        HttpURLConnection urlConnection = getConnection(getKeycloakBaseApiPath() + "groups", "GET", getAccessToken(), null);
-        int responseCode = urlConnection.getResponseCode();
-        if (responseCode > 299) {
-            throw new IOException(String.format("Error getGroups: %s %s", responseCode, readError(urlConnection)));
-        }
-        String jsonResponse = readAll(urlConnection);
-        ObjectMapper mapper = new ObjectMapper();
-
-        return mapper.readValue(jsonResponse, mapper.getTypeFactory().constructCollectionLikeType(List.class, GroupRepresentation.class));
-    }
-
-    public List<UserRepresentation> getGroupMember(String groupId) throws IOException {
-
-        String queryParams = String.format("groups/%s/members", groupId);
-        HttpURLConnection urlConnection = getConnection(getKeycloakBaseApiPath() + queryParams, "GET", getAccessToken(), null);
-        int responseCode = urlConnection.getResponseCode();
-        if (responseCode > 299) {
-            throw new IOException(String.format("Error getGroupMember for group %s: %s %s", groupId, responseCode, readError(urlConnection)));
-        }
-        String jsonResponse = readAll(urlConnection);
-        ObjectMapper mapper = new ObjectMapper();
-
-        return mapper.readValue(jsonResponse, mapper.getTypeFactory().constructCollectionLikeType(List.class, UserRepresentation.class));
     }
 
     public void deleteUser(String id) throws IOException {
@@ -181,49 +135,21 @@ public class KeycloakUtilsImpl {
     }
 
     public String uploadCheckUsersExistAdminApi(File dataFile) throws IOException {
-        URL url = new URL(getUsersDeltaresPath() + "/check-users-exist");
 
-        String boundaryString = "----CheckUsersExist";
+        HttpClient httpclient = HttpClientBuilder.create().build();
+        final HttpPost httpPost = new HttpPost(getUsersDeltaresPath() + "/check-users-exist");
+//        httpPost.addHeader("Content-Type", "multipart/form-data");
+        httpPost.addHeader("Authorization", "Bearer " + accessToken);
 
-        HashMap<String, String> map = new HashMap<>();
-        map.put("Content-Type", "multipart/form-data; boundary=" + boundaryString);
-        HttpURLConnection urlConnection = getHttpConnection(url, "POST", map);
-        urlConnection.setRequestProperty("Authorization", "Bearer " + getAccessToken());
+//        final FileBody fileBody = new FileBody(dataFile, Files.probeContentType(dataFile.toPath()));
+        final MultipartEntityBuilder reqEntity = MultipartEntityBuilder.create();
+        reqEntity.addBinaryBody("data", dataFile, ContentType.TEXT_PLAIN, "data.csv");
+        httpPost.setEntity(reqEntity.build());
 
-        OutputStream outputStream = urlConnection.getOutputStream();
-        BufferedWriter httpRequestBodyWriter =
-                new BufferedWriter(new OutputStreamWriter(outputStream));
-
-        // Include the section to describe the file
-        httpRequestBodyWriter.write("\n--" + boundaryString + "\n");
-        String fileName = dataFile.getName();
-        httpRequestBodyWriter.write("Content-Disposition: form-data;"
-                + "name=\"data\";"
-                + "filename=\"" + fileName + "\""
-                + "\nContent-Type: application/octet-stream\n\n");
-        httpRequestBodyWriter.flush();
-
-        // Write the actual file contents
-        FileInputStream inputStreamToLogFile = new FileInputStream(dataFile);
-
-        int bytesRead;
-        byte[] dataBuffer = new byte[1024];
-        while ((bytesRead = inputStreamToLogFile.read(dataBuffer)) != -1) {
-            outputStream.write(dataBuffer, 0, bytesRead);
-        }
-
-        outputStream.flush();
-
-        // Mark the end of the multipart http request
-        httpRequestBodyWriter.write("\n--" + boundaryString + "--\n");
-        httpRequestBodyWriter.flush();
-
-        // Close the streams
-        outputStream.close();
-        httpRequestBodyWriter.close();
+        final org.apache.http.HttpResponse response = httpclient.execute(httpPost);
 
         // Read response from web server, which will trigger the multipart HTTP request to be sent.
-        return readAll(urlConnection);
+        return readAll(response.getEntity().getContent());
     }
 
     public int uploadUserAvatarApi(String userId, File portraitFile) throws Exception {
@@ -415,10 +341,10 @@ public class KeycloakUtilsImpl {
 
         StringBuilder postData = new StringBuilder();
         for (Map.Entry<String, Object> param : params.entrySet()) {
-            if (postData.length() != 0) postData.append('&');
-            postData.append(URLEncoder.encode(param.getKey(), StandardCharsets.UTF_8.name()));
+            if (!postData.isEmpty()) postData.append('&');
+            postData.append(URLEncoder.encode(param.getKey(), StandardCharsets.UTF_8));
             postData.append('=');
-            postData.append(URLEncoder.encode(String.valueOf(param.getValue()), StandardCharsets.UTF_8.name()));
+            postData.append(URLEncoder.encode(String.valueOf(param.getValue()), StandardCharsets.UTF_8));
         }
         byte[] postDataBytes = postData.toString().getBytes(StandardCharsets.UTF_8);
 
@@ -455,17 +381,18 @@ public class KeycloakUtilsImpl {
     }
 
     private static String readAll(HttpURLConnection connection) throws IOException {
+        return readAll(connection.getInputStream());
+    }
+    private static String readAll(InputStream inputStream) throws IOException {
 
-        try (InputStream inputStream = connection.getInputStream()) {
-            ByteArrayOutputStream result = new ByteArrayOutputStream();
-            byte[] buffer = new byte[1024];
-            int length;
-            while ((length = inputStream.read(buffer)) != -1) {
-                result.write(buffer, 0, length);
-            }
-            // StandardCharsets.UTF_8.name() > JDK 7
-            return result.toString("UTF-8");
+        ByteArrayOutputStream result = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int length;
+        while ((length = inputStream.read(buffer)) != -1) {
+            result.write(buffer, 0, length);
         }
+        // StandardCharsets.UTF_8.name() > JDK 7
+        return result.toString("UTF-8");
 
     }
 

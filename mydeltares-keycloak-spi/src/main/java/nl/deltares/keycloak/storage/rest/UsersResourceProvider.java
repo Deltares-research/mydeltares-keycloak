@@ -18,9 +18,7 @@ public class UsersResourceProvider implements RealmResourceProvider {
 
     @Override
     public Object getResource() {
-        UsersResource usersResource = new UsersResource(keycloakSession, properties);
-        usersResource.init();
-        return usersResource;
+        return new UsersResource(keycloakSession, properties);
     }
 
     @Override
