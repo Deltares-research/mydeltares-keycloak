@@ -18,9 +18,7 @@ public class AvatarResourceProvider implements RealmResourceProvider {
 
     @Override
     public Object getResource() {
-        AvatarResource avatarResource = new AvatarResource(keycloakSession, properties);
-        avatarResource.init();
-        return avatarResource;
+        return new AvatarResource(keycloakSession, properties);
     }
 
     @Override

@@ -3,124 +3,151 @@ package nl.deltares.keycloak.storage.rest;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
 import nl.deltares.keycloak.storage.jpa.Avatar;
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.RestForm;
+import org.jboss.resteasy.reactive.multipart.FileUpload;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.models.UserModel;
+import org.keycloak.services.ForbiddenException;
 
-import java.util.Objects;
 import java.util.Properties;
 
-import static nl.deltares.keycloak.storage.rest.ResourceUtils.getAuthResult;
+import static nl.deltares.keycloak.storage.rest.ResourceUtils.contentTypeToExtension;
 
 public class AvatarResource extends AbstractAvatarResource {
 
-    private static final String STATE_CHECKER_ATTRIBUTE = "state_checker";
-    private static final String STATE_CHECKER_PARAMETER = "stateChecker";
+    private static final Logger logger = Logger.getLogger(AvatarResource.class);
 
-    private AuthenticationManager.AuthResult authResult;
-
-    @Context
-    private HttpHeaders httpHeaders;
 
     AvatarResource(KeycloakSession session, Properties properties) {
         super(session, properties);
     }
 
-    public void init(){
-        ResteasyProviderFactory.getInstance().injectProperties(this);
-        authResult = getAuthResult(session, httpHeaders);
+    @GET
+    @Path("/hello")
+    public Response sayHello() {
+        return Response.ok("hello").build();
     }
 
-    @Path("/admin")
-    public AvatarAdminResource admin() {
-        AvatarAdminResource service = new AvatarAdminResource(session, super.properties);
-        ResteasyProviderFactory.getInstance().injectProperties(service);
-        service.init();
-        return service;
+    @GET
+    @Path("/{user_id}")
+    @Produces({"image/png", "image/jpeg", "image/gif"})
+    public Response downloadUserAvatarImage(@PathParam("user_id") String userId) {
+        try {
+            canViewUsers();
+            UserModel user = session.users().getUserById(realm, userId);
+            if (user == null) throw new NotFoundException("User not found for id " + userId);
+            Avatar avatar = getAvatarEntity(realm.getId(), userId);
+            if (avatar == null) {
+//                logger.info("No avatar exists for user " + userId);
+                return Response.status(Response.Status.NO_CONTENT).build();
+            }
+
+            return Response.ok(avatar.getAvatar(), avatar.getContentType())
+                    .header("Content-Disposition", "inline; filename = \"" + user.getUsername() + '.' + contentTypeToExtension(avatar.getContentType()) + '\"')
+                    .build();
+
+        } catch (ForbiddenException e) {
+            return Response.status(Response.Status.FORBIDDEN).entity(e.getMessage()).build();
+        } catch (Exception e) {
+            logger.error("error getting user avatar", e);
+            return Response.serverError().entity(e.getMessage()).build();
+        }
     }
 
     @GET
     @Produces({"image/png", "image/jpeg", "image/gif"})
-    public Response downloadCurrentUserAvatarImage() {
+    public Response getAvatar(@Context UriInfo uriInfo) {
 
-        if (authResult == null) {
-            return badRequest();
+        canViewUsers();
+
+        final MultivaluedMap<String, String> queryParameters = uriInfo.getQueryParameters();
+        UserModel user;
+        if (queryParameters.containsKey("username")) {
+            final String username = queryParameters.get("username").get(0);
+            user = session.users().getUserByUsername(realm, username);
+            if (user == null) throw new NotFoundException("User not found for username " + username);
+        } else if (queryParameters.containsKey("email")) {
+            final String email = queryParameters.get("email").get(0);
+            user = session.users().getUserByEmail(realm, email);
+            if (user == null) throw new NotFoundException("User not found for email " + email);
+        } else {
+            throw new IllegalArgumentException("no filter parameters defined!");
         }
 
-        String  userId = authResult.getUser().getId();
-        String realmId = authResult.getSession().getRealm().getId();
-
-        Avatar avatar = getAvatarEntity(realmId, userId);
-        if (avatar == null){
+        Avatar avatar = getAvatarEntity(realm.getId(), user.getId());
+        if (avatar == null) {
+            logger.info("No avatar exists for user " + user.getId());
             return Response.status(Response.Status.NO_CONTENT).build();
         }
 
         return Response.ok(avatar.getAvatar(), avatar.getContentType())
-                .header("Content-Disposition", "inline; filename = \"" + authResult.getUser().getUsername() + '.' + ResourceUtils.contentTypeToExtension(avatar.getContentType()) + '\"')
+                .header("Content-Disposition", "inline; filename = \"" + user.getUsername() + '.' + contentTypeToExtension(avatar.getContentType()) + '\"')
                 .build();
-
     }
 
     @POST
-    @NoCache
-    @Consumes({MediaType.MULTIPART_FORM_DATA})
-    public Response uploadCurrentUserAvatarImage(MultipartFormDataInput input) {
-
-        if (authResult == null) {
-            return badRequest();
-        }
-
-        if (!isValidStateChecker(input)) {
-            return badRequest();
-        }
-        String realmName = authResult.getSession().getRealm().getId();
+    @Path("/{user_id}")
+    @Consumes("multipart/form-data")
+    public Response uploadUserAvatarImage(@PathParam("user_id") String userId, @RestForm("image") FileUpload file) {
 
         try {
-            if (input.getFormDataMap().get("deleteAction") != null){
-                Response response = deleteCurrentUserAvatarImage();
-                if (response.getStatus() == 500) return response;
-            } else {
-                String userId = authResult.getUser().getId();
-                setAvatarImage(realmName, userId, input);
+            canManageUsers();
+            if (file == null) {
+                throw new IllegalArgumentException("Missing image");
             }
-            UriBuilder builder = RealmsResource.accountUrl(session.getContext().getUri().getBaseUriBuilder());
-            return Response.seeOther(builder.build(realmName)).build();
-        } catch (MaxSizeExceededException e){
-            return Response.status(Response.Status.REQUEST_ENTITY_TOO_LARGE.getStatusCode(), e.getMessage()).type(MediaType.TEXT_PLAIN).build();
-        } catch (Exception ex) {
-            return Response.serverError().build();
+            UserModel user = session.users().getUserById(realm, userId);
+            if (user == null) throw new NotFoundException("User not found for id " + userId);
+            setAvatarImage(realm.getId(), userId, file);
+        } catch (MaxSizeExceededException e) {
+            return Response.status(Response.Status.REQUEST_ENTITY_TOO_LARGE).entity(e.getMessage()).build();
+        } catch (ForbiddenException e) {
+            return Response.status(Response.Status.FORBIDDEN).entity(e.getMessage()).build();
+        } catch (Exception e) {
+            logger.error("error saving user avatar", e);
+            return Response.serverError().entity(e.getMessage()).build();
         }
+
+        return Response.ok().type(MediaType.TEXT_PLAIN).build();
     }
 
     @DELETE
-    @NoCache
-    public Response deleteCurrentUserAvatarImage() {
-
-        if (authResult == null) {
-            return badRequest();
-        }
+    @Path("/{user_id}")
+    public Response deleteUserAvatarImage(@PathParam("user_id") String userId) {
         try {
-            String realmName = authResult.getSession().getRealm().getId();
-            String userId = authResult.getUser().getId();
-            deleteAvatarImage(realmName, userId);
-            return Response.ok().type(MediaType.TEXT_PLAIN).build();
-        }  catch (Exception ex) {
-            return Response.serverError().build();
+            canManageUsers();
+
+            deleteAvatarImage(realm.getId(), userId);
+
+        } catch (ForbiddenException e) {
+            return Response.status(Response.Status.FORBIDDEN).entity(e.getMessage()).build();
+        } catch (Exception e) {
+            logger.error("error deleting user avatar", e);
+            return Response.serverError().entity(e.getMessage()).build();
+        }
+
+        return Response.ok().type(MediaType.TEXT_PLAIN).build();
+    }
+
+
+    private void canViewUsers() {
+        if (realmAuth == null) {
+            throw new NotAuthorizedException("User not authorized!");
+        }
+        if (!realmAuth.users().canView()) {
+            logger.info("user does not have permission to view users");
+            throw new ForbiddenException("user does not have permission to view users");
         }
     }
 
-    private boolean isValidStateChecker(MultipartFormDataInput input) {
+    private void canManageUsers() {
+        if (realmAuth == null) {
+            throw new NotAuthorizedException("User not authorized!");
+        }
 
-        try {
-            String actualStateChecker = input.getFormDataPart(STATE_CHECKER_PARAMETER, String.class, null);
-            String requiredStateChecker = (String) session.getAttribute(STATE_CHECKER_ATTRIBUTE);
-
-            return Objects.equals(requiredStateChecker, actualStateChecker);
-        } catch (Exception ex) {
-            return false;
+        if (!realmAuth.users().canManage()) {
+            logger.info("user does not have permission to manage users");
+            throw new ForbiddenException("user does not have permission to manage users");
         }
     }
 

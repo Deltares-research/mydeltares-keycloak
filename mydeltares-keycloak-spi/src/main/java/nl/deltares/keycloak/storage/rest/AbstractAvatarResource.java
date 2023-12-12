@@ -1,59 +1,63 @@
 package nl.deltares.keycloak.storage.rest;
 
 import jakarta.persistence.EntityManager;
-import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.HttpHeaders;
 import nl.deltares.keycloak.storage.jpa.Avatar;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.plugins.providers.multipart.InputPart;
-import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
+import org.jboss.resteasy.reactive.multipart.FileUpload;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.services.managers.Auth;
+import org.keycloak.services.resources.admin.AdminAuth;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
+import static nl.deltares.keycloak.storage.rest.ResourceUtils.getAuth;
 import static nl.deltares.keycloak.storage.rest.ResourceUtils.parseContentType;
 
 abstract class AbstractAvatarResource {
     private static final Logger LOG = Logger.getLogger(AbstractAvatarResource.class);
-    static final String AVATAR_IMAGE_PARAMETER = "image";
-    static final String AVATAR_CONTENTTYPE_PARAMETER = "Content-Type";
     static int MAX_SIZE; //bytes
     static int MAX_SIZE_KB = 65; //bytes
     final Properties properties;
-    KeycloakSession session;
+    final KeycloakSession session;
+    final HttpHeaders headers;
+    final AdminPermissionEvaluator realmAuth;
+    final RealmModel realm;
+    final HttpRequest request;
 
     AbstractAvatarResource(KeycloakSession session, Properties properties) {
         this.session = session;
         this.properties = properties;
-        if (properties != null){
+        this.headers = session.getContext().getRequestHeaders();
+        this.request = session.getContext().getHttpRequest();
+        realm = session.getContext().getRealm();
+        if (properties != null) {
             MAX_SIZE_KB = Integer.parseInt(properties.getOrDefault("avatar_maxsize_kb", MAX_SIZE_KB).toString());
         }
-        MAX_SIZE = MAX_SIZE_KB*1024;
+        MAX_SIZE = MAX_SIZE_KB * 1024;
 
+        Auth auth = getAuth(headers, session);
+        assert auth != null;
+        AdminAuth adminAuth = new AdminAuth(auth.getRealm(), auth.getToken(), auth.getUser(), auth.getClient());
+        realmAuth = AdminPermissions.evaluator(session, auth.getRealm(), adminAuth);
     }
 
-    Response badRequest() {
-        return Response.seeOther(RealmsResource.accountUrl(session.getContext().getUri().getBaseUriBuilder()).build()).status(Response.Status.BAD_REQUEST).build();
-    }
+    void setAvatarImage(String realmId, String userId, FileUpload input) throws MaxSizeExceededException, IOException {
 
-    void setAvatarImage(String realmId, String userId, MultipartFormDataInput input) throws MaxSizeExceededException, IOException {
-
-        Map<String, List<InputPart>> formDataMap = input.getFormDataMap();
-        List<InputPart> inputParts = formDataMap.get(AVATAR_IMAGE_PARAMETER);
-        if (inputParts == null || inputParts.isEmpty()){
-            throw new IllegalArgumentException("Missing image");
-        }
-        InputPart inputPart = inputParts.get(0);
-        String contentType = parseContentType(inputPart.getHeaders().getFirst(AVATAR_CONTENTTYPE_PARAMETER));
-        InputStream imageInputStream = inputPart.getBody(InputStream.class, null);
-        if (imageInputStream.available() == 0){
+        String contentType = parseContentType(input.contentType());
+        InputStream imageInputStream = new FileInputStream(input.uploadedFile().toFile());
+        if (imageInputStream.available() == 0) {
             return; //save pressed when no image selected
         }
         Avatar avatar = getAvatarEntity(realmId, userId);
@@ -73,7 +77,7 @@ abstract class AbstractAvatarResource {
 
     void deleteAvatarImage(String realmId, String userId) {
         Avatar avatar = getAvatarEntity(realmId, userId);
-        if (avatar == null){
+        if (avatar == null) {
             LOG.info("No avatar exists for user " + userId);
             return;
         }
@@ -102,7 +106,7 @@ abstract class AbstractAvatarResource {
         int maxRead = 0;
         while ((nRead = input.read(data, 0, data.length)) != -1) {
             maxRead += nRead;
-            if (maxRead > MAX_SIZE){
+            if (maxRead > MAX_SIZE) {
                 throw new MaxSizeExceededException("Upload size exceeds maximum allowed size of " + MAX_SIZE_KB + " (Kb)");
             }
             buffer.write(data, 0, nRead);

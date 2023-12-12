@@ -57,7 +57,7 @@ public class UploadAvatars {
                     else {
                         try {
                             File portraitFile = getPortraitFile(userPortraitsDir, portraitId);
-                            keycloakUtils.uploadUserAvatarAdminApi(userId, portraitFile);
+                            keycloakUtils.uploadUserAvatarApi(userId, portraitFile);
                         } catch (Exception e) {
                             writeFailed(bw, email, portraitId);
                         }

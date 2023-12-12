@@ -1,31 +1,34 @@
 package nl.deltares.keycloak.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import jakarta.ws.rs.client.*;
+import jakarta.ws.rs.core.Form;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.FileBody;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.*;
 
 public class KeycloakUtilsImpl {
 
     private static final String KEYCLOAK_BASEURL_KEY = "keycloak.baseurl";
     private static final String KEYCLOAK_BASEAPIURL_KEY = "keycloak.baseapiurl";
-    private static final String KEYCLOAK_USER_MAILING_PATH = "user-mailings";
-    private static final String KEYCLOAK_MAILING_PATH = "mailing-provider";
     private static final String KEYCLOAK_ATTRIBUTE_PATH = "user-attributes";
     private static final String KEYCLOAK_AVATAR_PATH = "avatar-provider";
     private static final String KEYCLOAK_USERS_PATH = "users";
     private static final String KEYCLOAK_USERS_DELTARES_PATH = "users-deltares";
     private static final String KEYCLOAK_ADMIN_ATTRIBUTE_PATH = KEYCLOAK_ATTRIBUTE_PATH + "/admin";
-    private static final String KEYCLOAK_ADMIN_USER_MAILING_PATH = KEYCLOAK_USER_MAILING_PATH + "/admin";
-    private static final String KEYCLOAK_ADMIN_MAILING_PATH = KEYCLOAK_MAILING_PATH + "/admin";
-    private static final String KEYCLOAK_ADMIN_AVATAR_PATH = KEYCLOAK_AVATAR_PATH + "/admin";
     private static final String KEYCLOAK_OPENID_TOKEN_PATH = "protocol/openid-connect/token";
     private static final String KEYCLOAK_CLIENTID_KEY = "keycloak.clientid";
     private static final String KEYCLOAK_CLIENTSECRET_KEY = "keycloak.clientsecret";
@@ -34,7 +37,7 @@ public class KeycloakUtilsImpl {
     private String accessToken;
     private long expTimeMillis;
 
-    public KeycloakUtilsImpl(File propertiesFile){
+    public KeycloakUtilsImpl(File propertiesFile) {
         this.properties = loadProperties(propertiesFile.getAbsolutePath());
     }
 
@@ -52,10 +55,10 @@ public class KeycloakUtilsImpl {
         return basePath + KEYCLOAK_AVATAR_PATH;
     }
 
-    private String getAdminAvatarPath() {
-        String basePath = getKeycloakBasePath();
-        return basePath + KEYCLOAK_ADMIN_AVATAR_PATH;
-    }
+//    private String getAdminAvatarPath() {
+//        String basePath = getKeycloakBasePath();
+//        return basePath + KEYCLOAK_ADMIN_AVATAR_PATH;
+//    }
 
     private String getUsersPath() {
         String basePath = getKeycloakBaseApiPath();
@@ -67,7 +70,7 @@ public class KeycloakUtilsImpl {
         return basePath + KEYCLOAK_USERS_DELTARES_PATH;
     }
 
-    public List<UserRepresentation> searchUser(String searchString) throws IOException{
+    public List<UserRepresentation> searchUser(String searchString) throws IOException {
 
         HttpURLConnection urlConnection = getConnection(getUsersPath() + "?search=" + searchString, "GET", getAccessToken(), null);
         int response = checkResponse(urlConnection);
@@ -76,11 +79,16 @@ public class KeycloakUtilsImpl {
         }
 
         ObjectMapper mapper = new ObjectMapper();
-        try(InputStream inputStream = urlConnection.getInputStream()) {
+        try (InputStream inputStream = urlConnection.getInputStream()) {
             return mapper.readValue(inputStream, mapper.getTypeFactory().constructCollectionType(List.class, UserRepresentation.class));
         } finally {
             urlConnection.disconnect();
         }
+    }
+
+    public String sayHello() throws IOException {
+        HttpURLConnection urlConnection = getConnection(getAvatarPath() + "/hello", "GET", getAccessToken(), null);
+        return readAll(urlConnection);
     }
 
     public UserRepresentation getUser(String id) throws IOException {
@@ -90,7 +98,7 @@ public class KeycloakUtilsImpl {
             return null;
         }
         ObjectMapper mapper = new ObjectMapper();
-        try(InputStream inputStream = urlConnection.getInputStream()) {
+        try (InputStream inputStream = urlConnection.getInputStream()) {
             return mapper.readValue(inputStream, mapper.getTypeFactory().constructType(UserRepresentation.class));
         } finally {
             urlConnection.disconnect();
@@ -105,6 +113,7 @@ public class KeycloakUtilsImpl {
         mapper.writeValue(urlConnection.getOutputStream(), user);
         checkResponse(urlConnection);
     }
+
     public UserRepresentation getUserByEmail(String email) throws IOException {
 
         HttpURLConnection urlConnection = getConnection(getUsersPath() + "?email=" + email, "GET", getAccessToken(), null);
@@ -123,7 +132,7 @@ public class KeycloakUtilsImpl {
 
     public List<GroupRepresentation> getGroups() throws IOException {
 
-        HttpURLConnection urlConnection = getConnection( getKeycloakBaseApiPath() + "groups", "GET", getAccessToken(), null);
+        HttpURLConnection urlConnection = getConnection(getKeycloakBaseApiPath() + "groups", "GET", getAccessToken(), null);
         int responseCode = urlConnection.getResponseCode();
         if (responseCode > 299) {
             throw new IOException(String.format("Error getGroups: %s %s", responseCode, readError(urlConnection)));
@@ -137,7 +146,7 @@ public class KeycloakUtilsImpl {
     public List<UserRepresentation> getGroupMember(String groupId) throws IOException {
 
         String queryParams = String.format("groups/%s/members", groupId);
-        HttpURLConnection urlConnection = getConnection( getKeycloakBaseApiPath() + queryParams, "GET", getAccessToken(), null);
+        HttpURLConnection urlConnection = getConnection(getKeycloakBaseApiPath() + queryParams, "GET", getAccessToken(), null);
         int responseCode = urlConnection.getResponseCode();
         if (responseCode > 299) {
             throw new IOException(String.format("Error getGroupMember for group %s: %s %s", groupId, responseCode, readError(urlConnection)));
@@ -153,25 +162,22 @@ public class KeycloakUtilsImpl {
         checkResponse(urlConnection);
     }
 
-    public byte[] getUserAvatarAdminApi(String email) throws IOException {
+    public byte[] getUserAvatarApiById(String id) throws IOException {
 
-        HttpURLConnection urlConnection = getConnection(getAdminAvatarPath() + "?email=" + email, "GET", getAccessToken(), null);
+        HttpURLConnection urlConnection = getConnection(getAvatarPath() + "/" + id, "GET", getAccessToken(), null);
         checkResponse(urlConnection);
         return readAllBytes(urlConnection.getInputStream());
     }
 
-    public byte[] getUserAvatarUserApi(String userName, String password) throws IOException {
-        HttpURLConnection urlConnection = getConnection(getAvatarPath(), "GET", getAccessToken(userName, password), null);
+    public byte[] getUserAvatarApiByEmail(String email) throws IOException {
+
+        HttpURLConnection urlConnection = getConnection(getAvatarPath() + "?email=" + email, "GET", getAccessToken(), null);
         checkResponse(urlConnection);
         return readAllBytes(urlConnection.getInputStream());
     }
 
-    public int deleteUserAvatarAdminApi(String userId) throws IOException {
-        return deleteUserAvatar(new URL(getAdminAvatarPath() + '/' + userId), getAccessToken());
-    }
-
-    public int deleteUserAvatarUserApi(String userName, String password) throws IOException {
-        return deleteUserAvatar(new URL(getAvatarPath()), getAccessToken(userName, password));
+    public int deleteUserAvatarApi(String userId) throws IOException {
+        return deleteUserAvatar(new URL(getAvatarPath() + '/' + userId), getAccessToken());
     }
 
     public String uploadCheckUsersExistAdminApi(File dataFile) throws IOException {
@@ -220,12 +226,8 @@ public class KeycloakUtilsImpl {
         return readAll(urlConnection);
     }
 
-    public int uploadUserAvatarAdminApi(String userId, File portraitFile) throws IOException {
-        return uploadUserAvatar(new URL(getAdminAvatarPath() + '/' + userId), portraitFile, getAccessToken());
-    }
-
-    public int uploadUserAvatarUserApi(File portraitFile, String username, String password) throws IOException {
-        return uploadUserAvatar(new URL(getAvatarPath()), portraitFile, getAccessToken(username, password));
+    public int uploadUserAvatarApi(String userId, File portraitFile) throws Exception {
+        return uploadUserAvatar(getAvatarPath() + '/' + userId, portraitFile, getAccessToken());
     }
 
     public int exportInvalidUsers(Writer writer) throws IOException {
@@ -352,7 +354,7 @@ public class KeycloakUtilsImpl {
         return getAccessToken(null, null);
     }
 
-    private String getAccessToken(String resourceOwner, String resourceOwnerPw){
+    private String getAccessToken(String resourceOwner, String resourceOwnerPw) {
 
         if (resourceOwner == null) {
             String cachedToken = getCachedToken();
@@ -406,7 +408,7 @@ public class KeycloakUtilsImpl {
         params.put("grant_type", resourceOwner == null ? "client_credentials" : "password");
         params.put("client_id", clientId);
         params.put("client_secret", clientSec);
-        if (resourceOwner != null){
+        if (resourceOwner != null) {
             params.put("username", resourceOwner);
             params.put("password", resourceOwnerPw);
         }
@@ -438,7 +440,7 @@ public class KeycloakUtilsImpl {
 
     private static String readError(HttpURLConnection connection) throws IOException {
 
-        try(InputStream inputStream = connection.getErrorStream()){
+        try (InputStream inputStream = connection.getErrorStream()) {
             if (inputStream == null) return connection.getResponseMessage();
             ByteArrayOutputStream result = new ByteArrayOutputStream();
             byte[] buffer = new byte[1024];
@@ -454,7 +456,7 @@ public class KeycloakUtilsImpl {
 
     private static String readAll(HttpURLConnection connection) throws IOException {
 
-        try(InputStream inputStream = connection.getInputStream()){
+        try (InputStream inputStream = connection.getInputStream()) {
             ByteArrayOutputStream result = new ByteArrayOutputStream();
             byte[] buffer = new byte[1024];
             int length;
@@ -483,7 +485,7 @@ public class KeycloakUtilsImpl {
         ObjectMapper mapper = new ObjectMapper();
         Map map = mapper.readValue(jsonResponse, Map.class);
 
-        long expMillis = (Integer)map.get("expires_in") * 1000;
+        long expMillis = (Integer) map.get("expires_in") * 1000;
         expTimeMillis = expMillis + System.currentTimeMillis();
 
         accessToken = (String) map.get("access_token");
@@ -499,48 +501,38 @@ public class KeycloakUtilsImpl {
         return null;
     }
 
-    private int uploadUserAvatar(URL url, File portraitFile, String accessToken) throws IOException {
-        String boundaryString = "----UploadAvatar";
+    private int uploadUserAvatar2(URL url, File portraitFile, String accessToken) throws IOException {
 
-        HashMap<String, String> map = new HashMap<>();
-        map.put("Content-Type", "multipart/form-data; boundary=" + boundaryString);
-        HttpURLConnection urlConnection = getHttpConnection(url, "POST", map);
-        urlConnection.setRequestProperty("Authorization", "Bearer " + accessToken);
+        try (final Client client = ClientBuilder.newClient()) {
+            final WebTarget target = client.target(url.toURI());
+            final Invocation.Builder builder = target.request(MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN).header(HttpHeaders.AUTHORIZATION, accessToken);
 
-        OutputStream outputStream = urlConnection.getOutputStream();
-        BufferedWriter httpRequestBodyWriter =
-                new BufferedWriter(new OutputStreamWriter(outputStream));
-
-        // Include the section to describe the file
-        httpRequestBodyWriter.write("\n--" + boundaryString + "\n");
-        String fileName = portraitFile.getName();
-        httpRequestBodyWriter.write("Content-Disposition: form-data;"
-                + "name=\"image\";"
-                + "filename=\"" + fileName + "\""
-                + "\nContent-Type: " +  URLConnection.guessContentTypeFromName(fileName) + "\n\n");
-        httpRequestBodyWriter.flush();
-
-        // Write the actual file contents
-        FileInputStream inputStreamToLogFile = new FileInputStream(portraitFile);
-
-        int bytesRead;
-        byte[] dataBuffer = new byte[1024];
-        while ((bytesRead = inputStreamToLogFile.read(dataBuffer)) != -1) {
-            outputStream.write(dataBuffer, 0, bytesRead);
+            final Form form = new Form();
+            form.param("fileName", portraitFile.getName());
+            form.param("image", portraitFile.getAbsolutePath());
+            final String response = builder.post(Entity.form(form)).readEntity(String.class);
+        } catch (Exception e) {
+            throw new IOException(e);
         }
+        return 0;
+    }
 
-        outputStream.flush();
+    private int uploadUserAvatar(String url, File portraitFile, String accessToken) throws IOException {
 
-        // Mark the end of the multipart http request
-        httpRequestBodyWriter.write("\n--" + boundaryString + "--\n");
-        httpRequestBodyWriter.flush();
+        HttpClient httpclient = HttpClientBuilder.create().build();
+        final HttpPost httpPost = new HttpPost(url);
+//        httpPost.addHeader("Content-Type", "multipart/form-data");
+        httpPost.addHeader("Authorization", "Bearer " + accessToken);
 
-        // Close the streams
-        outputStream.close();
-        httpRequestBodyWriter.close();
+        final FileBody fileBody = new FileBody(portraitFile, Files.probeContentType(portraitFile.toPath()));
+        final MultipartEntityBuilder reqEntity = MultipartEntityBuilder.create();
+        reqEntity.addPart("image", fileBody);
+        httpPost.setEntity(reqEntity.build());
 
-        // Read response from web server, which will trigger the multipart HTTP request to be sent.
-        return readResponse(urlConnection);
+        final org.apache.http.HttpResponse response = httpclient.execute(httpPost);
+
+        return response.getStatusLine().getStatusCode();
+
     }
 
     private int readResponse(HttpURLConnection urlConnection) throws IOException {
@@ -563,9 +555,9 @@ public class KeycloakUtilsImpl {
             prop.load(input);
 
             String portProp = System.getProperty("jboss.http.port");
-            if (portProp != null){
+            if (portProp != null) {
                 int httpPort = Integer.parseInt(portProp);
-                if (httpPort != 8080){
+                if (httpPort != 8080) {
                     String baseUrl = prop.getProperty("keycloak.baseurl");
                     prop.setProperty("keycloak.baseurl", baseUrl.replace("8080", portProp));
                     String apiUrl = prop.getProperty("keycloak.baseapiurl");
@@ -595,7 +587,10 @@ public class KeycloakUtilsImpl {
 
     }
 
-    public String createUser(String firstName, String lastName, String username, String email) throws IOException {
+    public String getOrCreateUser(String firstName, String lastName, String username, String email) throws IOException {
+
+        final UserRepresentation userByEmail = getUserByEmail(email);
+        if (userByEmail != null) return userByEmail.getId();
 
         UserRepresentation userRepresentation = new UserRepresentation();
         userRepresentation.setEmail(email);

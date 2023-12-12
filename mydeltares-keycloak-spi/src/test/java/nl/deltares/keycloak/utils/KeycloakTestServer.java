@@ -4,6 +4,11 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.containers.output.ToStringConsumer;
+import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
+import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.containers.wait.strategy.WaitStrategy;
+import org.testcontainers.shaded.org.bouncycastle.its.ITSValidityPeriod;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,6 +16,8 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.temporal.TemporalUnit;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -60,6 +67,7 @@ public class KeycloakTestServer {
     public static void startKeycloak(String keycloakDir) {
 
         dockerClient = new DockerComposeContainer(new File(keycloakDir, "docker-compose.yml"));
+        final WaitStrategy waitStrategy = new HttpWaitStrategy().forPort(8080).withStartupTimeout(Duration.ofMinutes(1));
         dockerClient.withLogConsumer("keycloak", new ToStringConsumer() {
             @Override
             public void accept(OutputFrame outputFrame) {
@@ -71,7 +79,7 @@ public class KeycloakTestServer {
                     }
                 }
             }
-        });
+        }).withExposedService("keycloak", 8080, waitStrategy);
         dockerClient.start();
         running = true;
 
