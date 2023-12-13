@@ -80,7 +80,7 @@ public class DataRequestManager {
 
     private void startNextRequest() {
 
-        while (pendingRequestsIds.size() > 0) {
+        while (!pendingRequestsIds.isEmpty()) {
             String nextId = pendingRequestsIds.remove();
             DataRequest request = dataRequests.get(nextId);
             if (request == null) continue;
@@ -100,8 +100,7 @@ public class DataRequestManager {
         }
         DataRequest.STATUS status = dataRequest.getStatus();
         if (status == DataRequest.STATUS.available && dataRequest.getDataFile().exists()) {
-            DataRequest finalDataRequest = dataRequest;
-            DownloadCallback callback = () -> instance.removeDataRequest(finalDataRequest);
+            DownloadCallback callback = () -> instance.removeDataRequest(dataRequest);
             return Response.
                     ok(getStreamingOutput(dataRequest.getDataFile(), callback)).
                     type("text/csv").

@@ -1,92 +1,61 @@
 package nl.deltares.keycloak.storage.rest;
 
-import jakarta.ws.rs.ForbiddenException;
-import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.PathSegment;
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
-import org.keycloak.common.util.UriUtils;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
+import jakarta.ws.rs.core.Response;
+import nl.deltares.keycloak.storage.jpa.model.DataRequestManager;
+import nl.deltares.keycloak.storage.rest.model.ExportUserAttributes;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.services.managers.Auth;
+import org.keycloak.services.resources.admin.AdminAuth;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
-import java.util.List;
 import java.util.Properties;
+
+import static nl.deltares.keycloak.storage.rest.ResourceUtils.getAuth;
 
 public class UserAttributesResource {
 
-    private static final Logger logger = Logger.getLogger(UserAttributesResource.class);
-    private final KeycloakSession session;
-    private RealmModel realm;
-    private final Properties properties;
-
-    @Context
-    private HttpHeaders httpHeaders;
-
-    @Context
-    protected HttpRequest request;
-
-    @Path("/admin")
-    public UserAttributesAdminResource admin() {
-        UserAttributesAdminResource service = new UserAttributesAdminResource(session, properties);
-        ResteasyProviderFactory.getInstance().injectProperties(service);
-        service.init();
-        return service;
-    }
+    final Properties properties;
+    final KeycloakSession session;
+    final HttpHeaders headers;
+    final AdminPermissionEvaluator realmAuth;
+    final RealmModel realm;
+    final HttpRequest request;
+    private final boolean cacheExport;
 
     UserAttributesResource(KeycloakSession session, Properties properties) {
         this.session = session;
-        ResteasyProviderFactory.getInstance().injectProperties(this);
         this.properties = properties;
+        this.headers = session.getContext().getRequestHeaders();
+        this.request = session.getContext().getHttpRequest();
+        realm = session.getContext().getRealm();
+
+        cacheExport = Boolean.parseBoolean(properties.getOrDefault("cache_export", "true").toString());
+        Auth auth = getAuth(headers, session);
+        assert auth != null;
+        AdminAuth adminAuth = new AdminAuth(auth.getRealm(), auth.getToken(), auth.getUser(), auth.getClient());
+        realmAuth = AdminPermissions.evaluator(session, auth.getRealm(), adminAuth);
     }
 
-    void init() {
-
-        if (isInitAccount()) {
-            initAccount();
+    @GET
+    @Path("/export")
+    @Produces({"text/plain", "text/csv", "application/json"})
+    public Response downloadUserAttributes(@QueryParam("search") String search) {
+        realmAuth.users().requireManage();
+        if (search != null) {
+            ExportUserAttributes content = new ExportUserAttributes(realm, session, search.trim());
+            return DataRequestManager.getExportDataResponse(content, properties, cacheExport);
         } else {
-            initApi();
+            return Response.noContent().build();
         }
 
-    }
-
-    private boolean isInitAccount() {
-        List<PathSegment> pathSegments = session.getContext().getUri().getPathSegments();
-        for (PathSegment pathSegment : pathSegments) {
-            if (pathSegment.getPath().equals("mailings-page")) return true;
-        }
-        return false;
-    }
-
-    private void initApi() {
-        ResteasyProviderFactory.getInstance().injectProperties(this);
-        realm = session.getContext().getRealm();
-    }
-
-    private void initAccount() {
-        realm = session.getContext().getRealm();
-        ClientModel client = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
-        if (client == null || !client.isEnabled()) {
-            logger.debug("account management not enabled");
-            throw new NotFoundException("account management not enabled");
-        }
-
-        String requestOrigin = UriUtils.getOrigin(session.getContext().getUri().getBaseUri());
-        String origin = httpHeaders.getRequestHeaders().getFirst("Origin");
-        if (origin != null && !requestOrigin.equals(origin)) {
-            throw new ForbiddenException();
-        }
-        if (!request.getHttpMethod().equals("GET")) {
-            String referrer = httpHeaders.getRequestHeaders().getFirst("Referer");
-            if (referrer != null && !requestOrigin.equals(UriUtils.getOrigin(referrer))) {
-                throw new ForbiddenException();
-            }
-        }
 
     }
 

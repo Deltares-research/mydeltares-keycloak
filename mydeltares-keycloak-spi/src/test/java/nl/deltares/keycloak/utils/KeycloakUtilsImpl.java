@@ -1,21 +1,20 @@
 package nl.deltares.keycloak.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.client.*;
-import jakarta.ws.rs.core.Form;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
-import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import java.io.*;
-import java.net.*;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
@@ -28,7 +27,6 @@ public class KeycloakUtilsImpl {
     private static final String KEYCLOAK_AVATAR_PATH = "avatar-provider";
     private static final String KEYCLOAK_USERS_PATH = "users";
     private static final String KEYCLOAK_USERS_DELTARES_PATH = "users-deltares";
-    private static final String KEYCLOAK_ADMIN_ATTRIBUTE_PATH = KEYCLOAK_ATTRIBUTE_PATH + "/admin";
     private static final String KEYCLOAK_OPENID_TOKEN_PATH = "protocol/openid-connect/token";
     private static final String KEYCLOAK_CLIENTID_KEY = "keycloak.clientid";
     private static final String KEYCLOAK_CLIENTSECRET_KEY = "keycloak.clientsecret";
@@ -47,7 +45,7 @@ public class KeycloakUtilsImpl {
 
     private String getAdminUserAttributePath() {
         String basePath = getKeycloakBasePath();
-        return basePath + KEYCLOAK_ADMIN_ATTRIBUTE_PATH;
+        return basePath + KEYCLOAK_ATTRIBUTE_PATH;
     }
 
     private String getAvatarPath() {
@@ -383,6 +381,7 @@ public class KeycloakUtilsImpl {
     private static String readAll(HttpURLConnection connection) throws IOException {
         return readAll(connection.getInputStream());
     }
+
     private static String readAll(InputStream inputStream) throws IOException {
 
         ByteArrayOutputStream result = new ByteArrayOutputStream();
@@ -403,7 +402,6 @@ public class KeycloakUtilsImpl {
         while ((length = inputStream.read(buffer)) != -1) {
             result.write(buffer, 0, length);
         }
-        // StandardCharsets.UTF_8.name() > JDK 7
         return result.toByteArray();
     }
 
@@ -428,22 +426,6 @@ public class KeycloakUtilsImpl {
         return null;
     }
 
-    private int uploadUserAvatar2(URL url, File portraitFile, String accessToken) throws IOException {
-
-        try (final Client client = ClientBuilder.newClient()) {
-            final WebTarget target = client.target(url.toURI());
-            final Invocation.Builder builder = target.request(MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN).header(HttpHeaders.AUTHORIZATION, accessToken);
-
-            final Form form = new Form();
-            form.param("fileName", portraitFile.getName());
-            form.param("image", portraitFile.getAbsolutePath());
-            final String response = builder.post(Entity.form(form)).readEntity(String.class);
-        } catch (Exception e) {
-            throw new IOException(e);
-        }
-        return 0;
-    }
-
     private int uploadUserAvatar(String url, File portraitFile, String accessToken) throws IOException {
 
         HttpClient httpclient = HttpClientBuilder.create().build();
@@ -451,9 +433,10 @@ public class KeycloakUtilsImpl {
 //        httpPost.addHeader("Content-Type", "multipart/form-data");
         httpPost.addHeader("Authorization", "Bearer " + accessToken);
 
-        final FileBody fileBody = new FileBody(portraitFile, Files.probeContentType(portraitFile.toPath()));
+//        final FileBody fileBody = new FileBody(portraitFile, Files.probeContentType(portraitFile.toPath()));
         final MultipartEntityBuilder reqEntity = MultipartEntityBuilder.create();
-        reqEntity.addPart("image", fileBody);
+        final ContentType contentType = ContentType.create(Files.probeContentType(portraitFile.toPath()));
+        reqEntity.addBinaryBody("image", portraitFile, contentType, portraitFile.getName());
         httpPost.setEntity(reqEntity.build());
 
         final org.apache.http.HttpResponse response = httpclient.execute(httpPost);
@@ -463,7 +446,7 @@ public class KeycloakUtilsImpl {
     }
 
     private int readResponse(HttpURLConnection urlConnection) throws IOException {
-        try (InputStream inputStream = urlConnection.getInputStream()) {
+        try (InputStream ignored = urlConnection.getInputStream()) {
             return urlConnection.getResponseCode();
         } catch (Exception e) {
             int responseCode = urlConnection.getResponseCode();
@@ -515,6 +498,10 @@ public class KeycloakUtilsImpl {
     }
 
     public String getOrCreateUser(String firstName, String lastName, String username, String email) throws IOException {
+        return getOrCreateUser(firstName, lastName, username, email, null);
+    }
+
+    public String getOrCreateUser(String firstName, String lastName, String username, String email, HashMap<String, List<String>> attributes) throws IOException {
 
         final UserRepresentation userByEmail = getUserByEmail(email);
         if (userByEmail != null) return userByEmail.getId();
@@ -527,6 +514,7 @@ public class KeycloakUtilsImpl {
         userRepresentation.setEmailVerified(true);
         userRepresentation.setEnabled(true);
 
+        userRepresentation.setAttributes(attributes);
         return createUser(userRepresentation);
 
     }

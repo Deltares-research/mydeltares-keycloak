@@ -62,24 +62,6 @@ public class UserEventListenerProvider implements EventListenerProvider {
 
     }
 
-//    private void escapeHtmlRegistration(Event event) {
-//
-//        final Map<String, String> details = event.getDetails();
-//
-//        final UserModel updatedUser = session.users().getUserById(model.getRealm(event.getRealmId()), event.getUserId());
-//        for (String key : details.keySet()) {
-//            final String updatedValue = details.get(key);
-//            switch (key){
-//                case "first_name":
-//                    updatedUser.setFirstName(StringEscapeUtils.escapeHtml4(updatedValue));
-//                    break;
-//                case "last_name":
-//                    updatedUser.setLastName(StringEscapeUtils.escapeHtml4(updatedValue));
-//                    break;
-//            }
-//        }
-//    }
-
     private void escapeHtmlProfile(Event event) {
 
         final Map<String, String> details = event.getDetails();
