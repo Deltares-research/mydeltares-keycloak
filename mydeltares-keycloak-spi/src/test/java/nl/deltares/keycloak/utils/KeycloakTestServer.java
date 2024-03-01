@@ -1,23 +1,17 @@
 package nl.deltares.keycloak.utils;
 
-import org.keycloak.representations.idm.UserRepresentation;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.containers.output.ToStringConsumer;
-import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.containers.wait.strategy.WaitStrategy;
-import org.testcontainers.shaded.org.bouncycastle.its.ITSValidityPeriod;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.time.temporal.TemporalUnit;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -45,7 +39,7 @@ public class KeycloakTestServer {
         File deploymentDir = new File(keycloakTmpDir, "providers");
         deploymentDir.mkdir();
 
-        Files.copy(new File(testResources, "docker-compose.yml").toPath(), new File(keycloakTmpDir, "docker-compose.yml").toPath());
+        Files.copy(new File(testResources.getParent(), "docker-compose.yml").toPath(), new File(keycloakTmpDir, "docker-compose.yml").toPath());
         Files.copy(new File(testResources, "data/import/realm-export.json").toPath(), new File(dataDir, "realm-export.json").toPath());
         Files.copy(new File(testResources, "conf/keycloak.conf").toPath(), new File(configDir, "keycloak.conf").toPath());
         Files.copy(new File(testResources, "providers/mydeltares-keycloak-spi-3.0.jar").toPath(), new File(deploymentDir, "mydeltares-keycloak-spi-3.0.jar").toPath());
