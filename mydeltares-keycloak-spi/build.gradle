@@ -68,6 +68,22 @@ tasks.register('copyJarsToDocker', Copy) {
     }
 }
 
+tasks.register('copyJarsToLiferay', Copy) {
+
+    if (file('build/libs/mydeltares-keycloak-theme-3.0.jar').exists()){
+        println('File exists during configuration')
+    } else {
+        println('File does not exist during configuration')
+    }
+
+    copy {
+        println('Copying jars to docker')
+        from('build/libs/')
+        into( liferayDockerPath)
+    }
+
+}
+
 jar {
     println('Configuring build step')
     doLast {
