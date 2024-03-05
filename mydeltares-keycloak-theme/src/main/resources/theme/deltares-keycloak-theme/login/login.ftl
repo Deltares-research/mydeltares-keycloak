@@ -59,15 +59,15 @@
                                         </label>
                                     </div>
                                 </#if>
-                            </div>
-                            <div class="${properties.kcFormOptionsWrapperClass!}">
+
                                 <#-- Deltares put reset password and register together -->
                                 <#if realm.resetPasswordAllowed>
-                                    <span><a tabindex="5" href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a></span><br />
+                                    <span><a tabindex="5" href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a></span>
                                 </#if>
                                 <#if realm.password && realm.registrationAllowed && !registrationDisabled??>
-                                    <span><a tabindex="6"  href="${url.registrationUrl}">${msg("doRegister")}</a></span><br />
+                                    <span><a tabindex="6"  href="${url.registrationUrl}">${msg("doRegister")}</a></span>
                                 </#if>
+
                             </div>
 
                         </div>
