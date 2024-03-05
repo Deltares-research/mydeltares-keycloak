@@ -15,3 +15,5 @@
 # limitations under the License.
 #
 nl.deltares.keycloak.authentication.forms.RegistrationUserCreation
+nl.deltares.keycloak.authentication.forms.RegistrationEmail
+nl.deltares.keycloak.authentication.forms.RegistrationUsername
