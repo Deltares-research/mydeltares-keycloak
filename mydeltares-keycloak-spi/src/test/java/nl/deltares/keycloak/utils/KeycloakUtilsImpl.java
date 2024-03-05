@@ -11,12 +11,12 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLEncoder;
+import java.net.*;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 public class KeycloakUtilsImpl {
@@ -154,13 +154,13 @@ public class KeycloakUtilsImpl {
         return uploadUserAvatar(getAvatarPath() + '/' + userId, portraitFile, getAccessToken());
     }
 
-    public int exportInvalidUsers(Writer writer) throws IOException {
+    public void exportInvalidUsers(Writer writer) throws IOException {
 
         HashMap<String, String> map = new HashMap<>();
         map.put("Content-Type", MediaType.TEXT_HTML);
         HttpURLConnection urlConnection = getConnection(getUsersDeltaresPath() + "/invalid", "GET", getAccessToken(), map);
 
-        int status = checkResponse(urlConnection);
+        checkResponse(urlConnection);
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()))) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -169,7 +169,6 @@ public class KeycloakUtilsImpl {
             }
             writer.flush();
         }
-        return status;
     }
 
     public String getUserAsJson(String id) throws IOException {
@@ -199,7 +198,7 @@ public class KeycloakUtilsImpl {
         HttpURLConnection urlConnection = getConnection(getUsersPath(), "POST", getAccessToken(), map);
         ObjectMapper mapper = new ObjectMapper();
         mapper.writeValue(urlConnection.getOutputStream(), user);
-        final int i = checkResponse(urlConnection);
+        checkResponse(urlConnection);
 
         final UserRepresentation userByEmail = getUserByEmail(user.getEmail());
         return userByEmail.getId();
@@ -275,23 +274,17 @@ public class KeycloakUtilsImpl {
     }
 
     private String getAccessToken() {
-        return getAccessToken(null, null);
-    }
 
-    private String getAccessToken(String resourceOwner, String resourceOwnerPw) {
-
-        if (resourceOwner == null) {
-            String cachedToken = getCachedToken();
-            if (cachedToken != null) return cachedToken;
-        }
+        String cachedToken = getCachedToken();
+        if (cachedToken != null) return cachedToken;
 
         try {
             String jsonResponse = getAccessTokenJson(
                     getTokenPath(),
                     getOpenIdClientId(),
                     getOpenIdClientSecret(),
-                    resourceOwner,
-                    resourceOwnerPw);
+                    null,
+                    null);
             return parseTokenJson(jsonResponse);
 
         } catch (IOException e) {
@@ -326,7 +319,9 @@ public class KeycloakUtilsImpl {
         return basePath + '/';
     }
 
-    private static String getAccessTokenJson(String tokenUrl, String clientId, String clientSec, String resourceOwner, String resourceOwnerPw) throws IOException {
+    private static String getAccessTokenJson(String tokenUrl, String clientId, String clientSec,
+                                             @SuppressWarnings("SameParameterValue") String resourceOwner,
+                                             @SuppressWarnings("SameParameterValue") String resourceOwnerPw) throws IOException {
 
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("grant_type", resourceOwner == null ? "client_credentials" : "password");
@@ -373,7 +368,7 @@ public class KeycloakUtilsImpl {
                 result.write(buffer, 0, length);
             }
             // StandardCharsets.UTF_8.name() > JDK 7
-            return result.toString("UTF-8");
+            return result.toString(StandardCharsets.UTF_8);
         }
 
     }
@@ -391,7 +386,7 @@ public class KeycloakUtilsImpl {
             result.write(buffer, 0, length);
         }
         // StandardCharsets.UTF_8.name() > JDK 7
-        return result.toString("UTF-8");
+        return result.toString(StandardCharsets.UTF_8);
 
     }
 
@@ -443,6 +438,51 @@ public class KeycloakUtilsImpl {
 
         return response.getStatusLine().getStatusCode();
 
+    }
+
+    public void uploadTestUserAvatar(String userId, File portraitFile) throws Exception {
+
+        String boundary = "UploadAvatarBoundary";
+        Map<Object, Object> data = new LinkedHashMap<>();
+        data.put("image", portraitFile.toPath());
+
+        final java.net.http.HttpClient client = java.net.http.HttpClient.newBuilder().build();
+
+        final HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(getAvatarPath() + '/' + userId))
+                .header("Authorization", "Bearer " + getAccessToken())
+                .header("Content-Type", "multipart/form-data;boundary=" + boundary)
+                .POST(ofMimeMultipartData(data, boundary))
+                .build();
+
+        final HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() !=204) {
+            throw new IOException("Error " + response.statusCode() + ": " + response.body());
+        }
+    }
+
+    public static HttpRequest.BodyPublisher ofMimeMultipartData(Map<Object, Object> data,
+                                                                String boundary) throws IOException {
+        var byteArrays = new ArrayList<byte[]>();
+        byte[] separator = ("\r\n--" + boundary + "\r\nContent-Disposition: form-data; name=")
+                .getBytes(StandardCharsets.UTF_8);
+        for (Map.Entry<Object, Object> entry : data.entrySet()) {
+            byteArrays.add(separator);
+
+            if (entry.getValue() instanceof Path path) {
+                String mimeType = Files.probeContentType(path);
+                byteArrays.add(("\"" + entry.getKey() + "\"; filename=\"" + path.getFileName()
+                        + "\"\r\nContent-Type: " + mimeType + "\r\n\r\n")
+                        .getBytes(StandardCharsets.UTF_8));
+                byteArrays.add(Files.readAllBytes(path));
+            }
+            else {
+                byteArrays.add(("\"" + entry.getKey() + "\"\r\n\r\n" + entry.getValue())
+                        .getBytes(StandardCharsets.UTF_8));
+            }
+        }
+        byteArrays.add(("\r\n--" + boundary + "--\r\n").getBytes(StandardCharsets.UTF_8));
+        return HttpRequest.BodyPublishers.ofByteArrays(byteArrays);
     }
 
     private int readResponse(HttpURLConnection urlConnection) throws IOException {

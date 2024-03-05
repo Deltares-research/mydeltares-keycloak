@@ -31,7 +31,8 @@ public class KeycloakTestServer {
 
         final File testResources = Paths.get("mydeltares-keycloak-spi", "src", "test", "resources", "docker", "keycloak").toFile();
         File keycloakTmpDir = Files.createTempDirectory("keycloak").toFile();
-
+        final File spiBuildLib = Paths.get("mydeltares-keycloak-spi", "build", "libs").toFile();
+        final File themeBuildLib = Paths.get("mydeltares-keycloak-theme", "build", "libs").toFile();
         File dataDir = new File(keycloakTmpDir, "data/import");
         dataDir.mkdirs();
         File configDir = new File(keycloakTmpDir, "conf");
@@ -42,8 +43,8 @@ public class KeycloakTestServer {
         Files.copy(new File(testResources.getParent(), "docker-compose.yml").toPath(), new File(keycloakTmpDir, "docker-compose.yml").toPath());
         Files.copy(new File(testResources, "data/import/realm-export.json").toPath(), new File(dataDir, "realm-export.json").toPath());
         Files.copy(new File(testResources, "conf/keycloak.conf").toPath(), new File(configDir, "keycloak.conf").toPath());
-        Files.copy(new File(testResources, "providers/mydeltares-keycloak-spi-3.0.jar").toPath(), new File(deploymentDir, "mydeltares-keycloak-spi-3.0.jar").toPath());
-        Files.copy(new File(testResources, "providers/mydeltares-keycloak-theme-3.0.jar").toPath(), new File(deploymentDir, "mydeltares-keycloak-theme-3.0.jar").toPath());
+        Files.copy(new File(spiBuildLib, "mydeltares-keycloak-spi-3.0.jar").toPath(), new File(deploymentDir, "mydeltares-keycloak-spi-3.0.jar").toPath());
+        Files.copy(new File(themeBuildLib, "mydeltares-keycloak-theme-3.0.jar").toPath(), new File(deploymentDir, "mydeltares-keycloak-theme-3.0.jar").toPath());
 
         KeycloakTestServer.startKeycloak(keycloakTmpDir.getPath());
 

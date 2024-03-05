@@ -1,7 +1,5 @@
 package scripting;
-
 import nl.deltares.keycloak.utils.KeycloakUtilsImpl;
-import org.keycloak.representations.idm.UserRepresentation;
 
 import java.io.*;
 import java.util.Properties;
@@ -10,9 +8,9 @@ public class UploadAvatars {
 
     /**
      * Uploads Avatar images to the keycloak accounts database. Expected input properties file:
-     *
+     * <p>
      * keycloak properties example:
-     *
+     * <p>
      * keycloak.baseurl=http://keycloak.local.nl:8080/auth/realms/liferay-portal/
      * keycloak.baseapiurl=http://keycloak.local.nl:8080/auth/admin/realms/liferay-portal/
      * keycloak.clientid= client id
@@ -25,59 +23,25 @@ public class UploadAvatars {
     public static void main(String[] args) {
         assert args.length > 0;
 
-        Properties properties = loadProperties(args[0]);
+        Properties properties = loadProperties("admin-keycloak.properties");
         if (properties == null) return;
         KeycloakUtilsImpl keycloakUtils = new KeycloakUtilsImpl(properties);
 
-        File userPortraitsDir = new File(properties.getProperty("avatar.dir").trim());
-        if (!userPortraitsDir.exists()){
-            throw new RuntimeException("Portraits dir does not exist: " + userPortraitsDir.getAbsolutePath());
-        }
-
-        File userPortraitIdsFile = new File(properties.getProperty("avatar.ids"));
-        File failedEmails = new File(userPortraitIdsFile.getParent(), "failedEmails.csv");
-        try(BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(failedEmails)))) {
-            writeFailed(bw, "email", "portraitId"); // write header
-            try (BufferedReader reader = new BufferedReader(new FileReader(userPortraitIdsFile))) {
-                reader.readLine(); //skip header
-                String line = reader.readLine();
-                while (line != null) {
-                    String[] values = line.split(";");
-                    String email = values[0];
-                    String portraitId = values[1];
-
-                    String userId = null;
-                    try {
-                        UserRepresentation userByEmail = keycloakUtils.getUserByEmail(email);
-                        userId = userByEmail != null ? userByEmail.getId() : null;
-                    } catch (Exception e) {
-                        System.out.println(e.getMessage());
-                    }
-                    if (userId == null) writeFailed(bw, email, portraitId);
-                    else {
-                        try {
-                            File portraitFile = getPortraitFile(userPortraitsDir, portraitId);
-                            keycloakUtils.uploadUserAvatarApi(userId, portraitFile);
-                        } catch (Exception e) {
-                            writeFailed(bw, email, portraitId);
-                        }
-                    }
-                    line = reader.readLine();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+        final File avatarFile = new File("avatar.jpg");
+        try {
+            keycloakUtils.uploadTestUserAvatar("cd9adcc2-40dc-465d-8c7a-4756481e9400", avatarFile);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
+
 
     private static File getPortraitFile(File userPortraitsDir, String portraitId) {
 
         FilenameFilter filter = (dir, name) -> name.startsWith(portraitId + ".");
 
         File[] portraitDir = userPortraitsDir.listFiles(filter);
-        assert portraitDir != null &&  portraitDir.length == 1;
+        assert portraitDir != null && portraitDir.length == 1;
         File[] portraitFile = portraitDir[0].listFiles();
         assert portraitFile != null && portraitFile.length == 1;
         return portraitFile[0];
