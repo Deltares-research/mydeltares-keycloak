@@ -16,3 +16,4 @@
 #
 
 nl.deltares.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory
+nl.deltares.keycloak.authentication.authenticators.email.EmailAuthenticatorFormFactory
