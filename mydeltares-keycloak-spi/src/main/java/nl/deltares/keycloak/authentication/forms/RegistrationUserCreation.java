@@ -61,8 +61,8 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
         context.getEvent().detail(Details.EMAIL, providedEmail);
         context.getEvent().detail(Details.USERNAME, username);
 
-        String firstName = profile.getAttributes().getFirstValue(UserModel.FIRST_NAME);
-        String lastName = profile.getAttributes().getFirstValue(UserModel.LAST_NAME);
+        String firstName = profile.getAttributes().getFirst(UserModel.FIRST_NAME);
+        String lastName = profile.getAttributes().getFirst(UserModel.LAST_NAME);
 
         // check to make sure no XSS or template injection occurs
         context.getEvent().detail(Details.FIRST_NAME, StringEscapeUtils.escapeHtml4(firstName));
@@ -78,7 +78,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
             List<FormMessage> errors = Validation.getFormErrorsFromValidation(pve.getErrors());
 
             if (pve.hasError(Messages.EMAIL_EXISTS, Messages.INVALID_EMAIL)) {
-                context.getEvent().detail(Details.EMAIL, profile.getAttributes().getFirstValue(UserModel.EMAIL));
+                context.getEvent().detail(Details.EMAIL, profile.getAttributes().getFirst(UserModel.EMAIL));
             }
 
             if (pve.hasError(Messages.EMAIL_EXISTS)) {

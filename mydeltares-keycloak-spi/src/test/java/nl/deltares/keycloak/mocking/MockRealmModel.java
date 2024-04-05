@@ -225,6 +225,16 @@ public class MockRealmModel implements RealmModel {
     }
 
     @Override
+    public int getMaxTemporaryLockouts() {
+        return 0;
+    }
+
+    @Override
+    public void setMaxTemporaryLockouts(int i) {
+
+    }
+
+    @Override
     public int getMaxFailureWaitSeconds() {
         return 0;
     }
@@ -776,6 +786,16 @@ public class MockRealmModel implements RealmModel {
 
     @Override
     public void setDockerAuthenticationFlow(AuthenticationFlowModel flow) {
+
+    }
+
+    @Override
+    public AuthenticationFlowModel getFirstBrokerLoginFlow() {
+        return null;
+    }
+
+    @Override
+    public void setFirstBrokerLoginFlow(AuthenticationFlowModel authenticationFlowModel) {
 
     }
 
