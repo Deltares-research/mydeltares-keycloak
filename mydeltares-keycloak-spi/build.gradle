@@ -32,7 +32,7 @@ dependencies {
     testImplementation('org.apache.httpcomponents:httpmime:4.5.14')
 
     testImplementation('org.junit.jupiter:junit-jupiter:5.9.1')
-    implementation platform('org.testcontainers:testcontainers-bom:1.19.3') //import bom
+    implementation platform('org.testcontainers:testcontainers-bom:1.19.1') //import bom
     testImplementation('org.testcontainers:mysql') //no version specified
     testImplementation('org.junit.platform:junit-platform-suite-engine')
 
@@ -53,41 +53,18 @@ jar {
     from { configurations.extraLibs.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 
-tasks.register('copyJarsToDocker', Copy) {
-
-    if (file('build/libs/mydeltares-keycloak-spi-3.0.jar').exists()){
-        println('File exists during configuration')
-    } else {
-        println('File does not exist during configuration')
-    }
-
+tasks.register('copyJarsToDocker', Task) {
+    println('Copying jars to docker')
     copy {
-        println('Copying jars to docker')
         from('build/libs/')
-        into( '../docker/keycloak/providers/')
+        into(liferayDockerPath + '/docker/keycloak/providers/')
     }
-}
-
-tasks.register('copyJarsToLiferay', Copy) {
-
-    if (file('build/libs/mydeltares-keycloak-theme-3.0.jar').exists()){
-        println('File exists during configuration')
-    } else {
-        println('File does not exist during configuration')
-    }
-
-    copy {
-        println('Copying jars to docker')
-        from('build/libs/')
-        into( liferayDockerPath)
-    }
-
 }
 
 jar {
     println('Configuring build step')
     doLast {
         println('Running last step: copyJarsToDocker')
-        tasks.copyJarsToDocker
+        copyJarsToDocker
     }
 }
