@@ -10,15 +10,33 @@ import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.List;
 
-public class EmailAuthenticatorFormFactory implements AuthenticatorFactory {
-    @Override
-    public String getId() {
-        return "email-authenticator";
-    }
+public class EmailOTPFormAuthenticatorFactory implements AuthenticatorFactory {
+
+    public static final String PROVIDER_ID =  "auth-email-otp-form";
 
     @Override
-    public String getDisplayType() {
-        return "Email OTP";
+    public Authenticator create(KeycloakSession session) {
+        return new EmailOTPFormAuthenticator(session);
+    }
+
+
+    @Override
+    public void init(Config.Scope config) {
+        // NOOP
+    }
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+        // NOOP
+    }
+    @Override
+    public void close() {
+        // NOOP
+    }
+
+
+    @Override
+    public String getId() {
+        return PROVIDER_ID;
     }
 
     @Override
@@ -31,10 +49,10 @@ public class EmailAuthenticatorFormFactory implements AuthenticatorFactory {
         return true;
     }
 
-    public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
-            AuthenticationExecutionModel.Requirement.REQUIRED, AuthenticationExecutionModel.Requirement.ALTERNATIVE,
-            AuthenticationExecutionModel.Requirement.DISABLED
-    };
+    @Override
+    public boolean isUserSetupAllowed() {
+        return false;
+    }
 
     @Override
     public AuthenticationExecutionModel.Requirement[] getRequirementChoices() {
@@ -42,13 +60,13 @@ public class EmailAuthenticatorFormFactory implements AuthenticatorFactory {
     }
 
     @Override
-    public boolean isUserSetupAllowed() {
-        return false;
+    public String getDisplayType() {
+        return "Email OTP Form";
     }
 
     @Override
     public String getHelpText() {
-        return "Email otp authenticator.";
+        return "Validates an Email OTP on a separate OTP form.";
     }
 
     @Override
@@ -62,23 +80,4 @@ public class EmailAuthenticatorFormFactory implements AuthenticatorFactory {
                         String.valueOf(EmailConstants.DEFAULT_TTL)));
     }
 
-    @Override
-    public void close() {
-        // NOOP
-    }
-
-    @Override
-    public Authenticator create(KeycloakSession session) {
-        return new EmailAuthenticatorForm(session);
-    }
-
-    @Override
-    public void init(Config.Scope config) {
-        // NOOP
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-        // NOOP
-    }
 }

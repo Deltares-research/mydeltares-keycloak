@@ -1,9 +1,10 @@
 package nl.deltares.keycloak.authentication.authenticators.email;
 
 import org.jboss.logging.Logger;
-import org.keycloak.authentication.AuthenticationFlowContext;
-import org.keycloak.authentication.AuthenticationFlowError;
-import org.keycloak.authentication.AuthenticationFlowException;
+import org.keycloak.authentication.*;
+import org.keycloak.credential.CredentialProvider;
+import org.keycloak.credential.OTPCredentialProvider;
+import org.keycloak.credential.OTPCredentialProviderFactory;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Errors;
@@ -15,28 +16,36 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.common.util.SecretGenerator;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class EmailAuthenticatorForm extends AbstractUsernameFormAuthenticator {
+public class EmailOTPFormAuthenticator extends AbstractUsernameFormAuthenticator implements Authenticator, CredentialValidator<OTPCredentialProvider> {
     private final KeycloakSession session;
 
-    protected static final Logger log = Logger.getLogger(EmailAuthenticatorForm.class);
+    protected static final Logger log = Logger.getLogger(EmailOTPFormAuthenticator.class);
 
-    public EmailAuthenticatorForm(KeycloakSession session) {
+    public EmailOTPFormAuthenticator(KeycloakSession session) {
         this.session = session;
     }
 
     @Override
+    public void action(AuthenticationFlowContext context) {
+        validateOTP(context);
+    }
+
+    @Override
     public void authenticate(AuthenticationFlowContext context) {
-        challenge(context, null);
+        Response challengeResponse = challenge(context, null);
+        context.challenge(challengeResponse);
     }
 
     @Override
@@ -51,36 +60,48 @@ public class EmailAuthenticatorForm extends AbstractUsernameFormAuthenticator {
                 form.setError(error);
             }
         }
+        form.setAttribute("email", context.getUser().getEmail());
         Response response = form.createForm("email-code-form.ftl");
         context.challenge(response);
         return response;
     }
 
-    private void generateAndSendEmailCode(AuthenticationFlowContext context) {
-        AuthenticatorConfigModel config = context.getAuthenticatorConfig();
-        AuthenticationSessionModel session = context.getAuthenticationSession();
-
-        if (session.getAuthNote(EmailConstants.CODE) != null) {
-            // skip sending email code
-            return;
-        }
-
-        int length = EmailConstants.DEFAULT_LENGTH;
-        int ttl = EmailConstants.DEFAULT_TTL;
-        if (config != null) {
-            // get config values
-            length = Integer.parseInt(config.getConfig().get(EmailConstants.CODE_LENGTH));
-            ttl = Integer.parseInt(config.getConfig().get(EmailConstants.CODE_TTL));
-        }
-
-        String code = SecretGenerator.getInstance().randomString(length, SecretGenerator.DIGITS);
-        sendEmailWithCode(context.getRealm(), context.getUser(), code, ttl);
-        session.setAuthNote(EmailConstants.CODE, code);
-        session.setAuthNote(EmailConstants.CODE_TTL, Long.toString(System.currentTimeMillis() + (ttl * 1000L)));
+    @Override
+    public boolean requiresUser() {
+        return true;
     }
 
     @Override
-    public void action(AuthenticationFlowContext context) {
+    protected String disabledByBruteForceError() {
+        return Messages.INVALID_TOTP;
+    }
+
+    @Override
+    protected String disabledByBruteForceFieldError() {
+        return Validation.FIELD_OTP_CODE;
+    }
+
+    @Override
+    public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
+        return true;
+    }
+
+    @Override
+    public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
+        // NOOP
+    }
+
+    @Override
+    public void close() {
+        // NOOP
+    }
+
+    @Override
+    public OTPCredentialProvider getCredentialProvider(KeycloakSession keycloakSession) {
+        return (OTPCredentialProvider)session.getProvider(CredentialProvider.class, OTPCredentialProviderFactory.PROVIDER_ID);
+    }
+
+    public void validateOTP(AuthenticationFlowContext context){
         UserModel userModel = context.getUser();
         if (!enabledUser(context, userModel)) {
             // error in context is set in enabledUser/isDisabledByBruteForce
@@ -129,34 +150,33 @@ public class EmailAuthenticatorForm extends AbstractUsernameFormAuthenticator {
         }
     }
 
-    @Override
-    protected String disabledByBruteForceError() {
-        return Messages.INVALID_ACCESS_CODE;
-    }
 
+    private void generateAndSendEmailCode(AuthenticationFlowContext context) {
+        AuthenticatorConfigModel config = context.getAuthenticatorConfig();
+        AuthenticationSessionModel session = context.getAuthenticationSession();
+
+        if (session.getAuthNote(EmailConstants.CODE) != null) {
+            // skip sending email code
+            return;
+        }
+
+        int length = EmailConstants.DEFAULT_LENGTH;
+        int ttl = EmailConstants.DEFAULT_TTL;
+        if (config != null) {
+            // get config values
+            length = Integer.parseInt(config.getConfig().get(EmailConstants.CODE_LENGTH));
+            ttl = Integer.parseInt(config.getConfig().get(EmailConstants.CODE_TTL));
+        }
+
+        String code = SecretGenerator.getInstance().randomString(length, SecretGenerator.DIGITS);
+        sendEmailWithCode(context.getRealm(), context.getUser(), code, ttl);
+        session.setAuthNote(EmailConstants.CODE, code);
+        session.setAuthNote(EmailConstants.CODE_TTL, Long.toString(System.currentTimeMillis() + (ttl * 1000L)));
+    }
     private void resetEmailCode(AuthenticationFlowContext context) {
         context.getAuthenticationSession().removeAuthNote(EmailConstants.CODE);
     }
 
-    @Override
-    public boolean requiresUser() {
-        return true;
-    }
-
-    @Override
-    public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
-        return true;
-    }
-
-    @Override
-    public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
-        // NOOP
-    }
-
-    @Override
-    public void close() {
-        // NOOP
-    }
 
     private void sendEmailWithCode(RealmModel realm, UserModel user, String code, int ttl) {
         if (user.getEmail() == null) {
