@@ -54,10 +54,16 @@ jar {
 }
 
 tasks.register('copyJarsToDocker', Task) {
-    println('Copying jars to docker')
+
     copy {
+        println('Copying spi jar to main docker')
         from('build/libs/')
-        into(liferayDockerPath + '/docker/keycloak/providers/')
+        into(liferayDockerPath + '/keycloak/providers/')
+    }
+    copy {
+        println('Copying spi jar to test docker')
+        from('build/libs/')
+        into(testDockerPath + '/keycloak/providers/')
     }
 }
 

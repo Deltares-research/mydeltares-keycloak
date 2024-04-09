@@ -19,10 +19,15 @@ test {
 }
 
 tasks.register("copyJarsToDocker", Task) {
-    println('Copying jars to docker')
     copy {
+        println('Copying theme jar to main docker')
         from('build/libs/')
-        into(liferayDockerPath + '/docker/keycloak/providers/')
+        into(liferayDockerPath + '/keycloak/providers/')
+    }
+    copy {
+        println('Copying theme jar to test docker')
+        from('build/libs/')
+        into(testDockerPath + '/keycloak/providers/')
     }
 }
 
