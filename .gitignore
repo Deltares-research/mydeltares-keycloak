@@ -47,3 +47,4 @@ bin/
 /mydeltares-keycloak-spi/src/test/resources/docker/keycloak/providers/mydeltares-keycloak-spi-3.0.jar
 /mydeltares-keycloak-spi/src/test/resources/docker/keycloak/providers/mydeltares-keycloak-theme-3.0.jar
 /Keycloak-soapui-project.xml
+/gradle-local.properties

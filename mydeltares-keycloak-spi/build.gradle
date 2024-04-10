@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'maven-publish'
 }
 
 group = 'nl.deltares'
@@ -9,6 +10,28 @@ repositories {
     mavenCentral()
 }
 
+publishing {
+
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            groupId = project.properties['group']
+            artifactId = project.name
+            version = project.properties['version']
+        }
+    }
+
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = "https://maven.pkg.github.com/Deltares-research/mydeltares-keycloak"
+            credentials {
+                username = GITHUB_ACTOR
+                password = GITHUB_TOKEN
+            }
+        }
+    }
+}
 
 configurations {
     extraLibs
