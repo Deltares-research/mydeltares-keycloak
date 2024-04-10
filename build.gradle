@@ -1,7 +1,7 @@
 project.ext {
 
-    Properties localProperties = new Properties()
-    localProperties.load(file("./gradle-local.properties").newDataInputStream())
-    GITHUB_TOKEN = localProperties.get('GITHUB_TOKEN')
-    GITHUB_ACTOR = localProperties.get('GITHUB_ACTOR')
+//    Properties localProperties = new Properties()
+//    localProperties.load(file("./gradle-local.properties").newDataInputStream())
+    GITHUB_TOKEN = System.getenv('GITHUB_TOKEN')
+    GITHUB_ACTOR = System.getenv('GITHUB_ACTOR')
 }
