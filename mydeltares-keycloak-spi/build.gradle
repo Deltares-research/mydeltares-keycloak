@@ -78,6 +78,16 @@ jar {
 
 tasks.register('copyJarsToDocker', Task) {
 
+    println('Deleting old spi jar from main docker')
+    delete fileTree(liferayDockerPath + '/keycloak/providers/'){
+        include '**/mydeltares-keycloak-*.jar'
+    }
+
+    println('Deleting old spi jar from test docker')
+    delete fileTree(testDockerPath + '/keycloak/providers/'){
+        include '**/mydeltares-keycloak-*.jar'
+    }
+
     copy {
         println('Copying spi jar to main docker')
         from('build/libs/')

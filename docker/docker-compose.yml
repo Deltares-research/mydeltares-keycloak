@@ -45,5 +45,6 @@ services:
       - KEYCLOAK_ADMIN_PASSWORD=Pa55w0rd
       - DEBUG=true
       - DEBUG_PORT=*:8787
+      - KC_HTTP_RELATIVE_PATH=/auth
     depends_on:
       - mariadb

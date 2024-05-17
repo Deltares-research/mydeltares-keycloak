@@ -5,8 +5,10 @@ import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.containers.output.ToStringConsumer;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.containers.wait.strategy.WaitStrategy;
+import org.testcontainers.shaded.org.apache.commons.io.filefilter.WildcardFileFilter;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,9 +45,17 @@ public class KeycloakTestServer {
         Files.copy(new File(testResources.getParent(), "docker-compose.yml").toPath(), new File(keycloakTmpDir, "docker-compose.yml").toPath());
         Files.copy(new File(testResources, "data/import/realm-export.json").toPath(), new File(dataDir, "realm-export.json").toPath());
         Files.copy(new File(testResources, "conf/keycloak.conf").toPath(), new File(configDir, "keycloak.conf").toPath());
-        Files.copy(new File(spiBuildLib, "mydeltares-keycloak-spi-3.0.jar").toPath(), new File(deploymentDir, "mydeltares-keycloak-spi-3.0.jar").toPath());
-        Files.copy(new File(themeBuildLib, "mydeltares-keycloak-theme-3.0.jar").toPath(), new File(deploymentDir, "mydeltares-keycloak-theme-3.0.jar").toPath());
 
+        final WildcardFileFilter spiFilter = new WildcardFileFilter("mydeltares-keycloak-spi-*.jar");
+        final File[] spiFiles = new File(spiBuildLib.getPath()).listFiles((FileFilter) spiFilter);
+        for (File spiFile : spiFiles) {
+            Files.copy(spiFile.toPath(), new File(deploymentDir, spiFile.getName()).toPath());
+        }
+        final WildcardFileFilter themeFilter = new WildcardFileFilter("mydeltares-keycloak-theme-*.jar");
+        final File[] themeFiles = new File(themeBuildLib.getPath()).listFiles((FileFilter) themeFilter);
+        for (File themeFile : themeFiles) {
+            Files.copy(themeFile.toPath(), new File(deploymentDir, themeFile.getName()).toPath());
+        }
         KeycloakTestServer.startKeycloak(keycloakTmpDir.getPath());
 
         try {
@@ -75,7 +85,7 @@ public class KeycloakTestServer {
                 }
             }
         }).withExposedService("keycloak", 8080, waitStrategy);
-        dockerClient.start();
+        dockerClient. start();
         running = true;
 
     }

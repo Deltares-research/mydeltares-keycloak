@@ -44,6 +44,17 @@ test {
 }
 
 tasks.register("copyJarsToDocker", Task) {
+
+    println('Deleting old theme jar from main docker')
+    delete fileTree(liferayDockerPath + '/keycloak/providers/'){
+        include '**/mydeltares-keycloak-*.jar'
+    }
+
+    println('Deleting old theme jar from test docker')
+    delete fileTree(testDockerPath + '/keycloak/providers/'){
+        include '**/mydeltares-keycloak-*.jar'
+    }
+
     copy {
         println('Copying theme jar to main docker')
         from('build/libs/')

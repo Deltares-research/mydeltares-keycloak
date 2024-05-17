@@ -33,9 +33,9 @@ services:
       - 8787:8787
     entrypoint: ["/opt/keycloak/bin/kc.sh", "start-dev", "--import-realm", "--log-level=INFO"]
     volumes:
-      - ./keycloak/data/import/realm-export.json:/opt/keycloak/data/import/realm-export.json
-      - ./keycloak/conf/keycloak.conf:/opt/keycloak/conf/keycloak.conf
-      - ./keycloak/providers:/opt/keycloak/providers
+      - ./data/import/realm-export.json:/opt/keycloak/data/import/realm-export.json
+      - ./conf/keycloak.conf:/opt/keycloak/conf/keycloak.conf
+      - ./providers:/opt/keycloak/providers
     restart: always
     networks:
       - keycloak
@@ -44,5 +44,6 @@ services:
       - KEYCLOAK_ADMIN_PASSWORD=Pa55w0rd
       - DEBUG=true
       - DEBUG_PORT=*:8787
+      - KC_HTTP_RELATIVE_PATH=/auth
     depends_on:
       - mariadb
