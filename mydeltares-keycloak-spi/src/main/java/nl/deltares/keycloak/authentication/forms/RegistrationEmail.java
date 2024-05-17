@@ -106,7 +106,7 @@ public class RegistrationEmail implements FormAction, FormActionFactory {
 
     @Override
     public String getDisplayType() {
-        return "Deltares Email Check";
+        return "Deltares Email Check (deprecated)";
     }
 
     @Override

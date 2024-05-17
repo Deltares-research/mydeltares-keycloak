@@ -10,12 +10,12 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import java.time.ZoneId;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Optional;
+import java.util.TimeZone;
 import java.util.stream.Stream;
-
-import static java.time.LocalDateTime.now;
 
 public class LoginStatsRecordingRequiredActionProvider  implements RequiredActionProvider, RequiredActionFactory {
 
@@ -31,6 +31,12 @@ public class LoginStatsRecordingRequiredActionProvider  implements RequiredActio
     private static final String ONE = "1";
 
     private static final LoginStatsRecordingRequiredActionProvider INSTANCE = new LoginStatsRecordingRequiredActionProvider();
+    private final SimpleDateFormat simpleDateFormat;
+
+    public LoginStatsRecordingRequiredActionProvider() {
+        simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+    }
 
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
@@ -85,7 +91,7 @@ public class LoginStatsRecordingRequiredActionProvider  implements RequiredActio
 
     private void recordRecentLogin(String referrer, UserModel user) {
         String key = referrer == null ? LOGIN_RECENT_LOGIN_DATE : LOGIN_RECENT_LOGIN_DATE + '.' + referrer;
-        user.setAttribute(key, Collections.singletonList(now(ZoneId.of("GMT")).toString()));
+        user.setAttribute(key, Collections.singletonList(simpleDateFormat.format(new Date(System.currentTimeMillis()))));
     }
 
     private void recordFirstLogin(String clientId, UserModel user) {
@@ -93,7 +99,7 @@ public class LoginStatsRecordingRequiredActionProvider  implements RequiredActio
         Stream<String> stream = user.getAttributeStream(key);
         final Optional<String> first = stream.findFirst();
         if (first.isEmpty()) {
-            user.setAttribute(key, Collections.singletonList(now(ZoneId.of("GMT")).toString()));
+            user.setAttribute(key, Collections.singletonList(simpleDateFormat.format(new Date(System.currentTimeMillis()))));
         }
     }
 

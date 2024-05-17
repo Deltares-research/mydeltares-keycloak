@@ -6,15 +6,22 @@ import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
-import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 public class TermsAndPrivacy implements RequiredActionProvider, RequiredActionFactory {
+
+    final SimpleDateFormat simpleDateFormat;
+
     public TermsAndPrivacy() {
+        simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        simpleDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
     }
 
     public RequiredActionProvider create(KeycloakSession session) {
@@ -48,7 +55,7 @@ public class TermsAndPrivacy implements RequiredActionProvider, RequiredActionFa
             context.getUser().removeAttribute("terms_and_conditions");
             context.failure();
         } else {
-            context.getUser().setAttribute("terms_and_conditions", Collections.singletonList(Integer.toString(Time.currentTime())));
+            context.getUser().setAttribute("terms_and_conditions", Collections.singletonList(simpleDateFormat.format(new Date(System.currentTimeMillis()))));
             context.success();
         }
 

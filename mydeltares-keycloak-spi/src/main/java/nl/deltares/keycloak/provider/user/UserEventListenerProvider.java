@@ -1,7 +1,5 @@
 package nl.deltares.keycloak.provider.user;
 
-import org.apache.commons.text.StringEscapeUtils;
-import org.keycloak.events.EventType;
 import org.jboss.logging.Logger;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
@@ -21,7 +19,7 @@ public class UserEventListenerProvider implements EventListenerProvider {
     private static final Logger logger = Logger.getLogger(UserEventListenerProvider.class);
     private final KeycloakSession session;
     private final RealmProvider model;
-    private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 
     public UserEventListenerProvider(KeycloakSession session) {
         this.session = session;
@@ -31,11 +29,6 @@ public class UserEventListenerProvider implements EventListenerProvider {
 
     @Override
     public void onEvent(Event event) {
-        if (event.getType() != EventType.REGISTER) {
-            if (event.getType() == EventType.UPDATE_PROFILE) {
-                escapeHtmlProfile(event);
-            }
-        }  //escapeHtmlRegistration(event); does not work
 
     }
 
@@ -60,37 +53,6 @@ public class UserEventListenerProvider implements EventListenerProvider {
         final Stream<GroupModel> groupsStream = updatedUser.getGroupsStream();
         groupsStream.forEach(updatedUser::leaveGroup);
 
-    }
-
-    private void escapeHtmlProfile(Event event) {
-
-        final Map<String, String> details = event.getDetails();
-
-        final UserModel updatedUser = session.users().getUserById(model.getRealm(event.getRealmId()), event.getUserId());
-
-        for (String key : details.keySet()) {
-            if (!key.startsWith("updated_")) continue;
-            final String updatedValue = details.get(key);
-
-            switch (key){
-                case "updated_first_name":
-                    updatedUser.setFirstName(StringEscapeUtils.escapeHtml4(updatedValue));
-                    break;
-                case "updated_last_name":
-                    updatedUser.setLastName(StringEscapeUtils.escapeHtml4(updatedValue));
-                    break;
-                default:
-                    final String attributeKey = key.substring("updated_".length());
-                    final List<String> escapedValue = Collections.singletonList(StringEscapeUtils.escapeHtml4(updatedValue));
-                    updatedUser.setAttribute(attributeKey, escapedValue);
-                    break;
-            }
-        }
-
-        if (updatedUser.getEmail() == null && details.containsKey("previous_email")){
-            //apparently needs to be reset when changes take place
-            updatedUser.setEmail(details.get("previous_email"));
-        }
     }
 
     private UserModel getUpdatedUser(AdminEvent event) {

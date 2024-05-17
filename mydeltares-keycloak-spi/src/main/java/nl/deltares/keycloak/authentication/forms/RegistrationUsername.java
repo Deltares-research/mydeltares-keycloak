@@ -139,7 +139,7 @@ public class RegistrationUsername implements FormAction, FormActionFactory {
 
     @Override
     public String getDisplayType() {
-        return "Deltares Username Validate ";
+        return "Deltares Username Validate (deprecated)";
     }
 
     @Override
