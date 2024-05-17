@@ -4,9 +4,10 @@ import org.junit.jupiter.api.Test;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.models.UserModel;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
 
 import static nl.deltares.keycloak.mocking.TestUtils.getRequiredActionContext;
 import static org.junit.jupiter.api.Assertions.*;
@@ -15,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class LoginStatsRecordingRequiredActionProviderTest {
 
     @Test
-    public void testEvaluateTriggers(){
+    public void testEvaluateTriggers() throws ParseException {
 
         LoginStatsRecordingRequiredActionProvider provider = new LoginStatsRecordingRequiredActionProvider();
         RequiredActionContext context = getRequiredActionContext("evaluateTriggers");
@@ -25,14 +26,16 @@ public class LoginStatsRecordingRequiredActionProviderTest {
 
         UserModel user = context.getUser();
 
-        long startTime = LocalDateTime.now(ZoneId.of("GMT")).toEpochSecond(ZoneOffset.UTC);
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+        long startTime = System.currentTimeMillis();
 
         final String clientId = context.getAuthenticationSession().getClient().getClientId();
         String firstLoginDate = user.getFirstAttribute(LoginStatsRecordingRequiredActionProvider.LOGIN_FIRST_LOGIN_DATE + '.' + clientId);
         assertNotNull(firstLoginDate);
-        LocalDateTime dateTime = LocalDateTime.parse(firstLoginDate);
-        long timeStamp = dateTime.toEpochSecond(ZoneOffset.UTC);
-        assertEquals(startTime, timeStamp, 10);
+        Date dateTime = dateFormat.parse(firstLoginDate);
+        long timeStamp = dateTime.getTime();
+        assertEquals(startTime, timeStamp, 5000);
 
         String loginCount = user.getFirstAttribute(LoginStatsRecordingRequiredActionProvider.LOGIN_LOGIN_COUNT + '.' + clientId);
         assertNotNull(loginCount);
@@ -40,7 +43,8 @@ public class LoginStatsRecordingRequiredActionProviderTest {
 
         String recentLoginDate = user.getFirstAttribute(LoginStatsRecordingRequiredActionProvider.LOGIN_RECENT_LOGIN_DATE + '.' + clientId);
         assertNotNull(recentLoginDate);
-        timeStamp = dateTime.toEpochSecond(ZoneOffset.UTC);
+        dateTime = dateFormat.parse(recentLoginDate);
+        timeStamp = dateTime.getTime();
         assertEquals(startTime, timeStamp, 10);
     }
 
