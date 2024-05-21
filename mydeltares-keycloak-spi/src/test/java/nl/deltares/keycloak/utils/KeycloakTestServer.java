@@ -4,7 +4,6 @@ import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.containers.output.ToStringConsumer;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
-import org.testcontainers.containers.wait.strategy.WaitStrategy;
 import org.testcontainers.shaded.org.apache.commons.io.filefilter.WildcardFileFilter;
 
 import java.io.File;
@@ -24,6 +23,7 @@ public class KeycloakTestServer {
     private static KeycloakUtilsImpl userUtils;
     private static DockerComposeContainer dockerClient;
     private static boolean running;
+    private static volatile boolean starting;
 
     /**
      * Use main method to start keycloak server manually. Server can be stopped by manually updating the 'keepGoing'
@@ -35,11 +35,11 @@ public class KeycloakTestServer {
         File keycloakTmpDir = Files.createTempDirectory("keycloak").toFile();
         final File spiBuildLib = Paths.get("mydeltares-keycloak-spi", "build", "libs").toFile();
         final File themeBuildLib = Paths.get("mydeltares-keycloak-theme", "build", "libs").toFile();
-        File dataDir = new File(keycloakTmpDir, "data/import");
+        File dataDir = new File(keycloakTmpDir, "keycloak/data/import");
         dataDir.mkdirs();
-        File configDir = new File(keycloakTmpDir, "conf");
+        File configDir = new File(keycloakTmpDir, "keycloak/conf");
         configDir.mkdir();
-        File deploymentDir = new File(keycloakTmpDir, "providers");
+        File deploymentDir = new File(keycloakTmpDir, "keycloak/providers");
         deploymentDir.mkdir();
 
         Files.copy(new File(testResources.getParent(), "docker-compose.yml").toPath(), new File(keycloakTmpDir, "docker-compose.yml").toPath());
@@ -71,8 +71,15 @@ public class KeycloakTestServer {
 
     public static void startKeycloak(String keycloakDir) {
 
+        starting = true;
         dockerClient = new DockerComposeContainer(new File(keycloakDir, "docker-compose.yml"));
-        final WaitStrategy waitStrategy = new HttpWaitStrategy().forPort(8080).withStartupTimeout(Duration.ofMinutes(1));
+        int port = 8080;
+        int debugPort = 8787;
+
+        System.out.printf("Starting Keycloak on port %d and debug port %d\n", port, debugPort);
+
+        final HttpWaitStrategy waitStrategy = new HttpWaitStrategy();
+        waitStrategy.forPath("/auth").forPort(port).withStartupTimeout(Duration.ofMinutes(1));
         dockerClient.withLogConsumer("keycloak", new ToStringConsumer() {
             @Override
             public void accept(OutputFrame outputFrame) {
@@ -84,10 +91,15 @@ public class KeycloakTestServer {
                     }
                 }
             }
-        }).withExposedService("keycloak", 8080, waitStrategy);
-        dockerClient. start();
-        running = true;
-
+        }).withExposedService("keycloak", port, waitStrategy);
+        try {
+            dockerClient.start();
+            running = true;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            starting = false;
+        }
     }
 
     public static void stopKeycloak() {
@@ -115,6 +127,13 @@ public class KeycloakTestServer {
 
 
     public static boolean isRunning() {
+        while (starting) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
         return running;
     }
 
