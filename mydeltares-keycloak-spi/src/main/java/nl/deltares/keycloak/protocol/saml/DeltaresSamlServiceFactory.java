@@ -1,6 +1,5 @@
 package nl.deltares.keycloak.protocol.saml;
 
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakContext;
@@ -17,9 +16,7 @@ public class DeltaresSamlServiceFactory implements RealmResourceProviderFactory 
         KeycloakContext context = session.getContext();
         RealmModel realm = context.getRealm();
         EventBuilder event = new EventBuilder(realm, session, context.getConnection());
-        DeltaresSamlService provider = new DeltaresSamlService(session, event);
-        ResteasyProviderFactory.getInstance().injectProperties(provider);
-        return provider;
+        return new DeltaresSamlService(session, event);
     }
 
     @Override

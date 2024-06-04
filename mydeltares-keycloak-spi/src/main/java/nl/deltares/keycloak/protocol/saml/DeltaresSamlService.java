@@ -21,7 +21,7 @@ import org.keycloak.sessions.CommonClientSessionModel;
 import java.util.Collections;
 
 /**
- * This class listens on path: https://server/auth/realms/liferay-portal/protocol-saml-deltares/clients
+ * This class listens on path: http://keycloak:8080/auth/realms/liferay-portal/protocol-saml-deltares/clients/https%3A%2F%2Fgithub.com%2Fenterprises%2Fdeltares
  * Purpose of this class is to add the SAML AuthnRequest ID to the session so it can be returned in the response.
  *
  */
