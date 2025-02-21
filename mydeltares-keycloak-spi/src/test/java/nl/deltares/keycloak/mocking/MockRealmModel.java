@@ -3,17 +3,18 @@ package nl.deltares.keycloak.mocking;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.*;
+import org.keycloak.models.jpa.entities.ComponentEntity;
 import org.keycloak.provider.Provider;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 
-public class MockRealmModel implements RealmModel {
+public class MockRealmModel  implements RealmModel {
 
     private final List<String> eventListeners = Collections.emptyList();
+
+    private final Set<ComponentModel> components = new HashSet<>();
+
     @Override
     public String getId() {
         return "test-realm";
@@ -1006,17 +1007,17 @@ public class MockRealmModel implements RealmModel {
 
     @Override
     public Stream<ComponentModel> getComponentsStream(String s, String s1) {
-        return null;
+        return getComponentsStream();
     }
 
     @Override
     public Stream<ComponentModel> getComponentsStream(String s) {
-        return null;
+        return getComponentsStream();
     }
 
     @Override
     public Stream<ComponentModel> getComponentsStream() {
-        return null;
+        return components.stream();
     }
 
     @Override

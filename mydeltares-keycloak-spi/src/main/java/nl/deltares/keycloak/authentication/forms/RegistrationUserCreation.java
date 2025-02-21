@@ -207,7 +207,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
         return false;
     }
 
-    private static AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
+    private static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
             AuthenticationExecutionModel.Requirement.REQUIRED,
             AuthenticationExecutionModel.Requirement.DISABLED
     };
@@ -276,10 +276,23 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
         UserProvider users = context.getSession().users();
         i = 0;
         String validUserName = userName;
+        if(validUserName.length() < 3) validUserName = padLeftZeros(validUserName, 4);
         while (users.getUserByUsername(context.getRealm(), validUserName) != null){
             validUserName = userName + '_' + i++;
         }
         return validUserName;
+    }
+
+    public String padLeftZeros(String inputString, int requiredLength) {
+        if (inputString.length() >= requiredLength) {
+            return inputString;
+        }
+        StringBuilder sb = new StringBuilder();
+        while (sb.length() < requiredLength - inputString.length()) {
+            sb.append('0');
+        }
+        sb.append(inputString);
+        return sb.toString();
     }
 }
 
