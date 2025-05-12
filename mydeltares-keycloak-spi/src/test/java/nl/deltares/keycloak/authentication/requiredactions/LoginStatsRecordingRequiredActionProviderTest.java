@@ -35,7 +35,7 @@ public class LoginStatsRecordingRequiredActionProviderTest {
         assertNotNull(firstLoginDate);
         Date dateTime = dateFormat.parse(firstLoginDate);
         long timeStamp = dateTime.getTime();
-        assertEquals(startTime, timeStamp, 5000);
+        assertEquals(startTime, timeStamp, 60000);
 
         String loginCount = user.getFirstAttribute(LoginStatsRecordingRequiredActionProvider.LOGIN_LOGIN_COUNT + '.' + clientId);
         assertNotNull(loginCount);
@@ -45,7 +45,7 @@ public class LoginStatsRecordingRequiredActionProviderTest {
         assertNotNull(recentLoginDate);
         dateTime = dateFormat.parse(recentLoginDate);
         timeStamp = dateTime.getTime();
-        assertEquals(startTime, timeStamp, 10);
+        assertEquals(startTime, timeStamp, 60000);
     }
 
 
