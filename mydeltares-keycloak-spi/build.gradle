@@ -46,13 +46,14 @@ dependencies {
 
     implementation('org.keycloak:keycloak-server-spi:' + keycloakVersion)
     implementation('org.keycloak:keycloak-server-spi-private:' + keycloakVersion)
-    implementation('org.keycloak:keycloak-services:' + keycloakVersion)
+    implementation('org.keycloak:keycloak-services:[24.0.9,)')
     implementation('org.keycloak:keycloak-core:[24.0.7,)')
     implementation('org.keycloak:keycloak-model-jpa:' + keycloakVersion)
     implementation('org.keycloak:keycloak-saml-core:[24.0.8,)')
     implementation('org.keycloak:keycloak-saml-core-public:' + keycloakVersion)
 
     implementation('com.google.guava:guava:[32.0.0-android,)')
+    implementation('com.google.protobuf:protobuf-java:4.28.2')
     implementation('io.netty:netty-codec-http:[4.1.108.Final,)')
     implementation('io.netty:netty-handler:[4.1.118.Final,)')
     implementation('io.netty:netty-common:[4.1.115.Final,)')

@@ -7,7 +7,7 @@ import jakarta.ws.rs.core.Response;
 import nl.deltares.keycloak.storage.jpa.model.DataRequestManager;
 import nl.deltares.keycloak.storage.rest.model.ExportInvalidUser;
 import nl.deltares.keycloak.storage.rest.model.ExtractNonKeycloakUsers;
-import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.resteasy.reactive.NoCache;
 import org.jboss.resteasy.reactive.RestForm;
 import org.jboss.resteasy.reactive.multipart.FileUpload;
 import org.keycloak.http.HttpRequest;

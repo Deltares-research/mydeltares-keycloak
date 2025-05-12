@@ -1,6 +1,7 @@
 package nl.deltares.keycloak.storage.rest;
 
 import jakarta.persistence.EntityManager;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -83,7 +84,7 @@ public class ResourceUtils {
         Auth auth = new Auth(realm, token, authResult.getUser(), client, authResult.getSession(), true);
         if (!auth.getRealm().equals(realmManager.getKeycloakAdminstrationRealm())
                 && !auth.getRealm().equals(realm)) {
-            throw new org.keycloak.services.ForbiddenException();
+            throw new ForbiddenException();
         }
         return  auth;
     }
